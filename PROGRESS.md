@@ -11,7 +11,7 @@ M0 is in progress. M1 is not authorized until Ishak approves M0.
 - [x] GUT 9.7.1 addon vendored with license and enabled locally in this project.
 - [x] All 96 GDScripts load; all 9 GUT tests pass; main scene runs for 600 ticks.
 - [ ] Strict verification exits successfully outside restricted session (editor debugger socket error here).
-- [ ] Ishak launches the actual project and approves the grey test room.
+- [x] Ishak confirms the project works after the GUT startup fix ("Works fine").
 - [ ] Matching 4.7.2 export templates installed.
 - [ ] Initial character/animation packs obtained and actual files inspected.
 - [ ] Branch pushed for review; milestone merged/tagged after approval.
@@ -21,6 +21,8 @@ Working branch: `setup/m0-foundation`. The setup slice is committed locally usin
 ## Current verification
 
 M0 follow-up: Ishak reported `[GUT] Could not get version info, response code: 0` while opening the editor. Inspection traced it to GUT's automatic GitHub update request. Patched only its startup call to use bundled/cached version information. Manual update requests remain available; existing system/application configuration and the editor's current `project.godot` serialization were preserved.
+
+Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. Detailed pause/step/resize results and a normal-terminal strict verification log were not supplied. Export templates and initial character/animation assets remain pending; M0 as a whole is not yet complete.
 
 Verified locally with Godot `4.7.2.stable.official.ed1daf0bf` and GUT 9.7.1:
 
