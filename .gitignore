@@ -3,3 +3,8 @@ builds/
 .local/
 *.log
 *.tmp
+# Godot extracts these textures from the tracked self-contained character GLBs.
+assets/characters/base/*_T_*.png
+assets/characters/base/*_T_*.png.import
+assets/characters/outfits/*_T_*.png
+assets/characters/outfits/*_T_*.png.import

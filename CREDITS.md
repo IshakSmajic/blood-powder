@@ -4,7 +4,7 @@
 
 - Game design and original guide: Ishak. Original DOCX preserved in `docs/mvp_development_guide.docx`; searchable text extracted without changing design decisions.
 - `docs/concepts/visual_direction_v1.png`: generated concept image approved by Ishak as the visual direction. Documentation/reference only; not a rigged model, sprite sheet, or playable screenshot.
-- Setup room geometry, materials, scripts, and UI: project content. No external character, environment, or sound packs are included yet.
+- Setup room geometry, materials, scripts, and UI: project content. Stock character/animation candidates are listed below; no external environment or sound packs are included yet.
 
 ## GUT — Godot Unit Test
 
@@ -23,3 +23,16 @@ Godot Engine 4.7.2 stable, official build `ed1daf0bf`; MIT licensed. Editor bina
 ## Future assets
 
 Before adding third-party gameplay assets, record exact paths, author, original source, and applicable license here. Pack compatibility and per-file licensing must be verified rather than inferred from the design guide.
+
+## Quaternius character and animation candidates
+
+Author: Quaternius. License: CC0 1.0, verified against each supplied archive's notice. These are candidates for M1, not yet used by the setup room. Exact file paths and fingerprints are in `docs/asset_manifest.json`.
+
+| Files | Original pack/source | Retained notice |
+| --- | --- | --- |
+| `assets/characters/base/superhero_male.glb`, `superhero_female.glb` | [Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html), Standard | `assets/licenses/base_characters.txt` |
+| `assets/characters/outfits/male_peasant.glb`, `female_peasant.glb`, `male_ranger.glb`, `female_ranger.glb` | [Modular Character Outfits – Fantasy](https://quaternius.com/packs/modularcharacteroutfitsfantasy.html), Standard | `assets/licenses/fantasy_outfits.txt` |
+| `assets/animations/ual1/ual1_standard.glb` | [Universal Animation Library](https://quaternius.com/packs/universalanimationlibrary.html), Standard in-place | `assets/licenses/ual1.txt` |
+| `assets/animations/ual2/ual2_standard.glb` | [Universal Animation Library 2](https://quaternius.com/packs/universalanimationlibrary2.html), Standard in-place | `assets/licenses/ual2.txt` |
+
+Modifications: body/outfit glTF files repackaged with original textures and binary buffers into self-contained GLBs; broken texture URIs corrected to existing pack files as recorded in the manifest. No pixel/mesh edits or retargeting. Animation GLBs copied unchanged. Raw packs remain outside the repository.

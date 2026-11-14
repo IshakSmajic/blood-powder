@@ -19,6 +19,8 @@ GUT 9.7.1 is vendored under `addons/gut/` and enabled in project-local settings.
 
 The original guide and approved concept sheet live under `docs/`. Raw external character packs stay outside the repo. Empty asset/system directories reserve the guide's structure; `.gitkeep` files are placeholders, not implementations.
 
+Eight stock character/animation candidates are prepared under `assets/`; the setup scene does not instantiate them. See `docs/asset_audit.md` and the manifest for compatibility limits. Rigs share a 65-bone hierarchy but not all bind poses. `tools/prepare_assets.py` packages glTF dependencies; `tools/check_assets.gd` checks imported scenes, bone counts, and animation names during verification.
+
 ## Next milestone, after M0 approval
 
 M1 introduces Commands, unit components, navigation, basic attacks, damage, camera controls, debug interfaces, and animation calibration. It must not silently replace setup architecture or alter guide rules. Stock model rig and animation compatibility must be validated with actual files before choosing character recipes.

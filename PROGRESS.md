@@ -9,11 +9,11 @@ M0 is in progress. M1 is not authorized until Ishak approves M0.
 - [x] Original guide and approved visual concept preserved in `docs/`.
 - [x] Project structure, scene, input map, core autoloads, and session docs created.
 - [x] GUT 9.7.1 addon vendored with license and enabled locally in this project.
-- [x] All 96 GDScripts load; all 9 GUT tests pass; main scene runs for 600 ticks.
+- [x] All 97 GDScripts load; all 9 GUT tests pass; main scene runs for 600 ticks; all 8 prepared stock scenes import successfully.
 - [ ] Strict verification exits successfully outside restricted session (editor debugger socket error here).
 - [x] Ishak confirms the project works after the GUT startup fix ("Works fine").
 - [ ] Matching 4.7.2 export templates installed.
-- [ ] Initial character/animation packs obtained and actual files inspected.
+- [x] Four character/animation packs inspected, licenses checked, raw files extracted externally, and candidate assets prepared. See `docs/asset_audit.md` for rig/outfit limitations.
 - [ ] Branch pushed for review; milestone merged/tagged after approval.
 
 Working branch: `setup/m0-foundation`. The setup slice is committed locally using Ishak's configured author and committer identity, with no co-author trailers. Push was attempted and failed because this session cannot resolve `github.com`; there is no remote branch/PR yet. Working tree was clean after the setup commit. No milestone tag or merge has been made.
@@ -22,11 +22,14 @@ Working branch: `setup/m0-foundation`. The setup slice is committed locally usin
 
 M0 follow-up: Ishak reported `[GUT] Could not get version info, response code: 0` while opening the editor. Inspection traced it to GUT's automatic GitHub update request. Patched only its startup call to use bundled/cached version information. Manual update requests remain available; existing system/application configuration and the editor's current `project.godot` serialization were preserved.
 
-Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. Detailed pause/step/resize results and a normal-terminal strict verification log were not supplied. Export templates and initial character/animation assets remain pending; M0 as a whole is not yet complete.
+Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. Detailed pause/step/resize results and a normal-terminal strict verification log were not supplied. Character packs have since been inspected and prepared; export templates remain pending, so M0 is not yet complete.
+
+Asset preparation follow-up: all 8 prepared GLBs import into Godot with 65-bone skeletons; UAL1 and UAL2 each expose 43 clips. Godot strips the standard `_Loop` suffix when importing animations; the check recognizes that exact rule. Both libraries contain usable melee/locomotion candidates, but visual playback/retargeting is not yet verified. Repeat packaging produced identical outputs. Actual archive contents differ from several guide assumptions; see `docs/asset_audit.md`. No gameplay or M1 visual integration was started.
 
 Verified locally with Godot `4.7.2.stable.official.ed1daf0bf` and GUT 9.7.1:
 
-- All-script loader: 96 scripts load successfully, exit 0, no script errors.
+- All-script loader: 97 scripts load successfully, exit 0, no script errors.
+- Stock assets: all 8 scenes load with expected bones and animation clips, exit 0.
 - GUT: 9/9 tests, 729 assertions, zero failures, exit 0.
 - Main-scene smoke: 600 consecutive simulation ticks, exit 0, no runtime errors.
 - Editor import completed and generated the project cache, but reported sandbox socket errors (`_inet_open` and `TCPServer.listen` / `ERR_CANT_CREATE`). These are not suppressed: strict verification remains failed for the import stage until checked outside this restricted session.
@@ -52,7 +55,7 @@ Report: whether it launched, any errors, pause/step results, and whether you app
 - Git identity remains Ishak's configured identity; no AI author/co-author trailers are allowed.
 - Source text in the original guide mentions another coding assistant; preserved as received. This does not change responsibilities or add attribution requirements.
 - Guide proposes newest 4.7.x: installed and pinned 4.7.2. Guide text itself remains unchanged.
-- Export templates, stock character packs, final visuals, and exports are not part of the implemented test room.
+- Export templates remain pending; the extra Windows ZIP is an editor, not templates. Stock character/animation candidates are prepared but not instantiated in the test room. Final visuals and exports are not implemented.
 - Generated concept HUD and arena proportions are illustrative; mechanics/layout must follow the guide.
 
 ## Open decisions

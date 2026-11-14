@@ -54,6 +54,7 @@ def main():
     checks = [
         ("Import and editor parse", common + ["--import"], None),
         ("All-script parse", common + ["--script", "res://tools/parse_all.gd"], "PARSE PASS:"),
+        ("Stock asset imports", common + ["--script", "res://tools/check_assets.gd"], "ASSETS PASS:"),
         ("GUT suite", common + ["--script", "res://addons/gut/gut_cmdln.gd"], "All tests passed!"),
         ("600-tick main-scene smoke test", common + ["--script", "res://tools/smoke.gd",
             "--fixed-fps", "60"], "SMOKE PASS:"),
