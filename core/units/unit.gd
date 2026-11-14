@@ -11,9 +11,12 @@ var state: String = "Idle"
 var spawn_point: Vector3
 var attack := AttackCycle.new()
 var movement := MovementComponent.new()
+var statuses := StatusEffects.new()
+var ability := AbilityRunner.new()
 var order: UnitCommand = UnitCommand.create(UnitCommand.Kind.STOP)
 var _pending: UnitCommand
 var _pending_tick: int = 0
+var _pending_expires: int = 0
 var _victim: CombatUnit
 var _last_repath: int = -999
 var _respawn_tick: int = -1
@@ -35,6 +38,7 @@ func alive() -> bool:
 
 
 func _ready() -> void:
+	ability.data = preload("res://data/abilities/training_pulse.tres")
 	collision_layer = 2
 	collision_mask = 1
 	var collision := CollisionShape3D.new()
@@ -88,6 +92,8 @@ func reset_unit() -> void:
 	health = stat(&"max_health")
 	state = "Idle"
 	attack.reset()
+	ability.reset()
+	statuses.clear()
 	movement.stop()
 	order = UnitCommand.create(UnitCommand.Kind.STOP)
 	_pending = null
@@ -104,6 +110,7 @@ func queue_command(command: UnitCommand, issued_tick: int) -> void:
 		return
 	_pending = command
 	_pending_tick = issued_tick + 1
+	_pending_expires = issued_tick + 30
 
 
 func simulate(tick: int, units: Array[CombatUnit]) -> void:
@@ -112,20 +119,59 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 			reset_unit()
 			EventBus.publish(&"unit_respawned", {"unit": unit_id})
 		return
+	for effect_event in statuses.advance(tick):
+		if effect_event.event == &"burn_pulse":
+			receive_damage(effect_event.amount, tick, effect_event.source_id, false, &"true")
+		else:
+			EventBus.publish(&"status_expired", {"unit": unit_id, "status": effect_event.kind})
+	if not alive():
+		return
+	if _pending != null and tick >= _pending_expires:
+		_pending = null
+	if statuses.has(&"stun"):
+		if _pending != null and _pending.kind == UnitCommand.Kind.CAST:
+			_cast_failed("Stunned")
+			_pending = null
+		state = "Stunned"
+		movement.stop()
+		return
 	health = minf(health, stat(&"max_health"))
 	# A command on the hit tick cannot cancel a hit already committed that tick.
 	if attack.take_hit(tick):
 		_hit(tick)
+	if ability.take_completion(tick):
+		_complete_pulse(tick, units)
+	if ability.completion_tick >= 0:
+		state = "Casting"
+		return
 	if _pending != null and tick >= _pending_tick:
-		if attack.cancel(tick):
-			EventBus.publish(&"attack_cancelled", {"source": unit_id})
-		order = _pending
-		_pending = null
-		_victim = null
-		movement.stop()
-		_last_repath = -999
-		_resume_attack_move = false
-		EventBus.publish(&"order_issued", {"source": unit_id, "kind": order.kind})
+		if _pending.kind == UnitCommand.Kind.CAST:
+			_pending = null
+			var reason := ability.start(tick)
+			if not reason.is_empty():
+				_cast_failed(reason)
+			else:
+				if attack.cancel(tick):
+					EventBus.publish(&"attack_cancelled", {"source": unit_id})
+				_victim = null
+				movement.stop()
+				_last_repath = -999
+				EventBus.publish(&"ability_cast_started", {"source": unit_id, "ability": "training_pulse"})
+				if ability.take_completion(tick):
+					_complete_pulse(tick, units)
+				else:
+					state = "Casting"
+					return
+		else:
+			if attack.cancel(tick):
+				EventBus.publish(&"attack_cancelled", {"source": unit_id})
+			order = _pending
+			_pending = null
+			_victim = null
+			movement.stop()
+			_last_repath = -999
+			_resume_attack_move = false
+			EventBus.publish(&"order_issued", {"source": unit_id, "kind": order.kind})
 	if attack.hit_tick >= 0:
 		state = "Attack windup"
 		return
@@ -145,7 +191,7 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 				movement.set_destination(target.global_position)
 				_last_repath = tick
 			state = "Chasing"
-			_face(movement.simulate(stat(&"move_speed")))
+			_face(_move())
 			return
 	if order.kind in [UnitCommand.Kind.MOVE, UnitCommand.Kind.ATTACK_MOVE]:
 		if _resume_attack_move:
@@ -154,8 +200,8 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 		if _last_repath < 0:
 			movement.set_destination(order.point)
 			_last_repath = tick
-		_face(movement.simulate(stat(&"move_speed")))
-		state = "Moving" if movement.active else "Idle"
+		_face(_move())
+		state = "Rooted" if statuses.has(&"root") else "Moving" if movement.active else "Idle"
 		if not movement.active:
 			order = UnitCommand.create(UnitCommand.Kind.STOP)
 	else:
@@ -195,20 +241,68 @@ func _hit(tick: int) -> void:
 	_victim.receive_damage(damage, tick, unit_id, crit)
 
 
-func receive_damage(amount: float, tick: int, source: int, crit: bool = false) -> void:
+func receive_damage(amount: float, tick: int, source: int, crit: bool = false, damage_type: StringName = &"physical") -> void:
 	if not alive():
 		return
 	health = maxf(0.0, health - maxf(0.0, amount))
 	_flash_frames = 3
-	EventBus.publish(&"damage_dealt", {"source": source, "target": unit_id, "amount": amount, "crit": crit, "position": global_position})
+	EventBus.publish(&"damage_dealt", {"source": source, "target": unit_id, "amount": amount, "crit": crit, "position": global_position, "type": damage_type})
 	if not alive():
 		attack.reset()
+		ability.interrupt()
+		statuses.clear()
 		_pending = null
 		movement.stop()
 		state = "Dead"
 		_respawn_tick = tick + (180 if team == 0 else 120)
 		_visual.hide()
 		EventBus.publish(&"unit_died", {"unit": unit_id})
+
+
+func apply_status(kind: StringName, tick: int, duration: int, magnitude: float = 0.0, source: StringName = &"debug", source_id: int = -1) -> void:
+	if not alive() or duration <= 0:
+		return
+	statuses.apply(kind, tick, duration, magnitude, source, source_id)
+	EventBus.publish(&"status_applied", {"unit": unit_id, "status": kind, "duration": duration})
+	if kind == &"stun":
+		if attack.hit_tick >= 0:
+			attack.hit_tick = -1
+			attack.ready_tick = tick
+			EventBus.publish(&"attack_cancelled", {"source": unit_id})
+		if ability.completion_tick >= 0:
+			ability.interrupt()
+			EventBus.publish(&"ability_interrupted", {"source": unit_id})
+		movement.stop()
+		_last_repath = -999
+
+
+func cleanse() -> void:
+	for kind in statuses.cleanse():
+		EventBus.publish(&"status_expired", {"unit": unit_id, "status": kind, "reason": "cleanse"})
+
+
+func _move() -> Vector3:
+	if statuses.has(&"root"):
+		state = "Rooted"
+		velocity = Vector3.ZERO
+		return Vector3.ZERO
+	return movement.simulate(stat(&"move_speed") * statuses.move_multiplier())
+
+
+func _cast_failed(reason: String) -> void:
+	EventBus.publish(&"ability_cast_failed", {"source": unit_id, "reason": reason})
+
+
+func _complete_pulse(tick: int, units: Array[CombatUnit]) -> void:
+	var radius := maxf(0.0, ability.value(&"radius"))
+	for target in units:
+		if target.team == team or not target.alive():
+			continue
+		if global_position.distance_to(target.global_position) <= radius + target.stat(&"gameplay_radius"):
+			var damage := DamageResolver.resolve(ability.value(&"damage"), target.stat(&"magic_resist"))
+			target.receive_damage(damage, tick, unit_id, false, &"magic")
+			target.apply_status(&"slow", tick, maxi(0, roundi(ability.value(&"slow_duration") * 60)), ability.value(&"slow_fraction"), &"training_pulse", unit_id)
+	EventBus.publish(&"ability_cast_completed", {"source": unit_id, "ability": "training_pulse", "position": global_position, "radius": radius})
 
 
 func _process(_delta: float) -> void:

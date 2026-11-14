@@ -30,7 +30,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		pause_menu_requested.emit()
 	else:
 		for action in [&"move_attack", &"select_inspect", &"attack_move", &"stop", &"hold_position",
-			&"toggle_camera_lock", &"zoom_in", &"zoom_out", &"debug_panel", &"debug_ranges", &"debug_states", &"debug_log"]:
+			&"toggle_camera_lock", &"zoom_in", &"zoom_out", &"debug_panel", &"debug_ranges", &"debug_states", &"debug_log", &"ability_q"]:
 			if event.is_action_pressed(action):
 				world_action.emit(action)
 				get_viewport().set_input_as_handled()

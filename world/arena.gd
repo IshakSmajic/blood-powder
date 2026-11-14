@@ -21,6 +21,7 @@ var _menu_open: bool = false
 var _paused_before_menu: bool = false
 var _debug_mesh: MeshInstance3D
 var _effects: Node3D
+var _queued_debug_statuses: Array[StringName] = []
 
 
 func _ready() -> void:
@@ -120,6 +121,14 @@ func _add_unit(id: int, team: int, label: String, at: Vector3, data: UnitStats) 
 func simulate_tick(tick: int) -> void:
 	if not navigation_ready:
 		return
+	for kind in _queued_debug_statuses:
+		match kind:
+			&"cleanse": player.cleanse()
+			&"burn": player.apply_status(kind, tick, 150, 24.0)
+			&"slow": player.apply_status(kind, tick, 180, 0.5)
+			&"speed_buff": player.apply_status(kind, tick, 180, 0.5)
+			_: player.apply_status(kind, tick, 120)
+	_queued_debug_statuses.clear()
 	if attack_move_armed and tick >= _armed_until:
 		attack_move_armed = false
 	if _right_ground_held and not _menu_open and tick - _last_hold_tick >= 6:
@@ -136,6 +145,11 @@ func _on_action(action: StringName) -> void:
 	if _menu_open:
 		return
 	match action:
+		&"ability_q":
+			if player.alive():
+				player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), SimClock.state.tick)
+			else:
+				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead"})
 		&"toggle_camera_lock", &"zoom_in", &"zoom_out":
 			camera.handle_action(action)
 		&"debug_panel": _hud.toggle_debug()
@@ -177,6 +191,10 @@ func _issue_ground_move() -> void:
 	if point != null and navigation_ready:
 		player.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, point), SimClock.state.tick)
 		_click_ring(point, Color("84b37a"))
+
+
+func queue_debug_status(kind: StringName) -> void:
+	_queued_debug_statuses.append(kind)
 
 
 func _ground_point() -> Variant:
@@ -230,6 +248,7 @@ func reset_arena() -> void:
 	camera.controls_enabled = true
 	_right_ground_held = false
 	attack_move_armed = false
+	_queued_debug_statuses.clear()
 	_hud.show_menu(false)
 	_hud.clear_log()
 	camera.snap()
@@ -243,6 +262,7 @@ func _process(_delta: float) -> void:
 	if show_ranges:
 		immediate.surface_begin(Mesh.PRIMITIVE_LINES)
 		_draw_circle(immediate, player.global_position, player.stat(&"attack_range") + player.stat(&"gameplay_radius"))
+		_draw_circle(immediate, player.global_position, player.ability.value(&"radius"))
 		for unit in units:
 			_draw_circle(immediate, unit.global_position, unit.stat(&"gameplay_radius"))
 		if player.movement.active:
@@ -259,11 +279,11 @@ func _draw_circle(mesh: ImmediateMesh, center: Vector3, radius: float) -> void:
 			mesh.surface_add_vertex(center + Vector3(cos(angle) * radius, 0.06, sin(angle) * radius))
 
 
-func _click_ring(point: Vector3, color: Color) -> void:
+func _click_ring(point: Vector3, color: Color, radius: float = 0.31, grow: bool = false) -> void:
 	var ring := MeshInstance3D.new()
 	var torus := TorusMesh.new()
-	torus.inner_radius = 0.28
-	torus.outer_radius = 0.34
+	torus.inner_radius = maxf(0.01, radius - 0.03)
+	torus.outer_radius = maxf(0.04, radius + 0.03)
 	torus.rings = 16
 	torus.ring_segments = 6
 	ring.mesh = torus
@@ -273,12 +293,15 @@ func _click_ring(point: Vector3, color: Color) -> void:
 	ring.material_override = material
 	ring.position = point + Vector3.UP * 0.06
 	_effects.add_child(ring)
+	if grow: ring.scale = Vector3.ONE * 0.1
 	var tween := ring.create_tween()
-	tween.tween_property(ring, "scale", Vector3.ONE * 0.1, 0.4)
+	tween.tween_property(ring, "scale", Vector3.ONE if grow else Vector3.ONE * 0.1, 0.4)
 	tween.tween_callback(ring.queue_free)
 
 
 func _on_combat_event(_tick: int, event: StringName, payload: Dictionary) -> void:
+	if event == &"ability_cast_completed":
+		_click_ring(payload.position, Color("6cb8dc"), payload.radius, true)
 	if event != &"damage_dealt":
 		return
 	var number := Label3D.new()
@@ -286,7 +309,8 @@ func _on_combat_event(_tick: int, event: StringName, payload: Dictionary) -> voi
 	number.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	number.font_size = 64 if payload.crit else 46
 	number.pixel_size = 0.005
-	number.modulate = Color("ffd68a") if payload.crit else Color.WHITE
+	var type: StringName = payload.get("type", &"physical")
+	number.modulate = Color("7db9ef") if type == &"magic" else Color("ef9b4d") if type == &"true" else Color.WHITE
 	number.position = payload.position + Vector3(0, 2.0, 0)
 	_effects.add_child(number)
 	var tween := number.create_tween()

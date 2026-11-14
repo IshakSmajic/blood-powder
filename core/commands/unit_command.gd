@@ -2,7 +2,7 @@ class_name UnitCommand
 extends RefCounted
 ## Mouse and future AI commands share this representation.
 
-enum Kind { MOVE, ATTACK, ATTACK_MOVE, STOP, HOLD }
+enum Kind { MOVE, ATTACK, ATTACK_MOVE, STOP, HOLD, CAST }
 var kind: Kind = Kind.STOP
 var point: Vector3 = Vector3.ZERO
 var target: Node3D

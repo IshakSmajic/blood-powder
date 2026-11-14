@@ -2,7 +2,7 @@
 
 An offline 3D top-down combat arena for Linux and Windows, built with Godot and GDScript.
 
-Current slice: **M1 — capsule movement and basic attacks**. Right-click navigation around obstacles, stationary training dummies, attack timing/cancellation, damage/armor/crits, respawn, camera controls, and prototype debug HUD. Class abilities, stock character animation, and final art are not implemented yet. M0 is approved and preserved in `world/setup_room.tscn` (local tag `m0-approved`).
+Current slice: **M1 — capsule movement and basic attacks**. Right-click navigation around obstacles, stationary training dummies, attack timing/cancellation, damage/armor/crits, respawn, camera controls, and prototype debug HUD. A temporary Q Training Pulse exercises cast/cooldown/status behavior. Class abilities, stock character animation, and final art are not implemented yet. M0 is approved and preserved in `world/setup_room.tscn` (local tag `m0-approved`).
 
 ## Open and run
 
@@ -29,6 +29,7 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | Left-click | Inspect nearest unit under the ground cursor |
 | A then left-click | Attack-move to the clicked point |
 | S / H | Stop / hold position and attack in range |
+| Q | Temporary Training Pulse: nearby magic damage and slow, 0.25 s cast, 3 s cooldown |
 | Y / Space / wheel | Toggle camera lock / center while held / zoom |
 | F1 / F2 / F3 / F4 | Live player stats / range and path overlay / state and tick timers / combat log |
 | F5 in game | Reset units, camera, simulation clock, speed, and combat log; retain live tuning |
@@ -36,9 +37,9 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | F9 / F10 | Pause / single tick while paused |
 | Esc | Cancel armed attack-move, or open/close pause menu |
 
-Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. QWER slots are placeholders; keys 1–4 remain unbound. F6 class switching, abilities, and full tuning/export tools arrive in later slices.
+Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. Q is a prototype test ability; W/E/R and passive remain placeholders. Keys 1–4 remain unbound. F6 class switching, actual class abilities, and full tuning/export tools arrive in later slices.
 
-The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written to resource files.
+The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written to resource files. F1 also exposes test-ability values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; F5 clears all statuses and cooldowns.
 
 ## Verify
 

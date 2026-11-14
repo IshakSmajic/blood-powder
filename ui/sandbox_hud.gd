@@ -10,6 +10,10 @@ var _log: Label
 var _debug: PanelContainer
 var _menu: PanelContainer
 var _events: Array[String] = []
+var _pulse_slot: Control
+var _fail_label: Label
+var _fail_left: float = 0.0
+const Slot = preload("res://ui/ability_slot.gd")
 
 
 func _ready() -> void:
@@ -28,12 +32,23 @@ func _ready() -> void:
 	header.add_child(_selected)
 	var footer := VBoxContainer.new()
 	footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	footer.offset_top = -130
+	footer.offset_top = -220
 	footer.offset_left = 24
 	footer.offset_right = -24
 	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(footer)
-	footer.add_child(_label("PASSIVE     [Q]     [W]     [E]     [R]    — abilities arrive in later slices", 18, Color("bcb5ac")))
+	var slots := HBoxContainer.new()
+	slots.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	footer.add_child(slots)
+	for key in ["P", "Q", "W", "E", "R"]:
+		var slot := Slot.new()
+		slot.key_label = key
+		slot.usable = key == "Q"
+		if key == "Q":
+			slot.ability = arena.player.ability
+			_pulse_slot = slot
+		slots.add_child(slot)
+	footer.add_child(_label("Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
 	footer.add_child(_label("RMB move / attack · hold RMB ground to steer · A then LMB attack-move · S stop · H hold", 17))
 	footer.add_child(_label("Y camera lock · Space center · wheel zoom · F1 tuning · F2 ranges · F3 state · F4 log", 17))
 	footer.add_child(_label("F5 reset · F7/F8 speed · F9 pause · F10 step · Esc menu", 17))
@@ -70,6 +85,34 @@ func _ready() -> void:
 		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(arena.player.stats.resource_path, field, value))
 		row.add_child(spinner)
 	_debug.hide()
+	fields.add_child(_label("TRAINING PULSE", 18))
+	for property in arena.player.ability.data.get_property_list():
+		if not property.usage & PROPERTY_USAGE_EDITOR or property.type != TYPE_FLOAT: continue
+		var field := StringName(property.name)
+		var row := HBoxContainer.new()
+		fields.add_child(row)
+		var label := _label(String(field).replace("_", " "), 14)
+		label.custom_minimum_size.x = 170
+		row.add_child(label)
+		var spinner := SpinBox.new()
+		spinner.min_value = 0.0
+		spinner.max_value = 1.0 if field == &"slow_fraction" else 10000.0
+		spinner.step = 0.05
+		spinner.value = arena.player.ability.value(field)
+		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(arena.player.ability.data.resource_path, field, value))
+		row.add_child(spinner)
+	fields.add_child(_label("APPLY TO PLAYER", 18))
+	var status_grid := GridContainer.new()
+	status_grid.columns = 3
+	fields.add_child(status_grid)
+	for kind in [&"slow", &"root", &"stun", &"burn", &"speed_buff", &"cleanse"]:
+		var button := Button.new()
+		button.text = String(kind).replace("_", " ").capitalize()
+		button.pressed.connect(func() -> void: arena.queue_debug_status(kind))
+		status_grid.add_child(button)
+	_fail_label = _label("", 18, Color("ef8270"))
+	_fail_label.hide()
+	root.add_child(_fail_label)
 	_menu = PanelContainer.new()
 	_menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	_menu.offset_left = -180
@@ -91,7 +134,7 @@ func _ready() -> void:
 	EventBus.combat_event.connect(_on_event)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var player: CombatUnit = arena.player
 	_status.text = "%s · tick %06d · %.1f× · %s · HP %d/%d · %s" % [
 		"PAUSED" if SimClock.state.paused else "TRAINING", SimClock.state.tick,
@@ -99,10 +142,19 @@ func _process(_delta: float) -> void:
 		ceili(player.health), ceili(player.stat(&"max_health")), "A + click armed" if arena.attack_move_armed else ""]
 	if not arena.navigation_ready:
 		_status.text = "Baking navigation…"
+	var status_text := player.statuses.summary(SimClock.state.tick)
+	if not status_text.is_empty(): _status.text += "\n" + status_text
+	_pulse_slot.usable = player.alive() and not player.statuses.has(&"stun") and player.ability.completion_tick < 0
+	_fail_left = maxf(0.0, _fail_left - delta)
+	_fail_label.visible = _fail_left > 0.0
+	_fail_label.position = get_viewport().get_mouse_position() + Vector2(16, 16)
 	var unit: CombatUnit = arena.selected
 	_selected.text = "%s · HP %d · armor %.0f · MR %.0f" % [unit.unit_name, ceili(unit.health), unit.stat(&"armor"), unit.stat(&"magic_resist")] if is_instance_valid(unit) else "LMB inspect a unit"
 	if arena.show_states:
 		_selected.text += "\n%s · ready in %d ticks · hit tick %d" % [player.state, maxi(0, player.attack.ready_tick - SimClock.state.tick), player.attack.hit_tick]
+	if is_instance_valid(unit):
+		var effects := unit.statuses.summary(SimClock.state.tick)
+		if not effects.is_empty(): _selected.text += "\n" + effects
 	if _log.visible:
 		_log.text = "\n".join(_events.slice(maxi(0, _events.size() - 14)))
 
@@ -124,6 +176,10 @@ func clear_log() -> void:
 
 
 func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:
+	if event == &"ability_cast_failed" and payload.source == arena.player.unit_id:
+		_fail_label.text = payload.reason
+		_fail_left = 0.6
+		_pulse_slot.flash_failure()
 	_events.append("%06d  %s  %s" % [tick, event, str(payload)])
 	if _events.size() > 200:
 		_events.pop_front()

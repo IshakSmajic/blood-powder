@@ -107,3 +107,20 @@ Final slice verification: 109 scripts load, all 8 stock assets import, all 21 GU
 Manual slice check: restart the project, move around the pillars and central wall, approach dummies in the northern half, right-click one to attack, cancel a windup with S or movement, move immediately after a hit, retarget another dummy, try A+click and H, inspect with LMB, test Y/Space/wheel, F1–F4, pause/step, Esc, and reset. Report movement feel and any errors.
 
 Remaining M1: status components, working test ability/cooldowns, stock character/animation integration and hit-frame calibration, fuller tuning/log export, and full milestone playtest. Dummies currently have finite HP and reset after death; infinite-health/DPS configuration is a later training slice. Brush is visual only. No class abilities or enemy AI are present. No GUI/GPU verification is possible in this restricted session; desktop playtesting remains required. M1 is not approved/completed and M2 has not started.
+
+
+### 2026-11-14 — movement feel accepted; status/cooldown foundation
+
+Ishak reported the capsule sandbox feels surprisingly good. Preserve the current movement speed and basic-attack timing; no tuning defaults changed. Ishak also asked about the red capsule: clarified that downloaded assets are imported and verified, but visual character integration remains the final M1 step as specified by the guide. This is positive slice feedback, not approval of the entire unfinished M1 milestone.
+
+Added StatusEffects with strongest-slow selection, additive speed buffs, longest-duration root/stun, cleanse rules, and half-second true-damage burn pulses including the final expiry tick. Root blocks movement while preserving attacks/self-casts; stun cancels windups/casts and allows prior intent to resume when it expires. Death/reset clears effects.
+
+Added a temporary self-centered Q Training Pulse resource and AbilityRunner to exercise the M1 cast/cooldown pipeline: 0.25 s cast, 3 s cooldown, 3.5 m radius, 60 magic damage, 40% slow for 2 s. These are prototype test values, not the Powder Captain's future Flintlock implementation. Cooldowns begin on cast start; successful casting cancels an attack windup with refund, preserves prior movement/attack intent, and buffers one last-wins input for up to 30 ticks. Stun interruption retains the cooldown. Failed casts show a reason near the cursor and flash the Q slot.
+
+HUD now has code-drawn ability slots with radial cooldown/seconds, active status timers, blue magic/orange true-damage numbers, and pulse range/visual feedback. F1 adds live test-ability tuning and next-tick player status/cleanse buttons. No external/system configuration changes were made. Class abilities and stock character visuals are still pending.
+
+Verification: all 115 scripts load, all 8 stock assets import, all 36 GUT tests pass (2,054 assertions, including the prior movement/attack regression suite), and the main scene runs for 600 consecutive ticks. Strict editor-import verification continues to report this restricted session's blocked debugger socket; no gameplay/script errors were found. GUI rendering and new interactions need desktop playtesting.
+
+Manual check: restart the project, approach a dummy and press Q. Confirm a short cast, blue pulse/damage, visible Q cooldown, and “On cooldown” feedback when repeated. Inspect the dummy to see its slow. In F1, apply root/stun/burn to the player and use Cleanse; roots should allow Q and attacks, stuns should block/interrupt them, and burn should survive cleanse. F5 resets cooldowns/statuses. Movement/basic attack feel should match the accepted prior slice.
+
+Next: stock-character/animation integration and calibration. Remaining M1 tooling includes tuning/log exports and animation lab. Do not begin M2 before full M1 sign-off.

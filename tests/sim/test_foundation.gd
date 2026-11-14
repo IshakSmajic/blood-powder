@@ -130,3 +130,93 @@ func test_attack_move_resumes_original_goal_after_target_dies() -> void:
 	await advance(40)
 	assert_lt(player.movement.destination.distance_to(goal), 0.3)
 	assert_eq(player.order.kind, UnitCommand.Kind.ATTACK_MOVE)
+
+
+func test_pulse_commits_at_cast_end_and_slow_expires_on_exact_tick() -> void:
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), 0)
+	await advance(15)
+	assert_eq(dummy.health, 2000.0)
+	assert_eq(player.state, "Casting")
+	await advance(16)
+	assert_eq(dummy.health, 1960.0)
+	assert_eq(player.ability.ready_tick, 181)
+	assert_true(dummy.statuses.has(&"slow"))
+	await advance(135)
+	assert_true(dummy.statuses.has(&"slow"))
+	await advance(136)
+	assert_false(dummy.statuses.has(&"slow"))
+
+
+func test_cast_cancels_windup_then_resumes_previous_attack_intent() -> void:
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, dummy), 0)
+	await advance(5)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), 5)
+	await advance(16)
+	assert_eq(dummy.health, 2000.0)
+	assert_eq(player.attack.hit_tick, -1)
+	await advance(21)
+	assert_eq(dummy.health, 1960.0)
+	assert_eq(player.attack.hit_tick, 36)
+
+
+func test_last_buffered_order_wins_and_runs_when_cast_unlocks() -> void:
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), 0)
+	await advance(2)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, Vector3(4, 0, 8)), 2)
+	await advance(5)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.HOLD), 5)
+	await advance(16)
+	assert_eq(player.order.kind, UnitCommand.Kind.HOLD)
+	assert_eq(player.global_position, Vector3(0, 0, 8))
+
+
+func test_cast_input_buffer_expires_after_thirty_ticks() -> void:
+	DebugConfig.set_override(player.ability.data.resource_path, &"cast_time", 1.0)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), 0)
+	await advance(2)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, Vector3(4, 0, 8)), 2)
+	await advance(61)
+	assert_eq(player.order.kind, UnitCommand.Kind.STOP)
+	assert_eq(player.global_position, Vector3(0, 0, 8))
+
+
+func test_stun_interrupts_cast_but_keeps_its_cooldown() -> void:
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), 0)
+	await advance(5)
+	player.apply_status(&"stun", 5, 30)
+	await advance(21)
+	assert_eq(player.state, "Stunned")
+	assert_eq(dummy.health, 2000.0)
+	assert_eq(player.ability.completion_tick, -1)
+	assert_eq(player.ability.ready_tick, 181)
+	await advance(35)
+	assert_false(player.statuses.has(&"stun"))
+
+
+func test_root_blocks_movement_but_allows_self_cast_and_resumes_move() -> void:
+	player.apply_status(&"root", 0, 30)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, Vector3(4, 0, 8)), 0)
+	await advance(1)
+	assert_eq(player.global_position, Vector3(0, 0, 8))
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), 1)
+	await advance(29)
+	assert_eq(dummy.health, 1960.0)
+	assert_eq(player.global_position, Vector3(0, 0, 8))
+	await advance(30)
+	assert_gt(player.position.x, 0.01)
+
+
+func test_root_allows_basic_attacks_and_burn_bypasses_armor() -> void:
+	player.apply_status(&"root", 0, 60)
+	player.apply_status(&"burn", 0, 150, 24.0)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, dummy), 0)
+	await advance(16)
+	assert_lt(dummy.health, 2000.0)
+	await advance(30)
+	assert_eq(player.health, 1176.0)
+	player.cleanse()
+	assert_false(player.statuses.has(&"root"))
+	assert_true(player.statuses.has(&"burn"))
+	await advance(150)
+	assert_eq(player.health, 1080.0)
+	assert_false(player.statuses.has(&"burn"))
