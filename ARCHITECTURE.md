@@ -42,7 +42,7 @@ Status/cooldown slice:
 - `AbilityData` is a tunable resource and `AbilityRunner` owns cast/cooldown deadlines. Q uses a temporary self-centered Training Pulse; it is not a Captain class ability. Cast locks buffer one command until unlock, last wins, with 30-tick expiry. A cast preserves the prior order and resumes it after completion. Interrupted casts retain their cooldown. Death/reset clears cast state, cooldowns, and statuses.
 - Arena queues F1 debug status buttons for the next tick rather than modifying gameplay from GUI callbacks. HUD draws a radial Q cooldown, remaining seconds, failure feedback, and status text; pulse effects are visual only. Other class slots stay inactive.
 
-M1 is not complete: manual hit-frame calibration and full milestone regression/approval remain. M2/class mechanics have not started.
+Ishak accepts the current animations and has explicitly deferred finer manual hit-frame calibration unless a later issue requires it. Profile markers remain provisional; this is an accepted deferral, not a claim of completed calibration. The M1 implementation checkpoint awaits final milestone sign-off; M2/class mechanics have not started.
 
 
 Stock-character visual slice:

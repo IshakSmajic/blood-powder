@@ -76,7 +76,7 @@ The player now uses the Quaternius male ranger outfit, with only the base charac
 
 Open **F1 → Open Animation Lab** to inspect the stock animations. Choose a character and clip; use **Space** to play/pause and **, / .** to step at 60 fps. For `attack_a` and `attack_b`, stop at the visual contact frame and press **M** to mark it. This saves only the corresponding project data resource under `data/anim_profiles/`. **Esc** returns to a reset arena.
 
-The initial attack markers are **provisional**. Marking changes animation time scaling and does not change the authoritative 15-tick attack windup or 91-tick attack period. Rest-pose compensation keeps target proportions, while the in-place library never drives actor movement. Visual polish and final calibration require desktop inspection.
+The initial attack markers are **provisional**. Marking changes animation time scaling and does not change the authoritative 15-tick attack windup or 91-tick attack period. Rest-pose compensation keeps target proportions, while the in-place library never drives actor movement. Ishak has accepted the current animations and deferred finer calibration unless later playtesting shows a need. The Animation Lab remains available when that work is useful.
 
 
 ## Export playtest feedback

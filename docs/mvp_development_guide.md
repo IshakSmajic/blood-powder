@@ -2,7 +2,7 @@
 
 Text extracted from Ishak’s original DOCX; table cells appear sequentially.
 The DOCX alongside this file preserves table formatting and diagrams.
-No design decisions have been changed in this extraction.
+The extracted source text is preserved; dated user-directed amendments appear at the end of this document.
 
 Blood & Powder — MVP Development Guide
 
@@ -3535,3 +3535,8 @@ Kenney Particle Pack for Godot
 Brackeys VFX Bundle
 
 Mixamo and alternatives, 2026
+
+
+# User-directed amendment — 14 November 2026
+
+Ishak accepts the current animation appearance and explicitly defers further manual animation fine-tuning unless later playtesting reveals a need. The mandatory manual attack hit-frame marking step in sections 4 and 13 (M1) is therefore deferred rather than treated as completed. Keep the current provisional markers and authoritative combat timing unchanged. The original DOCX remains an unmodified historical copy; this amendment records the effective project instruction.

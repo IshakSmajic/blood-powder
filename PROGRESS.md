@@ -11,7 +11,7 @@ Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote 
 - [x] Explicit combat CSV and tuning .tres exports; reset tuning to resource defaults.
 - [x] Latest checks: 123 scripts, 8 stock asset imports, 47 tests / 2,131 assertions, 600-tick main-scene smoke.
 - [x] Ishak likes movement feel and character visuals.
-- [ ] Manual attack_a/attack_b hit-frame calibration (markers are still provisional).
+- [x] Current animations accepted; finer attack_a/attack_b calibration explicitly deferred by Ishak unless later playtesting reveals a need. Marker flags remain provisional, not falsely marked calibrated.
 - [ ] Final M1 regression/sign-off before M2.
 
 System/application configs remain untouched. The only strict verification error in this session is the previously confirmed sandbox debugger-socket restriction. GitHub pushes are still blocked by session DNS. See the dated work history below for each completed slice.
@@ -169,3 +169,10 @@ Verification: all 123 scripts parse/load, all 8 stock scenes import, all 47 GUT 
 Manual export check: change a value in F1, click Export tuning, then Reset tuning to file and confirm the control returns to its resource default. Attack/cast a dummy, click Export combat log, and find the files in `~/Projects/blood-powder/debug_exports/`. Exporting is explicit and never changes existing application/system configuration.
 
 Remaining before M1 sign-off: visually mark attack_a and attack_b in the Animation Lab, then perform the final movement/attack/status/camera/reset regression. M2 remains gated on Ishak's explicit M1 approval.
+
+
+### 2026-11-14 — animation fine-tuning deferred by user
+
+Ishak said: “I like it we can fine tune animations later should there be need of it.” Keep the accepted movement, visuals, timing, and current hit markers unchanged. Manual fine-tuning is deferred until a later feel/visual issue warrants it. This user instruction supersedes the guide's requirement to manually mark both attack clips before the foundation handoff. The existing `calibrated=false` values remain truthful; no calibration was fabricated or performed automatically.
+
+No gameplay/source resource/system configuration changes were made. The latest implementation still has 47 passing tests and a successful 600-tick scene smoke run; documentation-only updates do not require repeating those unchanged checks. The M1 implementation checkpoint is ready for final milestone sign-off; M2 has not been started in this documentation follow-up.
