@@ -1,6 +1,6 @@
 # Progress
 
-## Active milestone: M1 — foundation
+## Active milestone: M2 — Powder Captain
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -12,7 +12,7 @@ Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote 
 - [x] Latest checks: 123 scripts, 8 stock asset imports, 47 tests / 2,131 assertions, 600-tick main-scene smoke.
 - [x] Ishak likes movement feel and character visuals.
 - [x] Current animations accepted; finer attack_a/attack_b calibration explicitly deferred by Ishak unless later playtesting reveals a need. Marker flags remain provisional, not falsely marked calibrated.
-- [ ] Final M1 regression/sign-off before M2.
+- [x] Ishak accepted the current foundation and instructed continued work; M1 accepted with animation fine-tuning deferred. Individual manual checks not separately reported remain documented limitations.
 
 System/application configs remain untouched. The only strict verification error in this session is the previously confirmed sandbox debugger-socket restriction. GitHub pushes are still blocked by session DNS. See the dated work history below for each completed slice.
 
@@ -176,3 +176,8 @@ Remaining before M1 sign-off: visually mark attack_a and attack_b in the Animati
 Ishak said: “I like it we can fine tune animations later should there be need of it.” Keep the accepted movement, visuals, timing, and current hit markers unchanged. Manual fine-tuning is deferred until a later feel/visual issue warrants it. This user instruction supersedes the guide's requirement to manually mark both attack clips before the foundation handoff. The existing `calibrated=false` values remain truthful; no calibration was fabricated or performed automatically.
 
 No gameplay/source resource/system configuration changes were made. The latest implementation still has 47 passing tests and a successful 600-tick scene smoke run; documentation-only updates do not require repeating those unchanged checks. The M1 implementation checkpoint is ready for final milestone sign-off; M2 has not been started in this documentation follow-up.
+
+
+### 2026-11-14 — M1 accepted; M2 keg slice started
+
+Following acceptance of movement/visuals and explicit deferral of fine animation calibration, Ishak instructed “Lets just keep going.” Treat this as approval to move beyond the M1 checkpoint and begin M2. Preserve current movement, attack timing, visuals, and deferred marker values. Work continues locally; do not spend effort retrying GitHub pushes in this slice. First M2 slice: E charge-based keg placement/decay/graph/chaining plus targeted Q Flintlock and homing projectile. Searing Edge, Ration, Broadside, and further polish follow as later M2 slices.
