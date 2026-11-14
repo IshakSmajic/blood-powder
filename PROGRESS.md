@@ -1,8 +1,8 @@
 # Progress
 
-## Active milestone: M0 — setup
+## Active milestone: M1 — foundation
 
-M0 is in progress. M1 is not authorized until Ishak approves M0.
+Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
 - [x] Private repository created and cloned at `~/Projects/blood-powder`.
 - [x] Standalone Godot 4.7.2 installed; Ishak confirmed the editor opens.
@@ -22,7 +22,7 @@ Working branch: `setup/m0-foundation`. The setup slice is committed locally usin
 
 M0 follow-up: Ishak reported `[GUT] Could not get version info, response code: 0` while opening the editor. Inspection traced it to GUT's automatic GitHub update request. Patched only its startup call to use bundled/cached version information. Manual update requests remain available; existing system/application configuration and the editor's current `project.godot` serialization were preserved.
 
-Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. A normal-terminal strict verification log was subsequently supplied and all checks passed. Character packs and export templates are prepared. Detailed pause/step/resize results were not individually reported; explicit M0 sign-off remains pending.
+Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. A normal-terminal strict verification log was subsequently supplied and all checks passed. Character packs and export templates are prepared. Detailed pause/step/resize results were not individually reported; Ishak subsequently gave explicit M0 approval.
 
 Asset preparation follow-up: all 8 prepared GLBs import into Godot with 65-bone skeletons; UAL1 and UAL2 each expose 43 clips. Godot strips the standard `_Loop` suffix when importing animations; the check recognizes that exact rule. Both libraries contain usable melee/locomotion candidates, but visual playback/retargeting is not yet verified. Repeat packaging produced identical outputs. Actual archive contents differ from several guide assumptions; see `docs/asset_audit.md`. No gameplay or M1 visual integration was started.
 
@@ -83,9 +83,14 @@ This is the project’s ongoing work log. Update it after each work session with
 11. Installed matching Linux/Windows x86_64 export templates, including debug/release binaries and Windows console wrappers. Checked extracted bytes against the TPZ; both Linux binaries report `4.7.2.stable.official.ed1daf0bf`.
 12. Committed work locally on `setup/m0-foundation` using Ishak’s Git identity without AI/co-author trailers. GitHub push was attempted but failed because this session cannot resolve GitHub. The editor’s uncommitted `project.godot` serialization was preserved.
 
-Next: obtain Ishak’s explicit M0 sign-off, then begin the M1 movement/basic-attack sandbox. Character appearance/animation integration remains a later M1 slice; no movement, combat, enemy AI, class mechanics, or final art is implemented yet. Environment/VFX/audio sourcing remains later work. Do not merge/tag M0 or begin M1 before the required sign-off.
+Next: begin the M1 movement/basic-attack sandbox. Character appearance/animation integration remains a later M1 slice; no movement, combat, enemy AI, class mechanics, or final art is implemented yet. Environment/VFX/audio sourcing remains later work. M0 sign-off was subsequently received.
 
 
 ### 2026-11-14 — normal-terminal verification confirmed
 
-Ishak supplied the complete output of `python tools/verify.py`, ending in `VERIFICATION PASSED`. Editor import was clean, all 97 scripts loaded, all 8 stock scenes imported with the expected skeletons/clips, all 9 GUT tests passed (729 assertions), and the main scene completed 600 consecutive ticks. This resolves the outstanding verification gate; prior debugger-socket failures were restricted-session environment errors. No implementation changes were made in this follow-up, so no duplicate verification run was needed. M0 now awaits explicit milestone approval; GitHub synchronization remains blocked from this session.
+Ishak supplied the complete output of `python tools/verify.py`, ending in `VERIFICATION PASSED`. Editor import was clean, all 97 scripts loaded, all 8 stock scenes imported with the expected skeletons/clips, all 9 GUT tests passed (729 assertions), and the main scene completed 600 consecutive ticks. This resolves the outstanding verification gate; prior debugger-socket failures were restricted-session environment errors. No implementation changes were made in this follow-up, so no duplicate verification run was needed. M0 was subsequently explicitly approved; GitHub synchronization remains blocked from this session.
+
+
+### 2026-11-14 — M0 approved; M1 started
+
+Ishak explicitly approved M0 and proceeding to M1. Preserve the accepted setup scene as a standalone reference while adding the movement/basic-attack sandbox. Start with capsule visuals; character integration remains the last M1 slice. Existing uncommitted editor serialization in `project.godot` must be preserved.
