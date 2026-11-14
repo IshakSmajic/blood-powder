@@ -15,7 +15,7 @@ Read this file and `PROGRESS.md` at the beginning of a working session. The deve
 
 ## Dependencies and assets
 
-GUT 9.7.1 is vendored unmodified under `addons/gut/` and enabled in project-local settings. GUT itself includes font and GUI assets with upstream licenses. Only the addon subtree was extracted; its original license is retained.
+GUT 9.7.1 is vendored under `addons/gut/` and enabled in project-local settings. One local patch in `gut_plugin.gd` replaces its automatic startup network update check with the bundled/cached version check, avoiding offline startup errors. Explicit manual update checks remain available. GUT itself includes font and GUI assets with upstream licenses. Only the addon subtree was extracted; its original license is retained.
 
 The original guide and approved concept sheet live under `docs/`. Raw external character packs stay outside the repo. Empty asset/system directories reserve the guide's structure; `.gitkeep` files are placeholders, not implementations.
 

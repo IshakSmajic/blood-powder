@@ -20,6 +20,8 @@ Working branch: `setup/m0-foundation`. The setup slice is committed locally usin
 
 ## Current verification
 
+M0 follow-up: Ishak reported `[GUT] Could not get version info, response code: 0` while opening the editor. Inspection traced it to GUT's automatic GitHub update request. Patched only its startup call to use bundled/cached version information. Manual update requests remain available; existing system/application configuration and the editor's current `project.godot` serialization were preserved.
+
 Verified locally with Godot `4.7.2.stable.official.ed1daf0bf` and GUT 9.7.1:
 
 - All-script loader: 96 scripts load successfully, exit 0, no script errors.

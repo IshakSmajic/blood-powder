@@ -12,7 +12,8 @@
 - Version: **9.7.1**.
 - Source: <https://github.com/bitwes/Gut/releases/tag/v9.7.1> (user-provided `Gut-9.7.1.zip`).
 - License: MIT; upstream notice preserved in `addons/gut/LICENSE.md`.
-- Installed files: the complete upstream `addons/gut/` subtree, unmodified. Includes upstream fonts, icons, and GUI resources; bundled license files are retained.
+- Installed files: the complete upstream `addons/gut/` subtree. Includes upstream fonts, icons, and GUI resources; bundled license files are retained.
+- Local modification: `gut_plugin.gd` uses bundled/cached version data at editor startup instead of automatically fetching updates. Manual update checks remain available. No changes to upstream test execution or assertions.
 - Source ZIP SHA256: `14969aa46adc84aa08cdd21b9f6d1a64addd92ae60b36f02d0521ed305aa4086` (local fingerprint; not independently authenticated against a publisher checksum).
 
 ## Engine
