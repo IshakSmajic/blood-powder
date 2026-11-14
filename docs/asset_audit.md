@@ -42,3 +42,10 @@ Names do not establish visual suitability or calibrated timing. No paid library 
 ## Export templates
 
 `Godot_v4.7.2-stable_win64.exe.zip` contains Windows editor executables, not export templates; it was left untouched. Standard `Godot_v4.7.2-stable_export_templates.tpz` was subsequently supplied. Linux/Windows x86_64 debug/release binaries, console wrappers, ICU data, and the version marker are installed in `~/.local/share/godot/export_templates/4.7.2.stable/`; extracted bytes match the archive. Both Linux binaries report the pinned official version. Other targets remain in the TPZ. Existing config files were not changed.
+
+
+## M1 integration result
+
+The male ranger outfit and male base body are now instantiated in the arena. The base head is cropped by height plus head/neck bone weight to avoid wearing a full body beneath the outfit. Original GLBs remain unchanged. The skeleton bind poses are compensated in a cached runtime animation adapter; an actual T-pose comparison now verifies the target rest positions/rotations are preserved. Head skin fit and sampled pose bounds are also tested. Player cloth material overrides provide a provisional red palette; dummy materials are flat grey.
+
+Idle/run, alternating strike+recovery, temporary cast, and death clips are connected. A code-built sword attaches to the right hand. No pirate hat/coat was added. Attack hit markers remain provisional pending manual Animation Lab calibration; headless tests do not replace checking the appearance on screen.

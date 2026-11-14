@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AnimProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/units/anim_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+clip_name = &"Sword_Regular_A"
+recovery_clip = &"Sword_Regular_A_Rec"
+hit_time = 0.28

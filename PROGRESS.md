@@ -124,3 +124,18 @@ Verification: all 115 scripts load, all 8 stock assets import, all 36 GUT tests 
 Manual check: restart the project, approach a dummy and press Q. Confirm a short cast, blue pulse/damage, visible Q cooldown, and “On cooldown” feedback when repeated. Inspect the dummy to see its slow. In F1, apply root/stun/burn to the player and use Cleanse; roots should allow Q and attacks, stuns should block/interrupt them, and burn should survive cleanse. F5 resets cooldowns/statuses. Movement/basic attack feel should match the accepted prior slice.
 
 Next: stock-character/animation integration and calibration. Remaining M1 tooling includes tuning/log exports and animation lab. Do not begin M2 before full M1 sign-off.
+
+
+### 2026-11-14 — stock characters and animation integration
+
+Ishak authorized proceeding with the character swap. Replaced the red capsule mesh with the downloaded male ranger outfit in a provisional red palette, using only a cropped base head beneath it. Training dummies now use the stock male body with flat grey materials. The free pack still lacks the final Captain coat/hat; no bespoke clothing or purchase was introduced. A simple procedural sword attaches to the right-hand bone.
+
+Added cached model scenes and shared stock animation data, per-rig rest compensation, joined strike/recovery animations, idle/run, alternating melee, cast, death, brief pose blends, hit flash, and visual death sinking. The original mesh-array attribute format is retained when cropping the head. Movement speed, capsule collision, navigation, RNG consumption, damage, and attack deadlines remain unchanged.
+
+Added F1 → Animation Lab with character/clip selection, play/pause, 60 fps frame stepping, and explicit hit marking/saving to `data/anim_profiles/`. The initial hit-time values are provisional (`calibrated=false`); user marking is required before claiming final visual calibration. Save actions affect project animation data only, never application/system settings or combat timing.
+
+Added seven meaningful avatar checks: stock mesh/rig/role presence, target rest-pose preservation, cropped head skin fit/no torso triangles, shared libraries and recovery segments, finite bounded animated poses, visual sampling isolation from gameplay state, and lab stepping/character switching without simulation ticks. Final verification: all 120 scripts load, all 8 stock asset scenes import, all 43 GUT tests pass (2,105 assertions), and the main scene runs for 600 consecutive ticks without runtime errors. All earlier movement/status/cooldown regression tests remain included. Strict editor import still reports only the known restricted-session debugger-socket errors. Desktop rendering and manual visual calibration remain pending.
+
+Manual check: restart the project and F5. Confirm the player is a red-clothed humanoid with a sword and the dummies are grey humanoids. Check idle, running around obstacles, alternating attacks, cancellation/retargeting, Q, and dummy death/respawn. Check that heads/hoods/arms remain coherent. Open F1 → Animation Lab; inspect both attack roles and mark the contact frames with M, then Esc back to the arena. Report visual defects or send a screenshot/clip if any occur. Headless geometry/pose checks do not prove desktop rendering quality.
+
+Remaining M1: user visual calibration/approval, tuning/log export tooling, and full milestone regression. M1 is not marked complete and M2 has not started. Remote pushes remain blocked by this session's DNS restriction.

@@ -1,6 +1,6 @@
 class_name CombatUnit
 extends CharacterBody3D
-## Command-driven capsule unit shared by the player and training targets.
+## Command-driven unit; stock visual animation never drives its simulation.
 
 var stats: UnitStats
 var unit_name: String = "Unit"
@@ -21,7 +21,7 @@ var _victim: CombatUnit
 var _last_repath: int = -999
 var _respawn_tick: int = -1
 var _visual: Node3D
-var _mesh: MeshInstance3D
+var avatar: CharacterAvatar
 var _health_fill: MeshInstance3D
 var _label: Label3D
 var _color: Color
@@ -53,21 +53,11 @@ func _ready() -> void:
 	_color = Color("923b3b") if team == 0 else Color("a7aeb5")
 	_visual = Node3D.new()
 	add_child(_visual)
-	_mesh = MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = 0.45
-	capsule.height = 1.8
-	_mesh.mesh = capsule
-	_mesh.position.y = 0.9
-	_mesh.material_override = _material(_color)
-	_visual.add_child(_mesh)
-	var facing := MeshInstance3D.new()
-	var tip := BoxMesh.new()
-	tip.size = Vector3(0.16, 0.16, 0.5)
-	facing.mesh = tip
-	facing.material_override = _material(Color("e0b26b"))
-	facing.position = Vector3(0, 1.0, -0.58)
-	_visual.add_child(facing)
+	avatar = CharacterAvatar.new()
+	avatar.unit = self
+	avatar.dressed = team == 0
+	_visual.add_child(avatar)
+	if team == 1: _visual.rotation.y = PI
 	_label = Label3D.new()
 	_label.position.y = 2.5
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -102,6 +92,7 @@ func reset_unit() -> void:
 	_respawn_tick = -1
 	_resume_attack_move = false
 	_visual.show()
+	avatar.reset_pose()
 	reset_physics_interpolation()
 
 
@@ -255,7 +246,6 @@ func receive_damage(amount: float, tick: int, source: int, crit: bool = false, d
 		movement.stop()
 		state = "Dead"
 		_respawn_tick = tick + (180 if team == 0 else 120)
-		_visual.hide()
 		EventBus.publish(&"unit_died", {"unit": unit_id})
 
 
@@ -308,8 +298,7 @@ func _complete_pulse(tick: int, units: Array[CombatUnit]) -> void:
 func _process(_delta: float) -> void:
 	_label.text = "%s\n%d / %d" % [unit_name, ceili(health), ceili(stat(&"max_health"))]
 	_health_fill.scale.x = maxf(0.001, health / maxf(1.0, stat(&"max_health")))
-	var material := _mesh.material_override as StandardMaterial3D
-	material.albedo_color = Color.WHITE if _flash_frames > 0 else _color
+	avatar.set_flash(_flash_frames > 0)
 	_flash_frames = maxi(0, _flash_frames - 1)
 
 

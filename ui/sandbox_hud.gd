@@ -65,6 +65,10 @@ func _ready() -> void:
 	var fields := VBoxContainer.new()
 	_debug.add_child(fields)
 	fields.add_child(_label("PLAYER LIVE TUNING", 20))
+	var animation_lab := Button.new()
+	animation_lab.text = "Open Animation Lab"
+	animation_lab.pressed.connect(func() -> void: get_tree().call_deferred("change_scene_to_file", "res://debug/anim_lab.tscn"))
+	fields.add_child(animation_lab)
 	for property in arena.player.stats.get_property_list():
 		if not property.usage & PROPERTY_USAGE_EDITOR or property.type != TYPE_FLOAT:
 			continue

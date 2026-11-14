@@ -26,7 +26,7 @@ Before adding third-party gameplay assets, record exact paths, author, original 
 
 ## Quaternius character and animation candidates
 
-Author: Quaternius. License: CC0 1.0, verified against each supplied archive's notice. These are candidates for M1, not yet used by the setup room. Exact file paths and fingerprints are in `docs/asset_manifest.json`.
+Author: Quaternius. License: CC0 1.0, verified against each supplied archive's notice. The male ranger outfit, male base body/head, and animation libraries are now used by the M1 arena. Other files remain candidates; the original M0 setup room is unchanged. Exact file paths and fingerprints are in `docs/asset_manifest.json`.
 
 | Files | Original pack/source | Retained notice |
 | --- | --- | --- |
@@ -36,3 +36,6 @@ Author: Quaternius. License: CC0 1.0, verified against each supplied archive's n
 | `assets/animations/ual2/ual2_standard.glb` | [Universal Animation Library 2](https://quaternius.com/packs/universalanimationlibrary2.html), Standard in-place | `assets/licenses/ual2.txt` |
 
 Modifications: body/outfit glTF files repackaged with original textures and binary buffers into self-contained GLBs; broken texture URIs corrected to existing pack files as recorded in the manifest. No pixel/mesh edits or retargeting. Animation GLBs copied unchanged. Raw packs remain outside the repository.
+
+
+M1 runtime adaptations: the male base body's rendered head is cropped in memory by height and head/neck weights for use under clothing; original GLB files remain unchanged. Stock animation tracks are rest-compensated and strike/recovery segments combined into cached libraries. Player cloth material overrides provide a red prototype palette; dummy materials are grey. The primitive sword geometry and animation/debug UI are project-owned code, not additional external assets.
