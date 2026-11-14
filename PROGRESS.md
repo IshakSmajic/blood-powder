@@ -16,6 +16,8 @@ M0 is in progress. M1 is not authorized until Ishak approves M0.
 - [ ] Initial character/animation packs obtained and actual files inspected.
 - [ ] Branch pushed for review; milestone merged/tagged after approval.
 
+Working branch: `setup/m0-foundation`. The setup slice is committed locally using Ishak's configured author and committer identity, with no co-author trailers. Push was attempted and failed because this session cannot resolve `github.com`; there is no remote branch/PR yet. Working tree was clean after the setup commit. No milestone tag or merge has been made.
+
 ## Current verification
 
 Verified locally with Godot `4.7.2.stable.official.ed1daf0bf` and GUT 9.7.1:
