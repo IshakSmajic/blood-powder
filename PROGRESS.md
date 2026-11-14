@@ -4,6 +4,21 @@
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
+## Current M1 status
+
+- [x] Navigation, movement, attack-move, stop/hold, camera, basic combat, statuses, and test ability/cooldown pipeline.
+- [x] Stock character visuals, animation adapter, and Animation Lab.
+- [x] Explicit combat CSV and tuning .tres exports; reset tuning to resource defaults.
+- [x] Latest checks: 123 scripts, 8 stock asset imports, 47 tests / 2,131 assertions, 600-tick main-scene smoke.
+- [x] Ishak likes movement feel and character visuals.
+- [ ] Manual attack_a/attack_b hit-frame calibration (markers are still provisional).
+- [ ] Final M1 regression/sign-off before M2.
+
+System/application configs remain untouched. The only strict verification error in this session is the previously confirmed sandbox debugger-socket restriction. GitHub pushes are still blocked by session DNS. See the dated work history below for each completed slice.
+
+## M0 setup record
+
+
 - [x] Private repository created and cloned at `~/Projects/blood-powder`.
 - [x] Standalone Godot 4.7.2 installed; Ishak confirmed the editor opens.
 - [x] Original guide and approved visual concept preserved in `docs/`.
@@ -18,7 +33,7 @@ Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote 
 
 M0 branch: `setup/m0-foundation`; current work branch: `feature/m1-foundation`. The setup slice is committed locally using Ishak's configured author and committer identity, with no co-author trailers. Push was attempted and failed because this session cannot resolve `github.com`; there is no remote branch/PR yet. Working tree was clean after the setup commit. Local tag `m0-approved` was created after explicit approval. Remote synchronization/merge remains pending.
 
-## Current verification
+## Historical M0 verification
 
 M0 follow-up: Ishak reported `[GUT] Could not get version info, response code: 0` while opening the editor. Inspection traced it to GUT's automatic GitHub update request. Patched only its startup call to use bundled/cached version information. Manual update requests remain available; existing system/application configuration and the editor's current `project.godot` serialization were preserved.
 
@@ -139,3 +154,18 @@ Added seven meaningful avatar checks: stock mesh/rig/role presence, target rest-
 Manual check: restart the project and F5. Confirm the player is a red-clothed humanoid with a sword and the dummies are grey humanoids. Check idle, running around obstacles, alternating attacks, cancellation/retargeting, Q, and dummy death/respawn. Check that heads/hoods/arms remain coherent. Open F1 → Animation Lab; inspect both attack roles and mark the contact frames with M, then Esc back to the arena. Report visual defects or send a screenshot/clip if any occur. Headless geometry/pose checks do not prove desktop rendering quality.
 
 Remaining M1: user visual calibration/approval, tuning/log export tooling, and full milestone regression. M1 is not marked complete and M2 has not started. Remote pushes remain blocked by this session's DNS restriction.
+
+
+### 2026-11-14 — visuals accepted; debug exports completed
+
+Ishak reported “Looks very nice. I like it.” Record the character appearance as accepted and preserve its current look. This does not automatically mark the attack profiles as manually calibrated or approve the full M1 milestone.
+
+Added F1 buttons for exporting all active tuning overrides as a standalone .tres snapshot, resetting tuning to resource defaults, and exporting the full current arena combat log as CSV. Export names are unique and both exporters refuse to overwrite existing files. Generated files go under ignored `debug_exports/`; a .gdignore prevents treating exports as game assets. Existing .gdignore contents are preserved. Snapshot exports never rewrite source UnitStats/AbilityData resources or auto-load settings on startup. Reset synchronizes visible tuning controls without emitting new override changes.
+
+CombatLog stores the whole arena run, separately from the last-200-event HUD window, with tick/event/source/target/value/extra columns. Payloads are captured by value and CSV quoting preserves structured text. F5 clears the run log for the new simulation epoch. Logs/exports are presentation/debug helpers and never affect simulation or RNG. The F1 panel now scrolls to keep its controls accessible.
+
+Verification: all 123 scripts parse/load, all 8 stock scenes import, all 47 GUT tests pass (2,131 assertions), and the main scene completes 600 consecutive ticks without runtime errors. New tests cover snapshot round trips/source resource immutability/no overwrite, empty snapshots, CSV quoting/payload isolation, and retaining log rows beyond the HUD window. Strict editor import still reports the known sandbox TCP-listener errors; no gameplay changes were made in this slice.
+
+Manual export check: change a value in F1, click Export tuning, then Reset tuning to file and confirm the control returns to its resource default. Attack/cast a dummy, click Export combat log, and find the files in `~/Projects/blood-powder/debug_exports/`. Exporting is explicit and never changes existing application/system configuration.
+
+Remaining before M1 sign-off: visually mark attack_a and attack_b in the Animation Lab, then perform the final movement/attack/status/camera/reset regression. M2 remains gated on Ishak's explicit M1 approval.

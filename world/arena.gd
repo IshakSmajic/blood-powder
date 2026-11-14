@@ -22,6 +22,7 @@ var _paused_before_menu: bool = false
 var _debug_mesh: MeshInstance3D
 var _effects: Node3D
 var _queued_debug_statuses: Array[StringName] = []
+var combat_log := CombatLog.new()
 
 
 func _ready() -> void:
@@ -251,6 +252,7 @@ func reset_arena() -> void:
 	_queued_debug_statuses.clear()
 	_hud.show_menu(false)
 	_hud.clear_log()
+	combat_log.clear()
 	camera.snap()
 
 
@@ -299,7 +301,8 @@ func _click_ring(point: Vector3, color: Color, radius: float = 0.31, grow: bool 
 	tween.tween_callback(ring.queue_free)
 
 
-func _on_combat_event(_tick: int, event: StringName, payload: Dictionary) -> void:
+func _on_combat_event(tick: int, event: StringName, payload: Dictionary) -> void:
+	combat_log.record(tick, event, payload)
 	if event == &"ability_cast_completed":
 		_click_ring(payload.position, Color("6cb8dc"), payload.radius, true)
 	if event != &"damage_dealt":

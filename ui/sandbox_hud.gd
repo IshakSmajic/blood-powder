@@ -13,6 +13,8 @@ var _events: Array[String] = []
 var _pulse_slot: Control
 var _fail_label: Label
 var _fail_left: float = 0.0
+var _tuning_fields: Array[Dictionary] = []
+var _export_status: Label
 const Slot = preload("res://ui/ability_slot.gd")
 
 
@@ -62,13 +64,30 @@ func _ready() -> void:
 	_debug.offset_right = -20
 	_debug.offset_top = 20
 	root.add_child(_debug)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(310, 720)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_debug.add_child(scroll)
 	var fields := VBoxContainer.new()
-	_debug.add_child(fields)
+	fields.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(fields)
 	fields.add_child(_label("PLAYER LIVE TUNING", 20))
 	var animation_lab := Button.new()
 	animation_lab.text = "Open Animation Lab"
 	animation_lab.pressed.connect(func() -> void: get_tree().call_deferred("change_scene_to_file", "res://debug/anim_lab.tscn"))
 	fields.add_child(animation_lab)
+	for label in ["Export tuning (.tres)", "Reset tuning to file", "Export combat log (.csv)"]:
+		var button := Button.new()
+		button.text = label
+		fields.add_child(button)
+		match label:
+			"Export tuning (.tres)": button.pressed.connect(_export_tuning)
+			"Reset tuning to file": button.pressed.connect(DebugConfig.clear_overrides)
+			_: button.pressed.connect(_export_combat_log)
+	_export_status = _label("Exports go into the project's debug_exports folder.", 14)
+	_export_status.custom_minimum_size.x = 270
+	_export_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fields.add_child(_export_status)
 	for property in arena.player.stats.get_property_list():
 		if not property.usage & PROPERTY_USAGE_EDITOR or property.type != TYPE_FLOAT:
 			continue
@@ -87,6 +106,7 @@ func _ready() -> void:
 		spinner.step = 0.001 if field in [&"attack_speed", &"windup_fraction", &"crit_chance"] else 0.05
 		spinner.value = arena.player.stat(field)
 		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(arena.player.stats.resource_path, field, value))
+		_tuning_fields.append({"control": spinner, "resource": arena.player.stats, "field": field})
 		row.add_child(spinner)
 	_debug.hide()
 	fields.add_child(_label("TRAINING PULSE", 18))
@@ -104,6 +124,7 @@ func _ready() -> void:
 		spinner.step = 0.05
 		spinner.value = arena.player.ability.value(field)
 		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(arena.player.ability.data.resource_path, field, value))
+		_tuning_fields.append({"control": spinner, "resource": arena.player.ability.data, "field": field})
 		row.add_child(spinner)
 	fields.add_child(_label("APPLY TO PLAYER", 18))
 	var status_grid := GridContainer.new()
@@ -136,6 +157,7 @@ func _ready() -> void:
 			"Quit": button.pressed.connect(func() -> void: get_tree().quit())
 	_menu.hide()
 	EventBus.combat_event.connect(_on_event)
+	DebugConfig.overrides_cleared.connect(_sync_tuning_fields)
 
 
 func _process(delta: float) -> void:
@@ -177,6 +199,44 @@ func show_menu(value: bool) -> void:
 
 func clear_log() -> void:
 	_events.clear()
+
+
+func _sync_tuning_fields() -> void:
+	for binding in _tuning_fields:
+		binding.control.set_value_no_signal(binding.resource.get(binding.field))
+
+
+func _export_path(prefix: String, extension: String) -> String:
+	var folder := "res://debug_exports"
+	var error := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
+	if error != OK:
+		_export_status.text = "Could not create export folder: " + error_string(error)
+		return ""
+	var ignore_path := folder.path_join(".gdignore")
+	if not FileAccess.file_exists(ignore_path):
+		var ignore := FileAccess.open(ignore_path, FileAccess.WRITE)
+		if ignore != null: ignore.close()
+	var stem := "%s_%s_%d" % [prefix, Time.get_datetime_string_from_system().replace(":", "-"), Time.get_ticks_usec()]
+	var path := folder.path_join(stem + "." + extension)
+	var suffix: int = 1
+	while FileAccess.file_exists(path):
+		path = folder.path_join(stem + "_" + str(suffix) + "." + extension)
+		suffix += 1
+	return path
+
+
+func _export_tuning() -> void:
+	var path := _export_path("tuning", "tres")
+	if path.is_empty(): return
+	var error := DebugConfig.export_overrides(path)
+	_export_status.text = "Saved " + ProjectSettings.globalize_path(path) if error == OK else "Export failed: " + error_string(error)
+
+
+func _export_combat_log() -> void:
+	var path := _export_path("combat", "csv")
+	if path.is_empty(): return
+	var error: Error = arena.combat_log.export_csv(path)
+	_export_status.text = "Saved %d rows to %s" % [arena.combat_log.rows.size(), ProjectSettings.globalize_path(path)] if error == OK else "Export failed: " + error_string(error)
 
 
 func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:

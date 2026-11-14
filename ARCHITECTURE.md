@@ -9,7 +9,7 @@ Read this file and `PROGRESS.md` at the beginning of a working session. The deve
 - `SimClock` advances `TickState` from `_physics_process` and synchronously emits `tick_advanced(tick)`. Future gameplay updates must subscribe to this signal so pause and slowed pacing affect every gameplay timer uniformly. Each admitted tick is always 1/60 simulated second. `_process` is presentation only.
 - `TickState` stores integer tick count, integer speed in tenths, pause/single-step flags, and the sole seeded gameplay RNG. Integer accumulation admits fewer ticks at lower speed; `Engine.time_scale` is not modified. Pacing is for command-driven simulation. Future CharacterBody movement must use a fixed 1/60 step on each admitted tick; dynamic rigid-body gameplay would need an explicit pacing design before use.
 - `EventBus.publish` emits a tick-stamped notification and a deep-copied payload. Presentation and logs may listen; gameplay must never require those listeners.
-- `DebugConfig` provides in-memory per-resource overrides with fallback and reset. It has no disk persistence or tuning UI yet.
+- `DebugConfig` provides in-memory per-resource overrides with fallback and reset. It has a live tuning UI and explicit snapshot export, but no automatic disk persistence.
 - `InputRouter` handles setup reset, pause, single-step, speed, and menu signals. It ignores keyboard auto-repeat. Input map includes all later gameplay bindings, but Commands and world picking are M1 work.
 - `tools/verify.py` imports the project, loads every script, runs GUT, and runs the main scene for 600 consecutive simulation ticks. It pins the official engine version and redirects XDG paths inside ignored `.local/` for verification only.
 
@@ -33,7 +33,7 @@ M0 was explicitly approved by Ishak; local tag `m0-approved` records its accepte
 - AttackCycle uses absolute integer hit/ready deadlines. Captain defaults give 15-tick windup and 91-tick period. Windup cancellation before the hit refunds readiness; commands on the hit tick commit the hit first. Movement during backswing retains the original readiness deadline. Retargeting cancels the old windup and starts a new one if in range.
 - DamageResolver applies positive/negative resistance and percent penetration. Basic attacks roll crit from SimClock's seeded RNG, then resolve physical damage against armor. The temporary Training Pulse resolves magic damage against MR, and burn applies true damage directly. Target validity/range is rechecked at impact. Dummies have 2000 HP/50 armor and respawn after 120 ticks. Player respawn is 180 ticks; no attacking enemy AI exists yet.
 - ArenaCamera follows an interpolated target in render processing and disables interpolation on its own transform. It implements 56° pitch, 40° FOV, approximately 22 m default visible width, lock toggle, Space center, bounded zoom, and edge pan. Camera behavior cannot alter simulation results.
-- SandboxHUD provides prototype health/status text, selection stats, ability slots with a working temporary Q cooldown, live numeric player-stat/ability overrides, ranges/path overlay, state timers, last 200 combat events, and pause/restart/quit. Gameplay radius is excluded from live tuning because changing collider and baked navigation clearance must be coordinated. No tuning-file export or replay persistence exists yet.
+- SandboxHUD provides prototype health/status text, selection stats, ability slots with a working temporary Q cooldown, live numeric player-stat/ability overrides, ranges/path overlay, state timers, last 200 combat events, and pause/restart/quit. Gameplay radius is excluded from live tuning because changing collider and baked navigation clearance must be coordinated. Explicit tuning snapshots and whole-run CSV export are available; replay persistence is not implemented yet.
 - Basic hit flash and floating damage numbers are presentation only. All temporary effects are grouped and removed on reset. Brush has no vision/leap behavior in M1.
 
 Status/cooldown slice:
@@ -42,7 +42,7 @@ Status/cooldown slice:
 - `AbilityData` is a tunable resource and `AbilityRunner` owns cast/cooldown deadlines. Q uses a temporary self-centered Training Pulse; it is not a Captain class ability. Cast locks buffer one command until unlock, last wins, with 30-tick expiry. A cast preserves the prior order and resumes it after completion. Interrupted casts retain their cooldown. Death/reset clears cast state, cooldowns, and statuses.
 - Arena queues F1 debug status buttons for the next tick rather than modifying gameplay from GUI callbacks. HUD draws a radial Q cooldown, remaining seconds, failure feedback, and status text; pulse effects are visual only. Other class slots stay inactive.
 
-M1 is not complete: manual hit-frame calibration, fuller debug/export tooling, and full milestone feel approval remain. M2/class mechanics have not started.
+M1 is not complete: manual hit-frame calibration and full milestone regression/approval remain. M2/class mechanics have not started.
 
 
 Stock-character visual slice:
@@ -53,3 +53,10 @@ Stock-character visual slice:
 - `CharacterAvatar` manually samples seven animation roles: idle, run, attack_a/b, cast, death, and rest. It uses simulation ticks for presentation pacing, supports short pose blends, freezes on stun, and sinks the visual during the end of a death. Actor transforms, navigation, RNG, damage, and attack deadlines remain simulation-owned.
 - Attack animation sampling is piecewise: the source hit marker aligns with the actual hit tick, then the remainder fills the backswing. Source markers in `data/anim_profiles/attack_a.tres` and `attack_b.tres` are provisional until Ishak visually marks them.
 - `debug/anim_lab.tscn` is reachable through F1. It supports character/role selection, play/pause, 60 fps frame steps, and explicit hit marking through M/button. ResourceSaver writes only the selected project animation profile; failed saves restore the in-memory marker. Returning to the arena resets the sandbox. The lab pauses SimClock and never changes combat timing.
+
+
+Debug export slice:
+
+- `CombatLog` records full-run tick-stamped event payloads independently of the 200-row HUD display buffer. Arena's event handler owns recording, so leaving the scene disconnects collection automatically. Reset clears both logs. CSV export uses FileAccess CSV quoting with the guide's six columns.
+- `DebugConfig.export_overrides` writes an explicit TuningSnapshot resource containing only live overrides plus schema/engine/date metadata. It never mutates source resources or auto-loads snapshots on startup. `clear_overrides` restores defaults; the HUD synchronizes its SpinBoxes with signals blocked.
+- F1 export buttons write unique files under project-local `debug_exports/`, excluded from Git and game import. Both exporters reject existing targets. Tests use isolated `.local/test_exports/` paths and remove their outputs. No app/system configuration is edited.

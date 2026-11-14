@@ -1,5 +1,5 @@
 extends Node
-## Session-only overrides. No config files are read or written by this service.
+## Session-only overrides; explicit exports write standalone project data files.
 
 signal override_changed(resource_path: String, field: StringName)
 signal overrides_cleared
@@ -21,3 +21,14 @@ func resolve(resource_path: String, field: StringName, fallback: Variant) -> Var
 func clear_overrides() -> void:
 	_overrides.clear()
 	overrides_cleared.emit()
+
+
+func export_overrides(path: String) -> Error:
+	if FileAccess.file_exists(path): return ERR_ALREADY_EXISTS
+	var error := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
+	if error != OK: return error
+	var snapshot := TuningSnapshot.new()
+	snapshot.created_at = Time.get_datetime_string_from_system()
+	snapshot.engine_version = Engine.get_version_info().string
+	snapshot.overrides = _overrides.duplicate(true)
+	return ResourceSaver.save(snapshot, path)

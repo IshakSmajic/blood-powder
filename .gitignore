@@ -1,6 +1,7 @@
 .godot/
 builds/
 .local/
+debug_exports/
 *.log
 *.tmp
 # Godot extracts these textures from the tracked self-contained character GLBs.

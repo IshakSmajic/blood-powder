@@ -37,9 +37,9 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | F9 / F10 | Pause / single tick while paused |
 | Esc | Cancel armed attack-move, or open/close pause menu |
 
-Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. Q is a prototype test ability; W/E/R and passive remain placeholders. Keys 1–4 remain unbound. F6 class switching, actual class abilities, and full tuning/export tools arrive in later slices.
+Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. Q is a prototype test ability; W/E/R and passive remain placeholders. Keys 1–4 remain unbound. F6 class switching, actual class abilities, and replay tooling arrive in later milestones.
 
-The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written to resource files. F1 includes an **Open Animation Lab** button and exposes test-ability values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; F5 clears all statuses and cooldowns.
+The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written back to source resource files. Explicit export can save a separate snapshot. F1 includes an **Open Animation Lab** button and exposes test-ability values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; F5 clears all statuses and cooldowns.
 
 ## Verify
 
@@ -77,3 +77,10 @@ The player now uses the Quaternius male ranger outfit, with only the base charac
 Open **F1 → Open Animation Lab** to inspect the stock animations. Choose a character and clip; use **Space** to play/pause and **, / .** to step at 60 fps. For `attack_a` and `attack_b`, stop at the visual contact frame and press **M** to mark it. This saves only the corresponding project data resource under `data/anim_profiles/`. **Esc** returns to a reset arena.
 
 The initial attack markers are **provisional**. Marking changes animation time scaling and does not change the authoritative 15-tick attack windup or 91-tick attack period. Rest-pose compensation keeps target proportions, while the in-place library never drives actor movement. Visual polish and final calibration require desktop inspection.
+
+
+## Export playtest feedback
+
+In **F1**, use **Export tuning (.tres)** to save the current overrides, **Reset tuning to file** to restore source defaults, or **Export combat log (.csv)** to save every combat event since the last arena reset. Scroll the debug panel if necessary.
+
+Files appear in `~/Projects/blood-powder/debug_exports/` (or the same folder inside your project checkout). Each export has a unique filename. These files are ignored by Git and the game importer; source stats/abilities and system/application configuration are unchanged. Tuning snapshots are feedback artifacts and are not loaded automatically on startup. F5 clears the current run log.
