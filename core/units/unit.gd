@@ -13,11 +13,15 @@ var attack := AttackCycle.new()
 var movement := MovementComponent.new()
 var statuses := StatusEffects.new()
 var ability := AbilityRunner.new()
+var cast_controller: RefCounted
+var active_cast: AbilityRunner
+var counts_as_elite: bool = false
+var _approach_cast: UnitCommand
 var order: UnitCommand = UnitCommand.create(UnitCommand.Kind.STOP)
 var _pending: UnitCommand
 var _pending_tick: int = 0
 var _pending_expires: int = 0
-var _victim: CombatUnit
+var _victim: Node3D
 var _last_repath: int = -999
 var _respawn_tick: int = -1
 var _visual: Node3D
@@ -83,6 +87,9 @@ func reset_unit() -> void:
 	state = "Idle"
 	attack.reset()
 	ability.reset()
+	active_cast = null
+	_approach_cast = null
+	if cast_controller != null: cast_controller.reset()
 	statuses.clear()
 	movement.stop()
 	order = UnitCommand.create(UnitCommand.Kind.STOP)
@@ -121,7 +128,7 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 		_pending = null
 	if statuses.has(&"stun"):
 		if _pending != null and _pending.kind == UnitCommand.Kind.CAST:
-			_cast_failed("Stunned")
+			_cast_failed("Stunned", _pending.slot)
 			_pending = null
 		state = "Stunned"
 		movement.stop()
@@ -130,30 +137,24 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 	# A command on the hit tick cannot cancel a hit already committed that tick.
 	if attack.take_hit(tick):
 		_hit(tick)
-	if ability.take_completion(tick):
-		_complete_pulse(tick, units)
-	if ability.completion_tick >= 0:
+	if active_cast != null and active_cast.take_completion(tick):
+		active_cast = null
+		if cast_controller != null: cast_controller.complete(tick)
+		else: _complete_pulse(tick, units)
+	if active_cast != null:
 		state = "Casting"
 		return
 	if _pending != null and tick >= _pending_tick:
 		if _pending.kind == UnitCommand.Kind.CAST:
+			var command := _pending
 			_pending = null
-			var reason := ability.start(tick)
-			if not reason.is_empty():
-				_cast_failed(reason)
-			else:
-				if attack.cancel(tick):
-					EventBus.publish(&"attack_cancelled", {"source": unit_id})
-				_victim = null
-				movement.stop()
-				_last_repath = -999
-				EventBus.publish(&"ability_cast_started", {"source": unit_id, "ability": "training_pulse"})
-				if ability.take_completion(tick):
-					_complete_pulse(tick, units)
-				else:
-					state = "Casting"
-					return
+			_approach_cast = null
+			_request_cast(command, tick, units)
+			if active_cast != null:
+				state = "Casting"
+				return
 		else:
+			_approach_cast = null
 			if attack.cancel(tick):
 				EventBus.publish(&"attack_cancelled", {"source": unit_id})
 			order = _pending
@@ -163,6 +164,19 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 			_last_repath = -999
 			_resume_attack_move = false
 			EventBus.publish(&"order_issued", {"source": unit_id, "kind": order.kind})
+	if _approach_cast != null:
+		_request_cast(_approach_cast, tick, units)
+		if active_cast != null:
+			state = "Casting"
+			return
+		if _approach_cast != null:
+			var destination: Vector3 = _approach_cast.target.global_position if is_instance_valid(_approach_cast.target) else _approach_cast.point
+			if tick - _last_repath >= 6:
+				movement.set_destination(destination)
+				_last_repath = tick
+			state = "Approaching cast"
+			_face(_move())
+			return
 	if attack.hit_tick >= 0:
 		state = "Attack windup"
 		return
@@ -200,9 +214,9 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 		state = "Holding" if order.kind == UnitCommand.Kind.HOLD else "Idle"
 
 
-func _choose_target(units: Array[CombatUnit]) -> CombatUnit:
+func _choose_target(units: Array[CombatUnit]) -> Node3D:
 	if order.kind == UnitCommand.Kind.ATTACK:
-		return order.target as CombatUnit if is_instance_valid(order.target) and order.target.alive() else null
+		return order.target if is_instance_valid(order.target) and order.target.alive() else null
 	if order.kind not in [UnitCommand.Kind.HOLD, UnitCommand.Kind.ATTACK_MOVE]:
 		return null
 	var nearest: CombatUnit
@@ -218,7 +232,7 @@ func _choose_target(units: Array[CombatUnit]) -> CombatUnit:
 	return nearest
 
 
-func in_attack_range(target: CombatUnit) -> bool:
+func in_attack_range(target: Node3D) -> bool:
 	return global_position.distance_to(target.global_position) <= stat(&"attack_range") + stat(&"gameplay_radius") + target.stat(&"gameplay_radius") + 0.001
 
 
@@ -227,9 +241,12 @@ func _hit(tick: int) -> void:
 		return
 	var crit := SimClock.state.rng.randf() < clampf(stat(&"crit_chance"), 0.0, 1.0)
 	var raw := stat(&"attack_damage") * (stat(&"crit_multiplier") if crit else 1.0)
-	var damage := DamageResolver.resolve(raw, _victim.stat(&"armor"))
 	EventBus.publish(&"attack_hit", {"source": unit_id, "target": _victim.unit_id})
-	_victim.receive_damage(damage, tick, unit_id, crit)
+	if _victim is PowderKeg:
+		_victim.manager.hit(_victim.state.id, tick, {"raw": raw, "crit": crit, "source": unit_id})
+	else:
+		var damage := DamageResolver.resolve(raw, _victim.stat(&"armor"))
+		_victim.receive_damage(damage, tick, unit_id, crit)
 
 
 func receive_damage(amount: float, tick: int, source: int, crit: bool = false, damage_type: StringName = &"physical") -> void:
@@ -241,6 +258,10 @@ func receive_damage(amount: float, tick: int, source: int, crit: bool = false, d
 	if not alive():
 		attack.reset()
 		ability.interrupt()
+		if active_cast != null: active_cast.interrupt()
+		active_cast = null
+		_approach_cast = null
+		if cast_controller != null: cast_controller.interrupt()
 		statuses.clear()
 		_pending = null
 		movement.stop()
@@ -259,8 +280,10 @@ func apply_status(kind: StringName, tick: int, duration: int, magnitude: float =
 			attack.hit_tick = -1
 			attack.ready_tick = tick
 			EventBus.publish(&"attack_cancelled", {"source": unit_id})
-		if ability.completion_tick >= 0:
-			ability.interrupt()
+		if active_cast != null:
+			active_cast.interrupt()
+			active_cast = null
+			if cast_controller != null: cast_controller.interrupt()
 			EventBus.publish(&"ability_interrupted", {"source": unit_id})
 		movement.stop()
 		_last_repath = -999
@@ -279,8 +302,39 @@ func _move() -> Vector3:
 	return movement.simulate(stat(&"move_speed") * statuses.move_multiplier())
 
 
-func _cast_failed(reason: String) -> void:
-	EventBus.publish(&"ability_cast_failed", {"source": unit_id, "reason": reason})
+func _cast_failed(reason: String, slot: StringName = &"Q") -> void:
+	EventBus.publish(&"ability_cast_failed", {"source": unit_id, "reason": reason, "slot": slot})
+
+
+func _request_cast(command: UnitCommand, tick: int, units: Array[CombatUnit]) -> void:
+	var result: Dictionary
+	if cast_controller != null:
+		result = cast_controller.request(command, tick)
+	else:
+		result = {"reason": ability.start(tick), "runner": ability, "name": "training_pulse"}
+	if result.get("approach", false):
+		if _approach_cast == null:
+			attack.cancel(tick)
+			movement.stop()
+			_last_repath = -999
+		_approach_cast = command
+		return
+	_approach_cast = null
+	if not result.get("reason", "").is_empty():
+		_cast_failed(result.reason, command.slot)
+		return
+	active_cast = result.runner
+	if is_instance_valid(command.target): _face(command.target.global_position - global_position)
+	elif command.slot == &"E": _face(command.point - global_position)
+	if attack.cancel(tick): EventBus.publish(&"attack_cancelled", {"source": unit_id})
+	_victim = null
+	movement.stop()
+	_last_repath = -999
+	EventBus.publish(&"ability_cast_started", {"source": unit_id, "ability": result.name, "completion_tick": active_cast.completion_tick})
+	if active_cast.take_completion(tick):
+		active_cast = null
+		if cast_controller != null: cast_controller.complete(tick)
+		else: _complete_pulse(tick, units)
 
 
 func _complete_pulse(tick: int, units: Array[CombatUnit]) -> void:

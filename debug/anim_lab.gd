@@ -7,7 +7,7 @@ var time: float = 0.0
 var playing: bool = false
 var _info: Label
 var _notice: Label
-const ROLES: Array[StringName] = [&"attack_a", &"attack_b", &"idle", &"run", &"cast", &"death", &"rest"]
+const ROLES: Array[StringName] = [&"attack_a", &"attack_b", &"idle", &"run", &"cast", &"shoot", &"throw", &"death", &"rest"]
 
 
 func _ready() -> void:

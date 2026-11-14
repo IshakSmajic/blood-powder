@@ -9,3 +9,6 @@ extends Resource
 @export var damage: float = 60.0
 @export var slow_fraction: float = 0.4
 @export var slow_duration: float = 2.0
+@export var range: float = 0.0
+@export var projectile_speed: float = 0.0
+@export var ad_ratio: float = 0.0

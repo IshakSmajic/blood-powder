@@ -11,6 +11,7 @@ var _debug: PanelContainer
 var _menu: PanelContainer
 var _events: Array[String] = []
 var _pulse_slot: Control
+var _e_slot: Control
 var _fail_label: Label
 var _fail_left: float = 0.0
 var _tuning_fields: Array[Dictionary] = []
@@ -27,7 +28,7 @@ func _ready() -> void:
 	header.position = Vector2(24, 18)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(header)
-	header.add_child(_label("BLOOD & POWDER   /   M1 FOUNDATION", 24, Color("e8d6bb")))
+	header.add_child(_label("BLOOD & POWDER   /   " + ("M2 POWDER CAPTAIN" if arena.captain != null else "M1 FOUNDATION"), 24, Color("e8d6bb")))
 	_status = _label("Baking navigation…", 16)
 	header.add_child(_status)
 	_selected = _label("", 16)
@@ -49,8 +50,13 @@ func _ready() -> void:
 		if key == "Q":
 			slot.ability = arena.player.ability
 			_pulse_slot = slot
+		if key == "E" and arena.captain != null:
+			slot.ability = arena.captain.e
+			slot.charge_pool = arena.captain.charges
+			slot.usable = true
+			_e_slot = slot
 		slots.add_child(slot)
-	footer.add_child(_label("Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
+	footer.add_child(_label("Q: Flintlock at cursor target · E: place keg · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
 	footer.add_child(_label("RMB move / attack · hold RMB ground to steer · A then LMB attack-move · S stop · H hold", 17))
 	footer.add_child(_label("Y camera lock · Space center · wheel zoom · F1 tuning · F2 ranges · F3 state · F4 log", 17))
 	footer.add_child(_label("F5 reset · F7/F8 speed · F9 pause · F10 step · Esc menu", 17))
@@ -109,23 +115,11 @@ func _ready() -> void:
 		_tuning_fields.append({"control": spinner, "resource": arena.player.stats, "field": field})
 		row.add_child(spinner)
 	_debug.hide()
-	fields.add_child(_label("TRAINING PULSE", 18))
-	for property in arena.player.ability.data.get_property_list():
-		if not property.usage & PROPERTY_USAGE_EDITOR or property.type != TYPE_FLOAT: continue
-		var field := StringName(property.name)
-		var row := HBoxContainer.new()
-		fields.add_child(row)
-		var label := _label(String(field).replace("_", " "), 14)
-		label.custom_minimum_size.x = 170
-		row.add_child(label)
-		var spinner := SpinBox.new()
-		spinner.min_value = 0.0
-		spinner.max_value = 1.0 if field == &"slow_fraction" else 10000.0
-		spinner.step = 0.05
-		spinner.value = arena.player.ability.value(field)
-		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(arena.player.ability.data.resource_path, field, value))
-		_tuning_fields.append({"control": spinner, "resource": arena.player.ability.data, "field": field})
-		row.add_child(spinner)
+	fields.add_child(_label(arena.player.ability.data.display_name.to_upper(), 18))
+	_add_ability_fields(fields, arena.player.ability, ["cooldown", "cast_time", "damage", "range", "projectile_speed", "ad_ratio"] if arena.captain != null else [])
+	if arena.captain != null:
+		fields.add_child(_label("POWDER KEG", 18))
+		_add_ability_fields(fields, arena.captain.e, ["cooldown", "cast_time", "radius", "slow_fraction", "slow_duration", "range", "charges", "recharge", "decay_interval", "lifetime", "connection_distance", "chain_delay", "minimum_spacing", "armor_penetration", "crit_bonus", "elite_bonus"])
 	fields.add_child(_label("APPLY TO PLAYER", 18))
 	var status_grid := GridContainer.new()
 	status_grid.columns = 3
@@ -170,16 +164,19 @@ func _process(delta: float) -> void:
 		_status.text = "Baking navigation…"
 	var status_text := player.statuses.summary(SimClock.state.tick)
 	if not status_text.is_empty(): _status.text += "\n" + status_text
-	_pulse_slot.usable = player.alive() and not player.statuses.has(&"stun") and player.ability.completion_tick < 0
+	_pulse_slot.usable = player.alive() and not player.statuses.has(&"stun") and player.active_cast == null
 	_fail_left = maxf(0.0, _fail_left - delta)
 	_fail_label.visible = _fail_left > 0.0
 	_fail_label.position = get_viewport().get_mouse_position() + Vector2(16, 16)
-	var unit: CombatUnit = arena.selected
+	if _e_slot != null:
+		_e_slot.usable = _pulse_slot.usable and arena.captain.charges.available > 0
+		_status.text += "\nKeg charges %d / %d" % [arena.captain.charges.available, arena.captain.charges.maximum]
+	var unit: Node3D = arena.selected if is_instance_valid(arena.selected) else null
 	_selected.text = "%s · HP %d · armor %.0f · MR %.0f" % [unit.unit_name, ceili(unit.health), unit.stat(&"armor"), unit.stat(&"magic_resist")] if is_instance_valid(unit) else "LMB inspect a unit"
 	if arena.show_states:
 		_selected.text += "\n%s · ready in %d ticks · hit tick %d" % [player.state, maxi(0, player.attack.ready_tick - SimClock.state.tick), player.attack.hit_tick]
-	if is_instance_valid(unit):
-		var effects := unit.statuses.summary(SimClock.state.tick)
+	if is_instance_valid(unit) and unit is CombatUnit:
+		var effects: String = unit.statuses.summary(SimClock.state.tick)
 		if not effects.is_empty(): _selected.text += "\n" + effects
 	if _log.visible:
 		_log.text = "\n".join(_events.slice(maxi(0, _events.size() - 14)))
@@ -243,7 +240,8 @@ func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:
 	if event == &"ability_cast_failed" and payload.source == arena.player.unit_id:
 		_fail_label.text = payload.reason
 		_fail_left = 0.6
-		_pulse_slot.flash_failure()
+		var failed_slot: Control = _e_slot if payload.get("slot", &"Q") == &"E" else _pulse_slot
+		if failed_slot != null: failed_slot.flash_failure()
 	_events.append("%06d  %s  %s" % [tick, event, str(payload)])
 	if _events.size() > 200:
 		_events.pop_front()
@@ -256,3 +254,23 @@ func _label(text: String, size: int, color: Color = Color("d3dae1")) -> Label:
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
 	return label
+
+
+func _add_ability_fields(container: VBoxContainer, runner: AbilityRunner, allowed: Array) -> void:
+	for property in runner.data.get_property_list():
+		if not property.usage & PROPERTY_USAGE_EDITOR or property.type not in [TYPE_FLOAT, TYPE_INT]: continue
+		var field := StringName(property.name)
+		if not allowed.is_empty() and not allowed.has(String(field)): continue
+		var row := HBoxContainer.new()
+		container.add_child(row)
+		var label := _label(String(field).replace("_", " "), 14)
+		label.custom_minimum_size.x = 170
+		row.add_child(label)
+		var spinner := SpinBox.new()
+		spinner.min_value = 3 if field == &"charges" else 0.0
+		spinner.max_value = 5 if field == &"charges" else 1.0 if field in [&"slow_fraction", &"armor_penetration", &"crit_bonus"] else 10000.0
+		spinner.step = 1.0 if property.type == TYPE_INT else 0.01
+		spinner.value = runner.value(field)
+		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(runner.data.resource_path, field, value))
+		_tuning_fields.append({"control": spinner, "resource": runner.data, "field": field})
+		row.add_child(spinner)

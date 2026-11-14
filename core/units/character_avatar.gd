@@ -30,6 +30,9 @@ var _loop_time: float = 0.0
 var _blend_from: Array[Transform3D] = []
 var _blend_left: float = 0.0
 var _blend_duration: float = 0.05
+var _cast_role: StringName = &"cast"
+var _sword: Node3D
+var _pistol: Node3D
 
 
 func _ready() -> void:
@@ -127,6 +130,8 @@ func _add_weapon() -> void:
 	attachment.name = "SwordAttachment"
 	attachment.bone_name = "hand_r"
 	skeleton.add_child(attachment)
+	_sword = Node3D.new()
+	attachment.add_child(_sword)
 	for part in [[Vector3(0.045, 0.045, 0.65), Vector3(0, 0, 0.43), Color("b8c2c8")],
 		[Vector3(0.20, 0.05, 0.045), Vector3(0, 0, 0.10), Color("b98e51")],
 		[Vector3(0.065, 0.065, 0.16), Vector3(0, 0, 0), Color("574033")]]:
@@ -138,7 +143,22 @@ func _add_weapon() -> void:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = part[2]
 		piece.material_override = material
-		attachment.add_child(piece)
+		_sword.add_child(piece)
+	_pistol = Node3D.new()
+	attachment.add_child(_pistol)
+	for part in [[Vector3(0.09, 0.11, 0.26), Vector3(0, 0, 0.16), Color("61422c")],
+		[Vector3(0.07, 0.18, 0.09), Vector3(0, -0.07, 0.035), Color("61422c")],
+		[Vector3(0.065, 0.065, 0.32), Vector3(0, 0.025, 0.38), Color("8b9297")]]:
+		var piece := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = part[0]
+		piece.mesh = box
+		piece.position = part[1]
+		var material := StandardMaterial3D.new()
+		material.albedo_color = part[2]
+		piece.material_override = material
+		_pistol.add_child(piece)
+	_pistol.hide()
 
 
 func set_flash(value: bool) -> void:
@@ -156,6 +176,9 @@ func reset_pose() -> void:
 
 
 func preview(role: StringName, time: float, elapsed: float = 0.0) -> void:
+	if dressed:
+		_sword.visible = role not in [&"shoot", &"throw"]
+		_pistol.visible = role == &"shoot"
 	if animation_player.current_animation != role:
 		_blend_from.clear()
 		if elapsed > 0.0:
@@ -205,8 +228,8 @@ func _process(delta: float) -> void:
 			phase = profile.hit_time + (length - profile.hit_time) * clampf((_visual_tick - _hit_tick) / maxf(1.0, _ready_tick - _hit_tick), 0.0, 1.0)
 		preview(_attack_role, phase, elapsed_sim)
 	elif unit.state == "Casting":
-		var length := animation_player.get_animation(&"cast").length
-		preview(&"cast", length * clampf((_visual_tick - _cast_start) / maxf(1.0, _cast_end - _cast_start), 0.0, 1.0), elapsed_sim)
+		var length := animation_player.get_animation(_cast_role).length
+		preview(_cast_role, length * clampf((_visual_tick - _cast_start) / maxf(1.0, _cast_end - _cast_start), 0.0, 1.0), elapsed_sim)
 	else:
 		preview(&"run" if unit.state in ["Moving", "Chasing"] and unit.velocity.length_squared() > 0.001 else &"idle", _loop_time, elapsed_sim)
 
@@ -224,4 +247,5 @@ func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:
 		_ready_tick = unit.attack.ready_tick
 	elif event == &"ability_cast_started":
 		_cast_start = tick
-		_cast_end = unit.ability.completion_tick
+		_cast_end = payload.get("completion_tick", unit.ability.completion_tick)
+		_cast_role = &"shoot" if payload.ability == "flintlock" else &"throw" if payload.ability == "powder_keg" else &"cast"

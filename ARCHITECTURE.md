@@ -23,7 +23,7 @@ Eight stock character/animation candidates are prepared under `assets/`. The ori
 
 ## M1 implementation — first foundation slice
 
-M0 was explicitly approved by Ishak; local tag `m0-approved` records its accepted code. M1 is active on `feature/m1-foundation`.
+M0 was explicitly approved by Ishak; local tag `m0-approved` records its accepted code. M1 was accepted with finer animation calibration deferred; local tag `m1-approved` records it. M2 is active on `feature/m2-captain-kegs`.
 
 - `world/arena.gd` builds the separate sandbox and runs units in stable array order on `SimClock.tick_advanced`. It owns cursor-to-ground projection, selection, held movement, attack-move arming, debug toggles, and reset/menu handling. No runtime network is used.
 - `world/arena_geometry.gd` creates the 36×28 m floor, four pillars, central low wall, outer walls, and visual-only brush patches. Static collider geometry is parsed/baked into one NavigationRegion3D synchronously at startup. The region becomes usable after navigation-server synchronization; commands wait for readiness.
@@ -42,7 +42,7 @@ Status/cooldown slice:
 - `AbilityData` is a tunable resource and `AbilityRunner` owns cast/cooldown deadlines. Q uses a temporary self-centered Training Pulse; it is not a Captain class ability. Cast locks buffer one command until unlock, last wins, with 30-tick expiry. A cast preserves the prior order and resumes it after completion. Interrupted casts retain their cooldown. Death/reset clears cast state, cooldowns, and statuses.
 - Arena queues F1 debug status buttons for the next tick rather than modifying gameplay from GUI callbacks. HUD draws a radial Q cooldown, remaining seconds, failure feedback, and status text; pulse effects are visual only. Other class slots stay inactive.
 
-Ishak accepts the current animations and has explicitly deferred finer manual hit-frame calibration unless a later issue requires it. Profile markers remain provisional; this is an accepted deferral, not a claim of completed calibration. The M1 implementation checkpoint awaits final milestone sign-off; M2/class mechanics have not started.
+Ishak accepts the current animations and has explicitly deferred finer manual hit-frame calibration unless a later issue requires it. Profile markers remain provisional; this is an accepted deferral, not a claim of completed calibration. Ishak subsequently instructed continued work and accepted the M1 checkpoint; the first M2 Q/E slice is now active.
 
 
 Stock-character visual slice:
@@ -60,3 +60,18 @@ Debug export slice:
 - `CombatLog` records full-run tick-stamped event payloads independently of the 200-row HUD display buffer. Arena's event handler owns recording, so leaving the scene disconnects collection automatically. Reset clears both logs. CSV export uses FileAccess CSV quoting with the guide's six columns.
 - `DebugConfig.export_overrides` writes an explicit TuningSnapshot resource containing only live overrides plus schema/engine/date metadata. It never mutates source resources or auto-loads snapshots on startup. `clear_overrides` restores defaults; the HUD synchronizes its SpinBoxes with signals blocked.
 - F1 export buttons write unique files under project-local `debug_exports/`, excluded from Git and game import. Both exporters reject existing targets. Tests use isolated `.local/test_exports/` paths and remove their outputs. No app/system configuration is edited.
+
+
+## M2 first slice — Q/E and keg combos
+
+- Arena enables a CaptainController by default. The legacy M1 Training Pulse fixture explicitly disables it to preserve previous regression coverage. Movement, physics radii, basic attack deadlines, and character appearance are unchanged.
+- CombatUnit now accepts generic Node3D targets implementing `alive/stat/unit_id` (units or owned kegs), tracks the active cast runner separately from Q's runner, and preserves an out-of-range cast intent while approaching. A new move/attack cancels that pending approach. Cast locks still use one last-wins 30-tick buffer. Successful Q/E casts face their target point.
+- CaptainController owns Q/E runners, serial ChargePool, homing projectiles, and KegManager. It validates Q targets and E wall/spacing constraints before consuming cooldown/charges. Existing cast and stun semantics are retained. Stun cancels the pending ghost but does not refund an already committed charge. Reset/respawn clears the controller, kegs, schedules, and projectiles.
+- KegState/KegGraph represent both pending and live kegs; neighbors are sorted by id and connect at <=6.9 m. Pending materialization time participates in chain deadlines. Only successful E completion materializes the node. Views are nonblocking targetable prototype barrels with health pips/countdown rings; graph links brighten for scheduled nodes.
+- Simulation order is: queued debug actions, Captain pre-tick (charges, live decay/expiry, due chains), unit ticks/cast completion, projectile movement/impact, and a final due-chain pass. This makes decay apply before same-tick hits and permits a scheduled pending keg to explode on its materialization tick without recursion.
+- Each chain snapshots triggering raw damage, crit flag/extra multiplier, armor penetration, elite bonus, and slow parameters. It owns a hit-unit set so overlapping blasts apply once per chain. A crit payload gets an additional 1.05 multiplier by default, then an elite-only flat bonus; penetration is 40%. Those formula choices are explicit resource fields. Later child explosions do not resnapshot current attack damage or live damage modifiers.
+- A scheduled keg destroyed early uses its existing chain payload; stale queue entries are ignored. Removed/expired/reset nodes cannot explode again. Chain payloads are released when no chain nodes remain.
+- Q starts a 15-tick cast and 270-tick cooldown; its projectile advances at 26 m/s starting the tick after launch. It re-aims at the valid target each tick. Removed/dead targets fizzle; kegs take exactly one health damage. E has a 15-tick cast, 30-tick recast lock, three charges and serial 780-tick recharge. Decay interval locks when materialized; lifetime defaults to 1500 ticks.
+- The HUD supports Q/E cooldowns, charge pips/recharge progress, selection of owned kegs, correct-slot failure flashes, and Q/E tuning. Stock pistol-shot/throw animations and a procedural pistol support the new casts; all visuals remain simulation-independent.
+
+Still pending in M2: Searing Edge passive/reset, W Ration/cleanse, R Broadside, more training controls and polished VFX/audio/props. No Hunter/M3 work is authorized yet.

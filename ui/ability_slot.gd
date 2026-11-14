@@ -2,6 +2,7 @@ extends Control
 ## Code-drawn prototype ability slot with a radial cooldown sweep.
 
 var ability: AbilityRunner
+var charge_pool: ChargePool
 var key_label: String = "Q"
 var usable: bool = true
 var _flash_left: float = 0.0
@@ -46,3 +47,8 @@ func _draw() -> void:
 			draw_string(ThemeDB.fallback_font, Vector2(18, 47), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22)
 	draw_rect(rect, Color("dc655b") if _flash_left > 0 else Color("b89a6a") if usable else Color("58616a"), false, 2.0)
 	draw_string(ThemeDB.fallback_font, Vector2(6, 17), key_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
+	if charge_pool != null:
+		if charge_pool.next_charge_tick >= 0:
+			var fraction := clampf(1.0 - (charge_pool.next_charge_tick - SimClock.state.tick) / float(charge_pool.recharge_ticks), 0.0, 1.0)
+			draw_arc(center, 24.0, -PI / 2, -PI / 2 + TAU * fraction, 32, Color("e0b36f"), 2.0)
+		draw_string(ThemeDB.fallback_font, Vector2(22, 65), "%d/%d" % [charge_pool.available, charge_pool.maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, 13)

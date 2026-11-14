@@ -2,7 +2,7 @@
 
 An offline 3D top-down combat arena for Linux and Windows, built with Godot and GDScript.
 
-Current slice: **M1 — stock character visuals and animation integration**. Right-click navigation around obstacles, stationary training dummies, attack timing/cancellation, damage/armor/crits, respawn, camera controls, and prototype debug HUD. A temporary Q Training Pulse exercises cast/cooldown/status behavior. The player uses the downloaded ranger outfit with a red prototype palette; dummies use grey stock bodies. Idle/run, alternating melee, test-cast, and death clips are connected. Class abilities and final Captain clothing are not implemented yet. M0 is approved and preserved in `world/setup_room.tscn` (local tag `m0-approved`).
+Current slice: **M2 — Flintlock and powder-keg combos**. Q is targeted Flintlock, E places charge-based kegs, and right-click can attack your own kegs. The player keeps the accepted stock character and movement/basic attack timing. Searing Edge, W Ration, and R Broadside are not implemented in this first M2 slice. M0/M1 checkpoints are local tags `m0-approved` and `m1-approved`.
 
 ## Open and run
 
@@ -29,7 +29,8 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | Left-click | Inspect nearest unit under the ground cursor |
 | A then left-click | Attack-move to the clicked point |
 | S / H | Stop / hold position and attack in range |
-| Q | Temporary Training Pulse: nearby magic damage and slow, 0.25 s cast, 3 s cooldown |
+| Q | Flintlock: shoot the enemy/own keg at the cursor; walks into range first |
+| E | Place a powder keg at the ground cursor; walks into range first |
 | Y / Space / wheel | Toggle camera lock / center while held / zoom |
 | F1 / F2 / F3 / F4 | Live player stats / range and path overlay / state and tick timers / combat log |
 | F5 in game | Reset units, camera, simulation clock, speed, and combat log; retain live tuning |
@@ -37,9 +38,9 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | F9 / F10 | Pause / single tick while paused |
 | Esc | Cancel armed attack-move, or open/close pause menu |
 
-Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. Q is a prototype test ability; W/E/R and passive remain placeholders. Keys 1–4 remain unbound. F6 class switching, actual class abilities, and replay tooling arrive in later milestones.
+Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. Q and E are active Captain abilities. W/R and passive remain inactive in this slice. Keys 1–4 remain unbound; class switching and replay tooling come later.
 
-The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written back to source resource files. Explicit export can save a separate snapshot. F1 includes an **Open Animation Lab** button and exposes test-ability values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; F5 clears all statuses and cooldowns.
+The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written back to source resource files. Explicit export can save a separate snapshot. F1 includes an **Open Animation Lab** button and exposes Q/E values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; F5 clears all statuses and cooldowns.
 
 ## Verify
 
@@ -67,7 +68,7 @@ GODOT_BIN=/absolute/path/to/godot python tools/verify.py
 - [Credits](CREDITS.md) — dependency and asset provenance.
 - [Approved visual direction](docs/concepts/visual_direction_v1.png) — concept reference, not a screenshot or game-ready 3D asset.
 
-Eight stock character/animation candidates have been prepared and documented in [the asset audit](docs/asset_audit.md). Matching Linux/Windows x86_64 export templates are installed. No environment packs are integrated yet. M0 is approved. M1 remains in progress; see `PROGRESS.md` for slice status. No runtime network service is required.
+Eight stock character/animation candidates have been prepared and documented in [the asset audit](docs/asset_audit.md). Matching Linux/Windows x86_64 export templates are installed. No environment packs are integrated yet. M0 and M1 are accepted, with finer animation calibration deferred by Ishak. M2 is in progress; see `PROGRESS.md` for slice status. No runtime network service is required.
 
 
 ## Character animation and calibration
@@ -84,3 +85,16 @@ The initial attack markers are **provisional**. Marking changes animation time s
 In **F1**, use **Export tuning (.tres)** to save the current overrides, **Reset tuning to file** to restore source defaults, or **Export combat log (.csv)** to save every combat event since the last arena reset. Scroll the debug panel if necessary.
 
 Files appear in `~/Projects/blood-powder/debug_exports/` (or the same folder inside your project checkout). Each export has a unique filename. These files are ignored by Git and the game importer; source stats/abilities and system/application configuration are unchanged. Tuning snapshots are feedback artifacts and are not loaded automatically on startup. F5 clears the current run log.
+
+
+## Try the keg-combo slice
+
+1. Press **E** over clear ground to place a keg. It materializes after 0.25 s and decays from **3 → 2 → 1** health, once per second. At one pip it is ready for a one-hit detonation.
+2. Place another keg within **6.9 m** of the first; a dark powder link appears. Use **F2** to show the **3.45 m** explosion radii.
+3. Hover the one-pip keg and press **Q**, or right-click it for a melee attack. Connected kegs explode **20 ticks** apart. A unit overlapping multiple blasts takes damage once per chain.
+4. Try **Q → E**: shoot an existing one-pip keg, then immediately place a linked keg. The in-progress ghost counts in the graph, allowing the one-part combo. New move/attack orders cancel an out-of-range pending cast.
+5. **F5** clears kegs/projectiles/schedules and restores charges/cooldowns. E starts with **3 charges** and recharges one every **13 s**. Live charges (3–5), decay, connection distance, and other Q/E values are in F1.
+
+Kegs expire after 25 s without exploding. They cannot be placed in walls or within 0.8 m of another keg. Pending ghosts are not attackable until materialized. Stun interrupts placement; the committed charge/cooldown remains spent. Q is homing and passes walls; a dead/removed target causes the shot to fizzle. The current barrels and explosion rings are procedural prototypes; full prop/VFX/audio polish comes later.
+
+The M1 Training Pulse resource and fixture remain only for regression testing. The normal arena enables the Captain controller. No character outfit or movement/attack timing defaults were changed for this slice.

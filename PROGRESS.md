@@ -2,6 +2,8 @@
 
 ## Active milestone: M2 — Powder Captain
 
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. The first M2 Q/E slice is implemented and verified: 68 tests / 2,231 assertions, 132 scripts, 8 stock imports, 600 runtime ticks. User playtesting and the remaining Captain abilities are next; M2 is not complete.
+
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
 ## Current M1 status
@@ -181,3 +183,24 @@ No gameplay/source resource/system configuration changes were made. The latest i
 ### 2026-11-14 — M1 accepted; M2 keg slice started
 
 Following acceptance of movement/visuals and explicit deferral of fine animation calibration, Ishak instructed “Lets just keep going.” Treat this as approval to move beyond the M1 checkpoint and begin M2. Preserve current movement, attack timing, visuals, and deferred marker values. Work continues locally; do not spend effort retrying GitHub pushes in this slice. First M2 slice: E charge-based keg placement/decay/graph/chaining plus targeted Q Flintlock and homing projectile. Searing Edge, Ration, Broadside, and further polish follow as later M2 slices.
+
+### 2026-11-14 — M2 work-in-progress handoff saved
+
+At Ishak's request, saved `docs/SESSION_HANDOFF.md` before finishing the current slice so another session can resume without reconstructing tool history. Current branch is `feature/m2-captain-kegs`. Implemented Q/E controllers, pending/placed keg graph, decay, serial charges, exact chain queue, damage snapshots/hit-once tracking, homing projectiles, owned-keg attacks, prototype barrels/pips/rings/links, HUD/tuning, and pistol/throw animation roles. Searing Edge/W/R remain unimplemented. First complete integration verification passed 65 tests (2,214 assertions), all 132 scripts, 8 stock assets, and 600 runtime ticks; strict import failed only at the known sandbox debugger socket. Final expanded run is still to be collected. This handoff is not a claim that M2 is complete or that the user has playtested the new mechanics.
+
+
+### 2026-11-14 — M2 Q/E keg slice verified and ready for playtest
+
+Implemented targeted Q Flintlock and E powder-keg combos with guide-default cast times/ranges/cooldowns. Q homes at 26 m/s, crits physical damage, hits enemy units or owned live kegs, and fizzles if its target disappears. E reserves a pending ghost during the cast, validates walls/spacing, spends one of three charges, and serially recharges every 780 ticks. Out-of-range casts approach first and new move/attack input cancels that pending intent.
+
+Kegs materialize after 15 ticks, decay from 3→2→1 at their locked-in tier, expire after 1500 ticks, connect within 6.9 m, and chain in a tick-keyed queue at 20-tick intervals. Pending nodes can join chains before materialization, supporting the one-part Q→E combo. Each chain snapshots damage/penetration/crit/slow parameters and tracks hit units once. A scheduled keg destroyed early keeps its original chain and cannot explode twice. Removed nodes and orphan chain payloads are cleaned up. Reset/respawn clears the controller, ghosts, schedules, projectiles, and charges.
+
+Added prototype barrel geometry, health pips, decay rings, links, explosion radius overlay, orange blast feedback, targeted selection, Q/E cooldown/failure UI, E recharge progress, and resource-backed Q/E tuning. Pistol-shot/throw animation roles use existing stock libraries; a simple right-hand pistol swaps with the sword for shooting. Casts face their target. W/R/passive remain inactive in this first M2 slice. Existing movement/basic-attack defaults and the accepted red character appearance are unchanged.
+
+Final verification: all 132 scripts load, all 8 stock scenes import, all 68 GUT tests pass (2,231 assertions), and the main scene completes 600 consecutive ticks without runtime errors. The M1 temporary-pulse regression fixture remains explicitly isolated with `captain_enabled=false`; the real arena and new Captain tests enable the controller. Strict editor import fails only at the already documented restricted-session debugger socket. No process is left running.
+
+New tests include melee and Flintlock detonation, exact projectile/cast timing, target removal in flight, invalid placement/spacing, charge exhaustion/serial recharge, exact decay/expiry/graph boundaries, overlap hit-once behavior, scheduled-node double-explosion safety, live chain extension, pending materialization, snapshot offense, stun interruption, reset cleanup, and the one-part combo (root at tick 166, second keg at 186).
+
+Playtest next: restart the project, place E on clear ground, wait until one pip, place another within 6.9 m, then Q or RMB the first keg. Use F2 for radii and F4 for events. Try two/three-keg chains and Q→E; F5 resets the training state. Full prop/VFX/audio polish is not part of this prototype slice. Stun retains the spent E charge/cooldown; that initial interruption choice is documented for later feel review.
+
+Current checkpoint: `feature/m2-captain-kegs` with local commits only. Existing uncommitted `project.godot` editor formatting is preserved. Read `docs/SESSION_HANDOFF.md` first next session. Remaining M2: Searing Edge, W Ration, R Broadside, more training controls/polish, and full milestone acceptance before M3. Fine animation calibration remains deferred per Ishak's instruction.

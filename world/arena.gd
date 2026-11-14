@@ -7,7 +7,9 @@ const HUD = preload("res://ui/sandbox_hud.gd")
 var player: CombatUnit
 var units: Array[CombatUnit] = []
 var camera: Camera3D
-var selected: CombatUnit
+var selected: Node3D
+var captain_enabled: bool = true
+var captain: CaptainController
 var navigation_ready: bool = false
 var attack_move_armed: bool = false
 var show_states: bool = false
@@ -36,6 +38,9 @@ func _ready() -> void:
 	player = _add_unit(0, 0, "Powder Captain", Vector3(0, 0, 11), preload("res://data/stats/captain.tres"))
 	for i in range(3):
 		_add_unit(i + 1, 1, "Dummy %d" % (i + 1), Vector3((i - 1) * 3, 0, -8), preload("res://data/stats/dummy.tres"))
+	if captain_enabled:
+		captain = CaptainController.new()
+		captain.configure(self, player)
 	selected = player
 	camera = Camera.new()
 	camera.name = "Camera"
@@ -130,6 +135,7 @@ func simulate_tick(tick: int) -> void:
 			&"speed_buff": player.apply_status(kind, tick, 180, 0.5)
 			_: player.apply_status(kind, tick, 120)
 	_queued_debug_statuses.clear()
+	if captain != null: captain.pre_tick(tick)
 	if attack_move_armed and tick >= _armed_until:
 		attack_move_armed = false
 	if _right_ground_held and not _menu_open and tick - _last_hold_tick >= 6:
@@ -137,6 +143,7 @@ func simulate_tick(tick: int) -> void:
 		_last_hold_tick = tick
 	for unit in units:
 		unit.simulate(tick, units)
+	if captain != null: captain.post_tick(tick)
 
 
 func _on_action(action: StringName) -> void:
@@ -148,9 +155,21 @@ func _on_action(action: StringName) -> void:
 	match action:
 		&"ability_q":
 			if player.alive():
-				player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), SimClock.state.tick)
+				var command := UnitCommand.create(UnitCommand.Kind.CAST)
+				if captain != null: command.target = _flintlock_target()
+				player.queue_command(command, SimClock.state.tick)
 			else:
 				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead"})
+		&"ability_e":
+			if captain == null: return
+			if not player.alive():
+				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"E"})
+				return
+			var point: Variant = _ground_point()
+			if point == null: return
+			var command := UnitCommand.create(UnitCommand.Kind.CAST, point)
+			command.slot = &"E"
+			player.queue_command(command, SimClock.state.tick)
 		&"toggle_camera_lock", &"zoom_in", &"zoom_out":
 			camera.handle_action(action)
 		&"debug_panel": _hud.toggle_debug()
@@ -168,7 +187,7 @@ func _on_action(action: StringName) -> void:
 		&"move_attack":
 			attack_move_armed = false
 			var picked := _pick_unit()
-			if picked != null and picked.team != player.team and picked.alive():
+			if picked != null and (picked is PowderKeg or picked.team != player.team) and picked.alive():
 				_right_ground_held = false
 				player.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, picked), SimClock.state.tick)
 				_click_ring(picked.global_position, Color("c94e43"))
@@ -203,13 +222,37 @@ func _ground_point() -> Variant:
 	return Plane(Vector3.UP, 0.0).intersects_ray(camera.project_ray_origin(mouse), camera.project_ray_normal(mouse))
 
 
-func _pick_unit() -> CombatUnit:
+func _targets() -> Array[Node3D]:
+	var targets: Array[Node3D] = []
+	for unit in units: targets.append(unit)
+	if captain != null:
+		for view in captain.kegs.views.values(): targets.append(view)
+	return targets
+
+
+func _flintlock_target() -> Node3D:
+	var point: Variant = _ground_point()
+	if point == null: return null
+	var hovered := _pick_unit()
+	if hovered != null and (hovered is PowderKeg or hovered.team != player.team): return hovered
+	var best: float = 1.5 * 1.5 + 0.00001
+	var nearest: Node3D
+	for target in _targets():
+		if not target.alive() or (target is CombatUnit and target.team == player.team): continue
+		var distance: float = point.distance_squared_to(target.global_position)
+		if distance < best:
+			best = distance
+			nearest = target
+	return nearest
+
+
+func _pick_unit() -> Node3D:
 	var point: Variant = _ground_point()
 	if point == null:
 		return null
-	var nearest: CombatUnit
+	var nearest: Node3D
 	var best: float = INF
-	for unit in units:
+	for unit in _targets():
 		var distance: float = unit.global_position.distance_squared_to(point)
 		if unit.alive() and distance <= pow(unit.stat(&"selection_radius"), 2) and distance < best:
 			best = distance
@@ -253,6 +296,7 @@ func reset_arena() -> void:
 	_hud.show_menu(false)
 	_hud.clear_log()
 	combat_log.clear()
+	selected = player
 	camera.snap()
 
 
@@ -265,6 +309,8 @@ func _process(_delta: float) -> void:
 		immediate.surface_begin(Mesh.PRIMITIVE_LINES)
 		_draw_circle(immediate, player.global_position, player.stat(&"attack_range") + player.stat(&"gameplay_radius"))
 		_draw_circle(immediate, player.global_position, player.ability.value(&"radius"))
+		if captain != null:
+			for node in captain.kegs.graph.nodes.values(): _draw_circle(immediate, node.point, captain.e.value(&"radius"))
 		for unit in units:
 			_draw_circle(immediate, unit.global_position, unit.stat(&"gameplay_radius"))
 		if player.movement.active:
@@ -303,7 +349,9 @@ func _click_ring(point: Vector3, color: Color, radius: float = 0.31, grow: bool 
 
 func _on_combat_event(tick: int, event: StringName, payload: Dictionary) -> void:
 	combat_log.record(tick, event, payload)
-	if event == &"ability_cast_completed":
+	if event == &"keg_exploded":
+		_click_ring(payload.position, Color("f09d46"), payload.radius, true)
+	if event == &"ability_cast_completed" and payload.get("ability", "") == "training_pulse":
 		_click_ring(payload.position, Color("6cb8dc"), payload.radius, true)
 	if event != &"damage_dealt":
 		return
