@@ -10,7 +10,7 @@ M0 is in progress. M1 is not authorized until Ishak approves M0.
 - [x] Project structure, scene, input map, core autoloads, and session docs created.
 - [x] GUT 9.7.1 addon vendored with license and enabled locally in this project.
 - [x] All 97 GDScripts load; all 9 GUT tests pass; main scene runs for 600 ticks; all 8 prepared stock scenes import successfully.
-- [ ] Strict verification exits successfully outside restricted session (editor debugger socket error here).
+- [x] Ishak ran `python tools/verify.py` in the normal terminal and supplied complete `VERIFICATION PASSED` output: clean editor import, 97 scripts, 8 asset scenes, 9 tests/729 assertions, 600 simulation ticks.
 - [x] Ishak confirms the project works after the GUT startup fix ("Works fine").
 - [x] Matching 4.7.2 Linux/Windows x86_64 debug/release export templates and console wrappers installed and byte-verified against the supplied TPZ. Both Linux templates report the pinned official version.
 - [x] Four character/animation packs inspected, licenses checked, raw files extracted externally, and candidate assets prepared. See `docs/asset_audit.md` for rig/outfit limitations.
@@ -22,7 +22,7 @@ Working branch: `setup/m0-foundation`. The setup slice is committed locally usin
 
 M0 follow-up: Ishak reported `[GUT] Could not get version info, response code: 0` while opening the editor. Inspection traced it to GUT's automatic GitHub update request. Patched only its startup call to use bundled/cached version information. Manual update requests remain available; existing system/application configuration and the editor's current `project.godot` serialization were preserved.
 
-Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. Detailed pause/step/resize results and a normal-terminal strict verification log were not supplied. Character packs and export templates have since been prepared; final normal-terminal verification and M0 approval remain pending.
+Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. A normal-terminal strict verification log was subsequently supplied and all checks passed. Character packs and export templates are prepared. Detailed pause/step/resize results were not individually reported; explicit M0 sign-off remains pending.
 
 Asset preparation follow-up: all 8 prepared GLBs import into Godot with 65-bone skeletons; UAL1 and UAL2 each expose 43 clips. Godot strips the standard `_Loop` suffix when importing animations; the check recognizes that exact rule. Both libraries contain usable melee/locomotion candidates, but visual playback/retargeting is not yet verified. Repeat packaging produced identical outputs. Actual archive contents differ from several guide assumptions; see `docs/asset_audit.md`. No gameplay or M1 visual integration was started.
 
@@ -32,7 +32,7 @@ Verified locally with Godot `4.7.2.stable.official.ed1daf0bf` and GUT 9.7.1:
 - Stock assets: all 8 scenes load with expected bones and animation clips, exit 0.
 - GUT: 9/9 tests, 729 assertions, zero failures, exit 0.
 - Main-scene smoke: 600 consecutive simulation ticks, exit 0, no runtime errors.
-- Editor import completed and generated the project cache, but reported sandbox socket errors (`_inet_open` and `TCPServer.listen` / `ERR_CANT_CREATE`). These are not suppressed: strict verification remains failed for the import stage until checked outside this restricted session.
+- Editor import completed and generated the project cache, but reported sandbox socket errors (`_inet_open` and `TCPServer.listen` / `ERR_CANT_CREATE`). These are not suppressed. Ishak subsequently verified the same project outside this restricted session: editor import and the full verification command passed without these errors.
 - Desktop rendering, resizing, and physical keyboard interaction require Ishak's manual playtest; headless tests do not verify GPU/window behavior.
 
 `python tools/verify.py` runs all stages even if one fails and saves logs in ignored `.local/`.
@@ -83,4 +83,9 @@ This is the project’s ongoing work log. Update it after each work session with
 11. Installed matching Linux/Windows x86_64 export templates, including debug/release binaries and Windows console wrappers. Checked extracted bytes against the TPZ; both Linux binaries report `4.7.2.stable.official.ed1daf0bf`.
 12. Committed work locally on `setup/m0-foundation` using Ishak’s Git identity without AI/co-author trailers. GitHub push was attempted but failed because this session cannot resolve GitHub. The editor’s uncommitted `project.godot` serialization was preserved.
 
-Next: collect normal-terminal verification and Ishak’s M0 sign-off, then begin the M1 movement/basic-attack sandbox. Character appearance/animation integration remains a later M1 slice; no movement, combat, enemy AI, class mechanics, or final art is implemented yet. Environment/VFX/audio sourcing remains later work. Do not merge/tag M0 or begin M1 before the required sign-off.
+Next: obtain Ishak’s explicit M0 sign-off, then begin the M1 movement/basic-attack sandbox. Character appearance/animation integration remains a later M1 slice; no movement, combat, enemy AI, class mechanics, or final art is implemented yet. Environment/VFX/audio sourcing remains later work. Do not merge/tag M0 or begin M1 before the required sign-off.
+
+
+### 2026-11-14 — normal-terminal verification confirmed
+
+Ishak supplied the complete output of `python tools/verify.py`, ending in `VERIFICATION PASSED`. Editor import was clean, all 97 scripts loaded, all 8 stock scenes imported with the expected skeletons/clips, all 9 GUT tests passed (729 assertions), and the main scene completed 600 consecutive ticks. This resolves the outstanding verification gate; prior debugger-socket failures were restricted-session environment errors. No implementation changes were made in this follow-up, so no duplicate verification run was needed. M0 now awaits explicit milestone approval; GitHub synchronization remains blocked from this session.
