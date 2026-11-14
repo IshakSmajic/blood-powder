@@ -23,7 +23,7 @@ func _start() -> void:
 			push_error("Missing autoload: " + singleton)
 			quit(1)
 			return
-	if not _room.has_node("Floor") or not _room.has_node("Camera"):
+	if _room.find_children("Floor", "", true, false).is_empty() or not _room.has_node("Camera"):
 		push_error("Test room is missing floor or camera")
 		quit(1)
 

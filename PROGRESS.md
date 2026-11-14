@@ -16,7 +16,7 @@ Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote 
 - [x] Four character/animation packs inspected, licenses checked, raw files extracted externally, and candidate assets prepared. See `docs/asset_audit.md` for rig/outfit limitations.
 - [ ] Branch pushed for review; milestone merged/tagged after approval.
 
-Working branch: `setup/m0-foundation`. The setup slice is committed locally using Ishak's configured author and committer identity, with no co-author trailers. Push was attempted and failed because this session cannot resolve `github.com`; there is no remote branch/PR yet. Working tree was clean after the setup commit. No milestone tag or merge has been made.
+M0 branch: `setup/m0-foundation`; current work branch: `feature/m1-foundation`. The setup slice is committed locally using Ishak's configured author and committer identity, with no co-author trailers. Push was attempted and failed because this session cannot resolve `github.com`; there is no remote branch/PR yet. Working tree was clean after the setup commit. Local tag `m0-approved` was created after explicit approval. Remote synchronization/merge remains pending.
 
 ## Current verification
 
@@ -94,3 +94,16 @@ Ishak supplied the complete output of `python tools/verify.py`, ending in `VERIF
 ### 2026-11-14 — M0 approved; M1 started
 
 Ishak explicitly approved M0 and proceeding to M1. Preserve the accepted setup scene as a standalone reference while adding the movement/basic-attack sandbox. Start with capsule visuals; character integration remains the last M1 slice. Existing uncommitted editor serialization in `project.godot` must be preserved.
+
+
+### 2026-11-14 — M1 capsule movement/basic-attack slice
+
+Implemented a separate arena scene; kept the accepted M0 reference unchanged. Added runtime-baked navigation around pillars/low wall, capsule player, three stationary dummies, next-tick command processing, held right-click movement, attack-move, stop/hold, chase/repath, integer attack deadlines, cancellation/retargeting, physical damage/armor/crits, health bars and labels, respawn, camera lock/pan/zoom, selection, live stat tuning, and range/state/log debug views. The new arena is now the main scene. No system or application config was edited; only the project main-scene line changes, preserving existing editor serialization.
+
+Added pure combat timing/damage checks and scene-level tests for exact hit ticks, windup refund, retargeting, backswing movement, obstacle routing without penetration, hold behavior, exact respawn, and attack-move resumption. Early tests found and fixed a quantized navigation-surface height mismatch and attack-move destination restoration. Camera interpolation is disabled on the render-updated camera to avoid double interpolation.
+
+Final slice verification: 109 scripts load, all 8 stock assets import, all 21 GUT tests pass (1,976 assertions, including 8 scene simulation tests), and the new main scene runs for 600 consecutive ticks without runtime errors. The strict command still fails only at editor import because this session blocks Godot’s debugger TCP listener; that environment limitation was independently confirmed during M0. M1 desktop feel/rendering verification remains pending.
+
+Manual slice check: restart the project, move around the pillars and central wall, approach dummies in the northern half, right-click one to attack, cancel a windup with S or movement, move immediately after a hit, retarget another dummy, try A+click and H, inspect with LMB, test Y/Space/wheel, F1–F4, pause/step, Esc, and reset. Report movement feel and any errors.
+
+Remaining M1: status components, working test ability/cooldowns, stock character/animation integration and hit-frame calibration, fuller tuning/log export, and full milestone playtest. Dummies currently have finite HP and reset after death; infinite-health/DPS configuration is a later training slice. Brush is visual only. No class abilities or enemy AI are present. No GUI/GPU verification is possible in this restricted session; desktop playtesting remains required. M1 is not approved/completed and M2 has not started.

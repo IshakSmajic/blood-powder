@@ -2,7 +2,7 @@
 
 An offline 3D top-down combat arena for Linux and Windows, built with Godot and GDScript.
 
-Current slice: **M0 — setup room**. A grey room, static capsule scale marker, simulation clock, and setup controls. Movement, attacks, navigation, classes, and final art are not implemented yet.
+Current slice: **M1 — capsule movement and basic attacks**. Right-click navigation around obstacles, stationary training dummies, attack timing/cancellation, damage/armor/crits, respawn, camera controls, and prototype debug HUD. Class abilities, stock character animation, and final art are not implemented yet. M0 is approved and preserved in `world/setup_room.tscn` (local tag `m0-approved`).
 
 ## Open and run
 
@@ -20,17 +20,25 @@ Wait for asset import, then press **F5** in the editor. To run the project direc
 
 On Hyprland, if the window misbehaves, add `--display-driver x11` to that command. This is a per-launch option and does not change desktop configuration.
 
-## M0 controls
+## Sandbox controls
 
 | Input | Result |
 | --- | --- |
-| F5 in the game window | Reset clock, speed, pause state, and session overrides |
-| F7 / F8 | Reduce / increase simulation speed by 0.1×, bounded to 0.1×–1× |
-| F9 | Pause / resume simulation |
-| F10 while paused | Advance one simulation tick |
-| Esc | Open / close setup menu |
+| Right-click ground / hold RMB | Move with pathfinding / steer every 6 simulation ticks |
+| Right-click dummy | Chase and repeatedly attack |
+| Left-click | Inspect nearest unit under the ground cursor |
+| A then left-click | Attack-move to the clicked point |
+| S / H | Stop / hold position and attack in range |
+| Y / Space / wheel | Toggle camera lock / center while held / zoom |
+| F1 / F2 / F3 / F4 | Live player stats / range and path overlay / state and tick timers / combat log |
+| F5 in game | Reset units, camera, simulation clock, speed, and combat log; retain live tuning |
+| F7 / F8 | Reduce / increase simulation speed by 0.1× |
+| F9 / F10 | Pause / single tick while paused |
+| Esc | Cancel armed attack-move, or open/close pause menu |
 
-The capsule does not move. QWER and the remaining gameplay/debug bindings are defined for later milestones but have no gameplay behavior yet. Keys 1–4 remain unbound.
+Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. QWER slots are placeholders; keys 1–4 remain unbound. F6 class switching, abilities, and full tuning/export tools arrive in later slices.
+
+The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written to resource files.
 
 ## Verify
 
@@ -40,7 +48,7 @@ From the repository root:
 python tools/verify.py
 ```
 
-The command verifies the pinned engine version, imports the project, explicitly loads every GDScript, runs the GUT suite, and runs the actual main scene for 600 consecutive simulation ticks. It treats engine/script errors as failures even when Godot returns exit code zero and runs all stages before reporting failures. Logs and test output live in ignored `.local/`; existing application settings are not used by verification.
+The command verifies the pinned engine version, imports the project, explicitly loads every GDScript, checks all prepared stock assets, runs the GUT suite, and runs the actual main scene for 600 consecutive simulation ticks. It treats engine/script errors as failures even when Godot returns exit code zero and runs all stages before reporting failures. Logs and test output live in ignored `.local/`; existing application settings are not used by verification.
 
 In a restricted session that prohibits socket creation, the editor import can report debugger TCP listener errors even when assets import and the standalone checks pass. Those errors remain failures in this script; run the same command from your normal terminal to confirm a clean import.
 
@@ -58,4 +66,4 @@ GODOT_BIN=/absolute/path/to/godot python tools/verify.py
 - [Credits](CREDITS.md) — dependency and asset provenance.
 - [Approved visual direction](docs/concepts/visual_direction_v1.png) — concept reference, not a screenshot or game-ready 3D asset.
 
-Eight stock character/animation candidates have been prepared and documented in [the asset audit](docs/asset_audit.md). Matching Linux/Windows x86_64 export templates are installed. No environment packs are integrated yet. M0 remains pending until setup dependencies and Ishak's sign-off are complete. No runtime network service is required.
+Eight stock character/animation candidates have been prepared and documented in [the asset audit](docs/asset_audit.md). Matching Linux/Windows x86_64 export templates are installed. No environment packs are integrated yet. M0 is approved. M1 remains in progress; see `PROGRESS.md` for slice status. No runtime network service is required.

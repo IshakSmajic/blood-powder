@@ -2,7 +2,7 @@
 
 - Read `docs/mvp_development_guide.md`, `ARCHITECTURE.md`, and `PROGRESS.md` before changing gameplay.
 - Maintain `PROGRESS.md` as the ongoing work log: append dated session history, completed work, verification, known limitations, and next steps at every handoff. Keep `ARCHITECTURE.md` aligned with implemented behavior.
-- Follow milestone gates. M0 is setup; do not start M1 until Ishak approves M0.
+- Follow milestone gates. Ishak approved M0; M1 is active. Do not start M2 until Ishak approves M1.
 - Do not edit system, shell, desktop, or other application configuration without Ishak's explicit approval. Project configuration is authorized for this project.
 - Never add AI authorship, co-authorship, or attribution trailers to commits or GitHub submissions. Preserve Ishak's configured Git identity.
 - Use branches for changes. Do not merge or tag a milestone until Ishak approves it.
