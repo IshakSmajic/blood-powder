@@ -1,0 +1,158 @@
+; Project-local settings for Blood & Powder. No system configuration needed.
+config_version=5
+
+[application]
+config/name="Blood & Powder"
+run/main_scene="res://world/setup_room.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+config/use_custom_user_dir=true
+config/custom_user_dir_name="blood-powder"
+
+[autoload]
+SimClock="*res://autoload/sim_clock.gd"
+EventBus="*res://autoload/event_bus.gd"
+DebugConfig="*res://autoload/debug_config.gd"
+InputRouter="*res://autoload/input_router.gd"
+
+[display]
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/stretch/mode="canvas_items"
+window/vsync/vsync_mode=1
+
+[editor_plugins]
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
+[input]
+
+attack_move={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":65)]
+}
+
+stop={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":83)]
+}
+
+hold_position={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":72)]
+}
+
+ability_q={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":81)]
+}
+
+ability_w={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":87)]
+}
+
+ability_e={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":69)]
+}
+
+ability_r={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":82)]
+}
+
+center_camera={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":32)]
+}
+
+toggle_camera_lock={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":89)]
+}
+
+pause_menu={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194305)]
+}
+
+debug_panel={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194332)]
+}
+
+debug_ranges={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194333)]
+}
+
+debug_states={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194334)]
+}
+
+debug_log={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194335)]
+}
+
+debug_reset={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194336)]
+}
+
+debug_class={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194337)]
+}
+
+debug_slower={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194338)]
+}
+
+debug_faster={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194339)]
+}
+
+debug_pause={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194340)]
+}
+
+debug_step={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194341)]
+}
+
+move_attack={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"button_index":2)]
+}
+
+select_inspect={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"button_index":1)]
+}
+
+zoom_in={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"button_index":4)]
+}
+
+zoom_out={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"button_index":5)]
+}
+
+[physics]
+common/physics_ticks_per_second=60
+common/max_physics_steps_per_frame=8
+common/physics_interpolation=true
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+renderer/rendering_method="forward_plus"
+
+[debug]
+file_logging/enable_file_logging=false
