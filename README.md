@@ -58,4 +58,4 @@ GODOT_BIN=/absolute/path/to/godot python tools/verify.py
 - [Credits](CREDITS.md) — dependency and asset provenance.
 - [Approved visual direction](docs/concepts/visual_direction_v1.png) — concept reference, not a screenshot or game-ready 3D asset.
 
-Eight stock character/animation candidates have been prepared and documented in [the asset audit](docs/asset_audit.md). Matching export templates remain pending. No environment packs are integrated yet. M0 remains pending until setup dependencies and Ishak's sign-off are complete. No runtime network service is required.
+Eight stock character/animation candidates have been prepared and documented in [the asset audit](docs/asset_audit.md). Matching Linux/Windows x86_64 export templates are installed. No environment packs are integrated yet. M0 remains pending until setup dependencies and Ishak's sign-off are complete. No runtime network service is required.

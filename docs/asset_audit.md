@@ -41,4 +41,4 @@ Names do not establish visual suitability or calibrated timing. No paid library 
 
 ## Export templates
 
-`Godot_v4.7.2-stable_win64.exe.zip` contains Windows editor executables, not export templates; it was left untouched. Standard `Godot_v4.7.2-stable_export_templates.tpz` is still needed. Template installation uses Godot's data directory and requires no config-file changes.
+`Godot_v4.7.2-stable_win64.exe.zip` contains Windows editor executables, not export templates; it was left untouched. Standard `Godot_v4.7.2-stable_export_templates.tpz` was subsequently supplied. Linux/Windows x86_64 debug/release binaries, console wrappers, ICU data, and the version marker are installed in `~/.local/share/godot/export_templates/4.7.2.stable/`; extracted bytes match the archive. Both Linux binaries report the pinned official version. Other targets remain in the TPZ. Existing config files were not changed.

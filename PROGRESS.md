@@ -12,7 +12,7 @@ M0 is in progress. M1 is not authorized until Ishak approves M0.
 - [x] All 97 GDScripts load; all 9 GUT tests pass; main scene runs for 600 ticks; all 8 prepared stock scenes import successfully.
 - [ ] Strict verification exits successfully outside restricted session (editor debugger socket error here).
 - [x] Ishak confirms the project works after the GUT startup fix ("Works fine").
-- [ ] Matching 4.7.2 export templates installed.
+- [x] Matching 4.7.2 Linux/Windows x86_64 debug/release export templates and console wrappers installed and byte-verified against the supplied TPZ. Both Linux templates report the pinned official version.
 - [x] Four character/animation packs inspected, licenses checked, raw files extracted externally, and candidate assets prepared. See `docs/asset_audit.md` for rig/outfit limitations.
 - [ ] Branch pushed for review; milestone merged/tagged after approval.
 
@@ -22,7 +22,7 @@ Working branch: `setup/m0-foundation`. The setup slice is committed locally usin
 
 M0 follow-up: Ishak reported `[GUT] Could not get version info, response code: 0` while opening the editor. Inspection traced it to GUT's automatic GitHub update request. Patched only its startup call to use bundled/cached version information. Manual update requests remain available; existing system/application configuration and the editor's current `project.godot` serialization were preserved.
 
-Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. Detailed pause/step/resize results and a normal-terminal strict verification log were not supplied. Character packs have since been inspected and prepared; export templates remain pending, so M0 is not yet complete.
+Ishak subsequently confirmed "Works fine" after reopening. This confirms the reported editor issue is resolved and the setup slice works on desktop. Detailed pause/step/resize results and a normal-terminal strict verification log were not supplied. Character packs and export templates have since been prepared; final normal-terminal verification and M0 approval remain pending.
 
 Asset preparation follow-up: all 8 prepared GLBs import into Godot with 65-bone skeletons; UAL1 and UAL2 each expose 43 clips. Godot strips the standard `_Loop` suffix when importing animations; the check recognizes that exact rule. Both libraries contain usable melee/locomotion candidates, but visual playback/retargeting is not yet verified. Repeat packaging produced identical outputs. Actual archive contents differ from several guide assumptions; see `docs/asset_audit.md`. No gameplay or M1 visual integration was started.
 
@@ -55,10 +55,32 @@ Report: whether it launched, any errors, pause/step results, and whether you app
 - Git identity remains Ishak's configured identity; no AI author/co-author trailers are allowed.
 - Source text in the original guide mentions another coding assistant; preserved as received. This does not change responsibilities or add attribution requirements.
 - Guide proposes newest 4.7.x: installed and pinned 4.7.2. Guide text itself remains unchanged.
-- Export templates remain pending; the extra Windows ZIP is an editor, not templates. Stock character/animation candidates are prepared but not instantiated in the test room. Final visuals and exports are not implemented.
+- Linux/Windows x86_64 export templates are installed in `~/.local/share/godot/export_templates/4.7.2.stable/`. Other platform/architecture templates remain in the original TPZ. No Windows executable has been run. Stock character/animation candidates are prepared but not instantiated in the test room. Final visuals and exports are not implemented.
 - Generated concept HUD and arena proportions are illustrative; mechanics/layout must follow the guide.
 
 ## Open decisions
 
 - Keep the concept's human hooded Hunter appearance unless Ishak requests a change; exact stock body/outfit selection remains pending asset inspection and approval in M1.
 - Final code license has not been selected. No license for project-owned code is implied by vendored MIT dependencies.
+
+
+## Work history
+
+This is the project’s ongoing work log. Update it after each work session with completed changes, verification, limitations, and the next task. `ARCHITECTURE.md` describes the current implementation; the development guide defines the intended MVP.
+
+### 2026-11-14 — M0 setup and asset preparation
+
+1. Reviewed Ishak’s MVP development guide and preserved the original DOCX and searchable text in `docs/`.
+2. Generated the visual concept sheet; Ishak approved its direction. Saved it under `docs/concepts/` and retained a copy in Downloads.
+3. Confirmed the GitHub repository was cloned at `~/Projects/blood-powder`.
+4. Installed standalone Godot 4.7.2 under `~/Applications/Godot-4.7.2/`, verified its exact version, and received confirmation that the editor launches.
+5. Created the Godot project, grey test room, static scale marker, input bindings, SimClock, EventBus, DebugConfig, and InputRouter. Added setup pause, frame step, speed controls, reset, and menu.
+6. Vendored GUT 9.7.1 with its license. Added 9 tests, all-script loading, a 600-tick main-scene smoke check, and `tools/verify.py` with isolated verification output.
+7. Fixed GUT’s automatic startup update request after Ishak reported an offline version-check error. Ishak confirmed the project works after reopening.
+8. Extracted the four downloaded Quaternius packs to `~/bp-assets-raw/`, verified CC0 notices, and prepared 8 self-contained GLBs. Added reproducible packaging, asset import checks, licenses, fingerprints, and the asset audit.
+9. Found and documented mismatched bind poses, limited free outfits, body-clipping considerations, and missing explicitly named roar/stun clips. Fixed broken source texture references during packaging; no mesh or texture-pixel edits were made.
+10. Verified 97 scripts load, all 8 asset scenes import, both 43-clip libraries are available, all 9 tests pass (729 assertions), and the main scene runs for 600 consecutive ticks. Strict editor-import verification still reports this session’s blocked debugger-socket errors.
+11. Installed matching Linux/Windows x86_64 export templates, including debug/release binaries and Windows console wrappers. Checked extracted bytes against the TPZ; both Linux binaries report `4.7.2.stable.official.ed1daf0bf`.
+12. Committed work locally on `setup/m0-foundation` using Ishak’s Git identity without AI/co-author trailers. GitHub push was attempted but failed because this session cannot resolve GitHub. The editor’s uncommitted `project.godot` serialization was preserved.
+
+Next: collect normal-terminal verification and Ishak’s M0 sign-off, then begin the M1 movement/basic-attack sandbox. Character appearance/animation integration remains a later M1 slice; no movement, combat, enemy AI, class mechanics, or final art is implemented yet. Environment/VFX/audio sourcing remains later work. Do not merge/tag M0 or begin M1 before the required sign-off.
