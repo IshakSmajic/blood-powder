@@ -8,6 +8,10 @@ var player: CombatUnit
 var units: Array[CombatUnit] = []
 var camera: Camera3D
 var selected: Node3D
+var training_enabled: bool = true
+var training_settings: TrainingSettings = preload("res://data/training/defaults.tres")
+var _training_signature: Dictionary = {}
+var _training_actions: Array[StringName] = []
 var captain_enabled: bool = true
 var captain: CaptainController
 var navigation_ready: bool = false
@@ -38,6 +42,7 @@ func _ready() -> void:
 	player = _add_unit(0, 0, "Powder Captain", Vector3(0, 0, 11), preload("res://data/stats/captain.tres"))
 	for i in range(3):
 		_add_unit(i + 1, 1, "Dummy %d" % (i + 1), Vector3((i - 1) * 3, 0, -8), preload("res://data/stats/dummy.tres"))
+	if training_enabled: _sync_training()
 	if captain_enabled:
 		captain = CaptainController.new()
 		captain.configure(self, player)
@@ -127,6 +132,12 @@ func _add_unit(id: int, team: int, label: String, at: Vector3, data: UnitStats) 
 func simulate_tick(tick: int) -> void:
 	if not navigation_ready:
 		return
+	if training_enabled: _sync_training()
+	for action in _training_actions:
+		if action == &"reset_damage":
+			for target in units: target.reset_damage_readout()
+		elif action == &"restore_player" and player.alive(): player.heal(player.stat(&"max_health"))
+	_training_actions.clear()
 	for kind in _queued_debug_statuses:
 		match kind:
 			&"cleanse": player.cleanse()
@@ -301,6 +312,7 @@ func reset_arena() -> void:
 	_right_ground_held = false
 	attack_move_armed = false
 	_queued_debug_statuses.clear()
+	_training_actions.clear()
 	_hud.show_menu(false)
 	_hud.clear_log()
 	combat_log.clear()
@@ -379,3 +391,32 @@ func _on_combat_event(tick: int, event: StringName, payload: Dictionary) -> void
 	tween.tween_property(number, "position:y", number.position.y + 0.8, 0.7)
 	tween.tween_property(number, "modulate:a", 0.0, 0.7)
 	tween.chain().tween_callback(number.queue_free)
+
+
+func queue_training_action(action: StringName) -> void:
+	_training_actions.append(action)
+
+
+func _sync_training() -> void:
+	var settings := {}
+	for field in [&"dummy_count", &"dummy_armor", &"dummy_health", &"infinite_health", &"elite"]:
+		settings[field] = DebugConfig.resolve(training_settings.resource_path, field, training_settings.get(field))
+	settings.dummy_count = clampi(int(settings.dummy_count), 1, 5)
+	if settings == _training_signature: return
+	_training_signature = settings.duplicate()
+	while units.size() > settings.dummy_count + 1:
+		var removed: CombatUnit = units.pop_back()
+		if selected == removed: selected = player
+		removed.health = 0.0
+		removed.queue_free()
+	while units.size() < settings.dummy_count + 1:
+		var id := units.size()
+		_add_unit(id, 1, "Dummy %d" % id, Vector3.ZERO, preload("res://data/stats/dummy.tres"))
+	for i in range(1, units.size()):
+		var target: CombatUnit = units[i]
+		target.spawn_point = Vector3((i - 1 - (settings.dummy_count - 1) * 0.5) * 3.0, 0, -8)
+		target.stat_adjustments = {&"max_health": maxf(1.0, float(settings.dummy_health)), &"armor": float(settings.dummy_armor)}
+		target.training_infinite = bool(settings.infinite_health)
+		target.counts_as_elite = bool(settings.elite)
+		target.reset_unit()
+	EventBus.publish(&"training_settings_changed", settings)

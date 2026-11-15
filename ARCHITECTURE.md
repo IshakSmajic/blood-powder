@@ -97,3 +97,12 @@ Debug export slice:
 - F5/controller reset and respawn clear all zones and R cooldown. Stun/death interrupts an unfinished cast without refund; completed zones continue until expiry or controller reset, consistent with already launched class effects. R HUD/failure feedback and F1 tuning are available.
 
 Still pending in M2: Broadside user playtest, final combo/manual milestone acceptance, and any remaining training controls. Polished VFX/audio/props remain deferred. No Hunter/M3 work is authorized yet.
+
+
+## M2 training controls
+
+- Main arena enables resource-backed TrainingSettings (`data/training/defaults.tres`): three stationary infinite-HP dummies by default, with F1 count 1–5, armor 0/50/100, finite HP 2000/10000, infinite toggle, and Counts as Elite. Settings use DebugConfig overrides, are exportable, and apply on the next admitted simulation tick. Changing them resets and recenters all targets at three-meter spacing without altering source UnitStats. Per-unit stat adjustments hold HP/armor; MR is unchanged.
+- The existing units array is mutated in place so KegManager and active Broadside zones see count changes. Removed targets are marked dead before deferred freeing and selection falls back to player. New units have unique active ids; old targets are safely invalid for projectiles/orders.
+- Infinite training targets keep their HP while normal damage/status events still fire. Each dummy records resolved incoming damage and first-hit tick; selected-unit UI shows total damage and encounter-average DPS (includes idle time since first hit, minimum one tick). Finite totals include overkill, matching damage log amounts. Reset/respawn and F1 Reset damage / DPS clear counters. F1 Restore player health is queued and heals only living players.
+- F5 retains session settings and resets damage/status state. Reset tuning to file restores resource defaults and selector values, with changes applied next tick. The Captain/M1 combat regression fixtures explicitly disable training defaults to retain finite-target assertions; a dedicated training suite exercises actual infinite defaults and options.
+- F1 offers explicit 2/1/0.5-second keg tiers alongside numeric tuning; materialized keg tiers remain locked. Strafe/chase dummy behavior and enemy keg-attacking toggle remain unimplemented later training/PvE work; no M3 AI/class work was started. `docs/M2_PLAYTEST.md` records the remaining manual gate, including five successful three-keg attempts.

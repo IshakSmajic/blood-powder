@@ -10,6 +10,7 @@ var current_tick: int = 0
 func before_each() -> void:
 	DebugConfig.clear_overrides()
 	arena = Arena.instantiate()
+	arena.training_enabled = false # Combat regressions retain finite-health targets.
 	add_child_autofree(arena)
 	SimClock.state.set_paused(true)
 	for i in range(3): await get_tree().physics_frame

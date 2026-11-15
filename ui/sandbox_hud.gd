@@ -18,6 +18,7 @@ var _w_slot: Control
 var _fail_label: Label
 var _fail_left: float = 0.0
 var _tuning_fields: Array[Dictionary] = []
+var _training_fields: Array[Dictionary] = []
 var _export_status: Label
 const Slot = preload("res://ui/ability_slot.gd")
 
@@ -108,6 +109,19 @@ func _ready() -> void:
 	_export_status.custom_minimum_size.x = 270
 	_export_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	fields.add_child(_export_status)
+	if arena.training_enabled:
+		fields.add_child(_label("TRAINING DUMMIES", 18))
+		_add_training_option(fields, "Count", arena.training_settings, &"dummy_count", [1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"])
+		_add_training_option(fields, "Armor", arena.training_settings, &"dummy_armor", [0.0, 50.0, 100.0], ["0", "50", "100"])
+		_add_training_option(fields, "Health", arena.training_settings, &"dummy_health", [2000.0, 10000.0], ["2000", "10,000"])
+		_add_training_option(fields, "Infinite health", arena.training_settings, &"infinite_health", [false, true], ["Off", "On"])
+		_add_training_option(fields, "Counts as Elite", arena.training_settings, &"elite", [false, true], ["Off", "On"])
+		for action in [&"reset_damage", &"restore_player"]:
+			var button := Button.new()
+			button.text = "Reset damage / DPS" if action == &"reset_damage" else "Restore player health"
+			button.pressed.connect(func() -> void: arena.queue_training_action(action))
+			fields.add_child(button)
+		fields.add_child(_label("Dummy changes reset targets on the next tick.", 12))
 	for property in arena.player.stats.get_property_list():
 		if not property.usage & PROPERTY_USAGE_EDITOR or property.type != TYPE_FLOAT:
 			continue
@@ -139,6 +153,7 @@ func _ready() -> void:
 		fields.add_child(_label("RATION", 18))
 		_add_ability_fields(fields, arena.captain.w, ["cooldown", "cast_time", "heal_flat", "heal_missing_fraction"])
 		fields.add_child(_label("POWDER KEG", 18))
+		_add_training_option(fields, "Decay tier", arena.captain.e.data, &"decay_interval", [2.0, 1.0, 0.5], ["2.0 seconds", "1.0 second", "0.5 seconds"])
 		_add_ability_fields(fields, arena.captain.e, ["cooldown", "cast_time", "radius", "slow_fraction", "slow_duration", "range", "charges", "recharge", "decay_interval", "lifetime", "connection_distance", "chain_delay", "minimum_spacing", "armor_penetration", "crit_bonus", "elite_bonus"])
 	fields.add_child(_label("APPLY TO PLAYER", 18))
 	var status_grid := GridContainer.new()
@@ -196,6 +211,8 @@ func _process(delta: float) -> void:
 		_status.text += "\nKeg charges %d / %d" % [arena.captain.charges.available, arena.captain.charges.maximum]
 	var unit: Node3D = arena.selected if is_instance_valid(arena.selected) else null
 	_selected.text = "%s · HP %d · armor %.0f · MR %.0f" % [unit.unit_name, ceili(unit.health), unit.stat(&"armor"), unit.stat(&"magic_resist")] if is_instance_valid(unit) else "LMB inspect a unit"
+	if is_instance_valid(unit) and unit is CombatUnit and unit.team != 0:
+		_selected.text += " · %s · Damage %.1f · DPS %.1f" % ["Infinite HP" if unit.training_infinite else "Finite HP", unit.training_damage, unit.training_dps(SimClock.state.tick)]
 	if arena.show_states:
 		_selected.text += "\n%s · ready in %d ticks · hit tick %d" % [player.state, maxi(0, player.attack.ready_tick - SimClock.state.tick), player.attack.hit_tick]
 	if is_instance_valid(unit) and unit is CombatUnit:
@@ -222,6 +239,8 @@ func clear_log() -> void:
 
 
 func _sync_tuning_fields() -> void:
+	for binding in _training_fields:
+		binding.control.select(binding.values.find(binding.resource.get(binding.field)))
 	for binding in _tuning_fields:
 		binding.control.set_value_no_signal(binding.resource.get(binding.field))
 
@@ -297,3 +316,17 @@ func _add_ability_fields(container: VBoxContainer, runner: AbilityRunner, allowe
 		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(runner.data.resource_path, field, value))
 		_tuning_fields.append({"control": spinner, "resource": runner.data, "field": field})
 		row.add_child(spinner)
+
+
+func _add_training_option(container: VBoxContainer, title: String, data: Resource, field: StringName, values: Array, labels: Array) -> void:
+	var row := HBoxContainer.new()
+	container.add_child(row)
+	var label := _label(title, 14)
+	label.custom_minimum_size.x = 170
+	row.add_child(label)
+	var option := OptionButton.new()
+	for text in labels: option.add_item(text)
+	option.select(values.find(DebugConfig.resolve(data.resource_path, field, data.get(field))))
+	option.item_selected.connect(func(index: int) -> void: DebugConfig.set_override(data.resource_path, field, values[index]))
+	row.add_child(option)
+	_training_fields.append({"control": option, "resource": data, "field": field, "values": values})

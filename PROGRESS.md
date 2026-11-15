@@ -2,7 +2,7 @@
 
 ## Active milestone: M2 — Powder Captain
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. Q/E functionality is user-playtested with polish deferred; W activation is user-confirmed after its keyboard fix. Searing Edge is implemented and user-playtested successfully; R Broadside is now implemented; its playtest and final M2 acceptance checks remain. M2 is not complete.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. Q/E functionality is user-playtested with polish deferred; W activation is user-confirmed after its keyboard fix. Searing Edge is implemented and user-playtested successfully; Broadside density feedback is accepted; training controls are implemented and verified (88 tests / 2,624 assertions). Final M2 manual acceptance checks remain. M2 is not complete.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -271,3 +271,16 @@ Ishak requested “much much more” falling models. Increased visuals from one 
 Added a regression comparing dense/sparse casts with the same seed, confirming equal simulation RNG state, wave anchors and relative schedules; checks default count and circle bounds. Manual check: restart, cast R near dummies, and inspect the denser staggered rain; use F1 cannonballs_per_wave for preference tuning. Rendering smoothness still needs desktop playtesting.
 
 Density verification: all 83 tests passed (2,572 assertions), 134 scripts loaded, 8 stock scenes imported, and the 600-tick runtime check passed. Full `python tools/verify.py` still exits failed only for the known editor-import sandbox socket restriction. `git diff --check` passed.
+
+2026-11-15: Ishak confirmed the denser Broadside visuals are “Much better” and authorized continued work, asking first for the documented map-art schedule and sourcing process. Record density feedback as accepted; this is not explicit full M2 milestone approval. Environment dressing is scheduled for M5, using the guide’s Quaternius dungeon/nature packs and Kenney Pirate Kit; verify actual archives/licenses before integration.
+
+
+### 2026-11-15 — M2 training targets and final playtest aid
+
+Added resource-backed F1 dummy controls: count 1–5, armor presets, 2000/10000 finite HP, infinite HP (default), Elite flag, selected-target damage/DPS, Reset damage / DPS, Restore player health, and explicit keg decay-tier selection. Settings apply on the next simulation tick; target settings reset/recenter dummies and preserve source resources. F5 preserves session settings and clears target damage; Reset tuning restores defaults. Damage/DPS use resolved amounts and simulation ticks, include idle time from first hit, and match combat-log overkill semantics for finite targets.
+
+Added dedicated default-training tests for infinite lethal hits, burn retention, next-tick options, count/shared-target-array/selection safety, source-resource preservation, finite death/reset/default restoration, Elite keg bonus, player healing, and locked keg tiers. Existing M1/Captain combat fixtures explicitly opt out of training defaults so their finite-health assertions remain meaningful. Added docs/M2_PLAYTEST.md with final combo and training checks.
+
+Stationary targets are implemented; strafe/chase behavior and enemy keg-attacking toggle remain later training/PvE work. Q/E polish is deferred and final map art stays M5. M2 manual acceptance still requires the guide's five consecutive three-keg chains on three dummies, plus explicit milestone approval before M3.
+
+Training slice verification: all 88 tests passed (2,624 assertions), 136 scripts loaded, all 8 stock scenes imported, and the 600-tick main-scene smoke check passed. Full `python tools/verify.py` exits failed only at editor import with the known sandbox debugger TCP-socket errors. `git diff --check` passed. No desktop UI/playtest approval is claimed.

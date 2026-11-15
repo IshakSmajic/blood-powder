@@ -91,3 +91,12 @@ Broadside verification: `python tools/verify.py` loaded all 134 scripts, importe
 Ishak requested many more falling models. Broadside now defaults to 16 cannonballs per wave (192 per cast), spread across its area with ±5-tick staggering. F1 exposes cannonballs_per_wave (1–32). Each existing seeded wave anchor initializes a separate cosmetic RNG; visual density does not alter the simulation RNG, damage, slow, or wave schedule. Shared low-poly resources and max 2048 visuals bound the prototype. Restart and playtest density/performance; M2 approval remains pending.
 
 Density verification: all 83 tests passed (2,572 assertions), 134 scripts loaded, 8 stock scenes imported, and the 600-tick runtime check passed. Full `python tools/verify.py` still exits failed only for the known editor-import sandbox socket restriction. `git diff --check` passed.
+
+2026-11-15: Ishak confirmed the denser Broadside visuals are “Much better” and authorized continued work, asking first for the documented map-art schedule and sourcing process. Record density feedback as accepted; this is not explicit full M2 milestone approval. Environment dressing is scheduled for M5, using the guide’s Quaternius dungeon/nature packs and Kenney Pirate Kit; verify actual archives/licenses before integration.
+
+
+## Training target controls checkpoint
+
+F1 now supports dummy count 1–5, armor 0/50/100, health 2000/10000, infinite HP (default On), Counts as Elite, Reset damage / DPS, Restore player health, and explicit keg decay tiers. LMB a dummy for total damage/average DPS since first hit (idle time included). Resource-backed settings export through DebugConfig, apply next tick, reset/recenter targets when changed, survive F5, and restore with Reset tuning. Counts mutate the shared units array so active class effects see updates. Existing combat regressions opt out of training defaults; dedicated tests use real defaults. Read docs/M2_PLAYTEST.md for final manual checks and five consecutive three-keg attempts. Stationary dummies only; strafe/chase/enemy keg-attacking toggle remain later training/PvE work. M3 is still gated on explicit M2 approval.
+
+Training slice verification: all 88 tests passed (2,624 assertions), 136 scripts loaded, all 8 stock scenes imported, and the 600-tick main-scene smoke check passed. Full `python tools/verify.py` exits failed only at editor import with the known sandbox debugger TCP-socket errors. `git diff --check` passed. No desktop UI/playtest approval is claimed.

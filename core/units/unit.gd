@@ -7,6 +7,10 @@ var unit_name: String = "Unit"
 var team: int = 0
 var unit_id: int = 0
 var health: float = 0.0
+var stat_adjustments: Dictionary = {}
+var training_infinite: bool = false
+var training_damage: float = 0.0
+var training_first_hit: int = -1
 var state: String = "Idle"
 var spawn_point: Vector3
 var attack := AttackCycle.new()
@@ -34,7 +38,7 @@ var _resume_attack_move: bool = false
 
 
 func stat(field: StringName) -> float:
-	return float(DebugConfig.resolve(stats.resource_path, field, stats.get(field)))
+	return float(stat_adjustments.get(field, DebugConfig.resolve(stats.resource_path, field, stats.get(field))))
 
 
 func alive() -> bool:
@@ -84,6 +88,7 @@ func _ready() -> void:
 func reset_unit() -> void:
 	global_position = spawn_point
 	health = stat(&"max_health")
+	reset_damage_readout()
 	state = "Idle"
 	attack.reset()
 	ability.reset()
@@ -253,7 +258,10 @@ func _hit(tick: int) -> void:
 func receive_damage(amount: float, tick: int, source: int, crit: bool = false, damage_type: StringName = &"physical") -> void:
 	if not alive():
 		return
-	health = maxf(0.0, health - maxf(0.0, amount))
+	if team != 0:
+		training_damage += maxf(0.0, amount)
+		if training_first_hit < 0: training_first_hit = tick
+	if not training_infinite: health = maxf(0.0, health - maxf(0.0, amount))
 	_flash_frames = 3
 	EventBus.publish(&"damage_dealt", {"source": source, "target": unit_id, "amount": amount, "crit": crit, "position": global_position, "type": damage_type})
 	if not alive():
@@ -288,6 +296,16 @@ func apply_status(kind: StringName, tick: int, duration: int, magnitude: float =
 			EventBus.publish(&"ability_interrupted", {"source": unit_id})
 		movement.stop()
 		_last_repath = -999
+
+
+func reset_damage_readout() -> void:
+	training_damage = 0.0
+	training_first_hit = -1
+
+
+func training_dps(tick: int) -> float:
+	if training_first_hit < 0: return 0.0
+	return training_damage * 60.0 / maxi(1, tick - training_first_hit + 1)
 
 
 func heal(amount: float) -> void:
@@ -358,7 +376,7 @@ func _complete_pulse(tick: int, units: Array[CombatUnit]) -> void:
 
 
 func _process(_delta: float) -> void:
-	_label.text = "%s\n%d / %d" % [unit_name, ceili(health), ceili(stat(&"max_health"))]
+	_label.text = "%s\n%s" % [unit_name, "Infinite HP" if training_infinite else "%d / %d" % [ceili(health), ceili(stat(&"max_health"))]]
 	_health_fill.scale.x = maxf(0.001, health / maxf(1.0, stat(&"max_health")))
 	avatar.set_flash(_flash_frames > 0)
 	_flash_frames = maxi(0, _flash_frames - 1)
