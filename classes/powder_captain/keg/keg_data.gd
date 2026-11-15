@@ -11,3 +11,6 @@ extends AbilityData
 @export var armor_penetration: float = 0.4
 @export var crit_bonus: float = 0.05
 @export var elite_bonus: float = 135.0
+
+@export var link_width: float = 0.16
+@export var link_border: float = 0.06

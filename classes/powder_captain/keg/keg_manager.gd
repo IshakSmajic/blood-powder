@@ -24,6 +24,7 @@ func _ready() -> void:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.vertex_color_use_as_albedo = true
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_links.material_override = material
 	add_child(_links)
 
@@ -166,13 +167,14 @@ func _process(_delta: float) -> void:
 		for neighbor in graph.neighbors(id):
 			if neighbor <= id: continue
 			if not drawing:
-				mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+				mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 				drawing = true
 			var a: KegState = graph.nodes[id]
 			var b: KegState = graph.nodes[neighbor]
-			mesh.surface_set_color(Color("e6b15f") if a.scheduled_tick >= 0 or b.scheduled_tick >= 0 else Color("473528"))
-			mesh.surface_add_vertex(a.point + Vector3.UP * 0.05)
-			mesh.surface_add_vertex(b.point + Vector3.UP * 0.05)
+			var width := maxf(0.02, value(&"link_width"))
+			_draw_link_strip(mesh, a.point, b.point, width + maxf(0.0, value(&"link_border")) * 2.0, Color("30251c"), 0.065)
+			var color := Color("fff2ba") if a.scheduled_tick >= 0 or b.scheduled_tick >= 0 else Color("efb75c")
+			_draw_link_strip(mesh, a.point, b.point, width, color, 0.075)
 	if drawing: mesh.surface_end()
 
 
@@ -186,3 +188,15 @@ func enemy_hit(id: int) -> void:
 		remove(id) # Enemy destruction never triggers an owned explosion or passive reset.
 	else:
 		EventBus.publish(&"keg_hit", {"unit": 1000 + id, "value": state.health})
+
+
+func _draw_link_strip(mesh: ImmediateMesh, from: Vector3, to: Vector3, width: float, color: Color, height: float) -> void:
+	var direction := to - from
+	direction.y = 0.0
+	if direction.length_squared() < 0.000001: return
+	var side := Vector3(-direction.z, 0.0, direction.x).normalized() * width * 0.5
+	var a := from + Vector3.UP * height
+	var b := to + Vector3.UP * height
+	mesh.surface_set_color(color)
+	for point in [a - side, a + side, b + side, a - side, b + side, b - side]:
+		mesh.surface_add_vertex(point)

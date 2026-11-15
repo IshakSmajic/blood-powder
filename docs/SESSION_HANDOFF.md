@@ -44,3 +44,7 @@ Final run details are appended to PROGRESS.md and below. `python tools/verify.py
 User inspection of final M2 build, including five consecutive three-keg chains on three dummies and Ration during stun. Address reported defects. Only after explicit M2 approval may M2 merge/tag or M3 Hunter work begin.
 
 Final verification: 93/93 tests passed (2,652 assertions), all 136 scripts loaded, 8 stock scenes imported, and main scene ran 600 ticks. `python tools/verify.py` fails only the known restricted-session editor debugger TCP-socket errors. `git diff --check` is clean.
+
+M2 inspection feedback: barrel links were too faint. Now amber ground ribbons with dark borders (link_width=0.16 m, link_border=0.06 m per side, F1 tunable), bright pale gold while scheduled. Visual-only change; graph/combat behavior unchanged. Restart for desktop inspection; M2 still awaiting approval.
+
+Link-visibility verification: 93 tests / 2,652 assertions passed, 136 scripts loaded, 8 asset scenes imported, and 600 runtime ticks passed. Strict verification retains only the known sandbox editor-import socket error. `git diff --check` passed; desktop visibility awaits inspection.

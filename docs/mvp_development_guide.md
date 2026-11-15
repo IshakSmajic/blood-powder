@@ -3545,3 +3545,8 @@ Ishak accepts the current animation appearance and explicitly defers further man
 # User-directed amendment — 15 November 2026: Ration during stun
 
 Ishak approved a Ration-specific exception to the shared stun rule: W may begin its 15-tick cast while stunned and completes through existing or newly applied stun, then heals and cleanses slow/root/stun. Other abilities remain blocked/interrupted by stun. Death still cancels Ration. Cooldown and cast buffering rules remain unchanged. This resolves the conflict between section 7's general cast prohibition and section 8's Ration stun cleanse. The original DOCX remains an unmodified historical copy.
+
+
+# User-directed amendment — 15 November 2026: keg-link visibility
+
+During M2 inspection, Ishak requested more visible barrel links. Replace the faint dark single-pixel trail with a thicker amber ground ribbon and dark border, brightening to pale gold while scheduled. Link width/border remain tunable; connection geometry and combat timing are unchanged. This refines section 11’s visual link specification.

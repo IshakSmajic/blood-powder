@@ -310,3 +310,10 @@ All Captain implementation and training controls are ready for milestone inspect
 Final `python tools/verify.py`: 136 scripts load, 8 stock scenes import, 93/93 tests pass with 2,652 assertions, and main scene runs 600 consecutive ticks. Strict command exits failed only for the previously documented editor-import debugger TCP-socket restriction. `git diff --check` passed. No system/application configuration was changed; pre-existing project.godot serialization remains unstaged. Work remains local with no milestone merge/tag.
 
 Remaining gate is user inspection/approval, including five consecutive three-keg chains on three dummies. Desktop feel and manual reliability cannot be claimed by headless checks. Preserve deferred Q/E/animation polish and M5 environment/VFX/audio schedule. No Hunter/M3 work was started.
+
+
+### 2026-11-15 — barrel-link visibility feedback
+
+Ishak requested more visible links during M2 inspection. Replaced the thin dark line with an amber ground ribbon and dark border; scheduled links brighten to pale gold. Default core width is 0.16 m plus 0.06 m border each side, tunable under F1 Powder Keg. Double-sided unshaded triangle strips provide stable thickness instead of hardware-dependent line widths. No graph, collision, or combat logic changed. Manual check: restart, place linked kegs and inspect the brighter/thicker trail; F1 link_width/link_border adjust thickness. M2 approval remains pending.
+
+Link-visibility verification: 93 tests / 2,652 assertions passed, 136 scripts loaded, 8 asset scenes imported, and 600 runtime ticks passed. Strict verification retains only the known sandbox editor-import socket error. `git diff --check` passed; desktop visibility awaits inspection.
