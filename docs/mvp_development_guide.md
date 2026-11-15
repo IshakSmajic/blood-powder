@@ -3550,3 +3550,8 @@ Ishak approved a Ration-specific exception to the shared stun rule: W may begin 
 # User-directed amendment — 15 November 2026: keg-link visibility
 
 During M2 inspection, Ishak requested more visible barrel links. Replace the faint dark single-pixel trail with a thicker amber ground ribbon and dark border, brightening to pale gold while scheduled. Link width/border remain tunable; connection geometry and combat timing are unchanged. This refines section 11’s visual link specification.
+
+
+# User-directed refinement — 15 November 2026: function-key access
+
+During M3 inspection, Ishak reported function keys unavailable in the game. Provide a persistent clickable debug toolbar and Tab alternative for Tools, while preserving the existing F-key actions. The toolbar covers overlays/log/reset/speed/pause/step. This adds access paths without changing mechanics or desktop/editor configuration.

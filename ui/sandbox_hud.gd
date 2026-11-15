@@ -38,6 +38,17 @@ func _ready() -> void:
 	header.add_child(_status)
 	_selected = _label("", 16)
 	header.add_child(_selected)
+	var toolbar := HFlowContainer.new()
+	toolbar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	toolbar.custom_minimum_size.x = 820
+	header.add_child(toolbar)
+	for item in [["Tools (Tab / F1)", &"debug_panel"], ["Ranges", &"debug_ranges"], ["States", &"debug_states"], ["Log", &"debug_log"], ["Reset", &"debug_reset"], ["Slower", &"debug_slower"], ["Faster", &"debug_faster"], ["Pause / Resume", &"debug_pause"], ["Step", &"debug_step"]]:
+		var button := Button.new()
+		button.text = item[0]
+		button.name = String(item[1])
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(func() -> void: InputRouter.activate_debug(item[1]))
+		toolbar.add_child(button)
 	var footer := VBoxContainer.new()
 	footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	footer.offset_top = -220
@@ -82,10 +93,10 @@ func _ready() -> void:
 		slots.add_child(slot)
 	footer.add_child(_label("Q: Rend · W: Howl · E: Bola · R: Stalk · brush + RMB enemy: leap · 4 Ferocity: empowered ability" if arena.hunter != null else "Q: Flintlock at cursor target · W: heal + cleanse · E: place keg · R: Broadside at cursor · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
 	footer.add_child(_label("RMB move / attack · hold RMB ground to steer · A then LMB attack-move · S stop · H hold", 17))
-	footer.add_child(_label("Y camera lock · Space center · wheel zoom · F1 tuning · F2 ranges · F3 state · F4 log", 17))
+	footer.add_child(_label("Y camera lock · Space center · wheel zoom · Tab / F1 tuning · F2 ranges · F3 state · F4 log", 17))
 	footer.add_child(_label("F5 reset · F7/F8 speed · F9 pause · F10 step · Esc menu", 17))
 	_log = _label("", 14)
-	_log.position = Vector2(24, 160)
+	_log.position = Vector2(24, 220)
 	_log.visible = false
 	root.add_child(_log)
 	_debug = PanelContainer.new()

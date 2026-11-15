@@ -1,3 +1,5 @@
+**Function-key alternative:** click **Tools** (or press **Tab**) for every F1 instruction below. The toolbar also provides Ranges, States, Log, Reset, Slower/Faster, Pause/Resume, and Step without function keys.
+
 # M2 final playtest
 
 Restart the running game after updating. F1 contains dummy settings, keg tuning, and player status controls. Dummy defaults are three stationary targets with infinite HP and 50 armor. LMB a dummy for damage/DPS; F1 → Reset damage / DPS clears those measurements. Settings persist through F5 for this session; Reset tuning to file restores defaults. Changing dummy settings resets/repositions all dummies on the next simulation tick. Paused settings wait for F10/resume.

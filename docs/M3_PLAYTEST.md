@@ -1,3 +1,5 @@
+**Function-key alternative:** click **Tools** (or press **Tab**) for every F1 instruction below. The toolbar also provides Ranges, States, Log, Reset, Slower/Faster, Pause/Resume, and Step without function keys.
+
 # M3 — Apex Hunter inspection
 
 Restart the game. Open F1 and select **Apex Hunter** at the top, then close F1. Switching class resets the player and clears old class effects; Captain remains available in the same selector. F5 resets the current class. The Hunter uses a provisional green hooded human outfit from the existing stock assets; Captain retains the accepted red appearance.

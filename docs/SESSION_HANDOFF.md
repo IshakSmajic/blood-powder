@@ -8,7 +8,7 @@ Read AGENTS.md, PROGRESS.md, ARCHITECTURE.md, and the relevant guide section bef
 - M2 was approved after the barrel-link visibility fix (“Great, you may proceed”). Local `m2-approved` tags accepted code `cd07c59`. No individual five-chain playtest result was supplied; do not fabricate it.
 - M3 Hunter implementation is ready for inspection after final verification. User approval is still required before M4. No M4 enemies/challenge or M5 environment work was started.
 - User wants autonomous milestone completion and milestone-level handoffs. Avoid per-feature reports; raise actual blockers/design decisions when needed.
-- Game still starts as Captain. **F1 → Apex Hunter** switches on the next simulation tick. F5 preserves class. Switching resets player and clears prior class effects, while preserving simulation tick sequence and training settings.
+- Game still starts as Captain. **Tools / Tab → Apex Hunter** switches on the next simulation tick. F5 preserves class. Switching resets player and clears prior class effects, while preserving simulation tick sequence and training settings.
 - Read `docs/M3_PLAYTEST.md` and `docs/M3_ACCEPTANCE.md` for the inspection/gate mapping.
 
 ## Hunter implementation
@@ -45,3 +45,7 @@ Final verified totals are in PROGRESS.md and appended below. tools/verify.py now
 User inspects M3: F1 Hunter, brush leap → Bola midair → Rend reset → empowered ability; inspect root/stun/walls, grey health, Stalk mark/camouflage, class switching/F5, and accepted Captain regression. Address defects and wait for explicit M3 approval before M4.
 
 Final verification: full suite 113/113 tests (2,758 assertions), all 143 scripts, 8 stock scenes, and Captain/Hunter 600-tick smoke checks passed. Strict editor import fails only the known sandbox TCP-listener check. Focused Hunter follow-up passed 18/18 tests (96 assertions), including the guide’s 30 armor stat. Whitespace checks are clean. No verification process remains running.
+
+Function-key feedback: user cannot activate F keys in-game; exact OS/hardware cause unconfirmed. Added persistent clickable debug toolbar and Tab to toggle Tools, and moved reserved debug-key dispatch before GUI focus can swallow it. Gameplay still respects GUI focus. Use Tools/Tab to choose Hunter, plus toolbar for all other debug functions. No system/editor/input-map configuration was changed. M3 approval remains pending.
+
+Debug-control verification: all 117 tests passed (2,779 assertions), all 144 scripts loaded, 8 stock asset scenes imported, and Captain/Hunter each ran 600 ticks. Focused debug-input checks passed 4/4 tests (20 assertions). Full verification retains only the known sandbox editor-import TCP-listener error. `git diff --check` passed. Exact host F-key interception remains unconfirmed; Tools/Tab/mouse alternatives are ready for desktop inspection.

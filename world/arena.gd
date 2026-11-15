@@ -214,6 +214,8 @@ func _on_action(action: StringName) -> void:
 		&"toggle_camera_lock", &"zoom_in", &"zoom_out":
 			camera.handle_action(action)
 		&"debug_panel": _hud.toggle_debug()
+		&"debug_class":
+			if captain != null or hunter != null: queue_class("Hunter" if hunter == null else "Captain")
 		&"debug_ranges": show_ranges = not show_ranges
 		&"debug_states": show_states = not show_states
 		&"debug_log": _hud.toggle_log()

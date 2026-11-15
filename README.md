@@ -2,7 +2,7 @@
 
 An offline 3D top-down combat arena for Linux and Windows, built with Godot and GDScript.
 
-Current milestone: **M3 — Apex Hunter**, ready for inspection after verification. M2 Powder Captain is accepted (`m2-approved`); M0/M1 tags remain available. All Captain abilities and training controls remain usable. Select **Apex Hunter in F1** to inspect brush leaps, Ferocity, Rend, Howl, Bola, and Stalk. See [M3 playtest](docs/M3_PLAYTEST.md) and [progress](PROGRESS.md).
+Current milestone: **M3 — Apex Hunter**, ready for inspection after verification. M2 Powder Captain is accepted (`m2-approved`); M0/M1 tags remain available. All Captain abilities and training controls remain usable. Click **Tools** (or press **Tab**) and select **Apex Hunter** to inspect brush leaps, Ferocity, Rend, Howl, Bola, and Stalk. See [M3 playtest](docs/M3_PLAYTEST.md) and [progress](PROGRESS.md).
 
 ## Open and run
 
@@ -34,13 +34,15 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | E | Captain: ground-targeted keg / Hunter: aimed Bola (instant mid-leap) |
 | R | Captain: Broadside at ground cursor / Hunter: Stalk speed/camouflage/mark |
 | Y / Space / wheel | Toggle camera lock / center while held / zoom |
-| F1 / F2 / F3 / F4 | Live player stats / range and path overlay / state and tick timers / combat log |
+| F6 / Tools class selector | Switch between Captain and Hunter on the next tick |
+| Tab / F1 / Tools button | Open or close class selection and tuning |
+| F2 / F3 / F4 or toolbar buttons | Ranges / state and tick timers / combat log |
 | F5 in game | Reset units, camera, simulation clock, speed, and combat log; retain live tuning |
 | F7 / F8 | Reduce / increase simulation speed by 0.1× |
 | F9 / F10 | Pause / single tick while paused |
 | Esc | Cancel armed attack-move, or open/close pause menu |
 
-Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are brush zones: Hunter can leap from them or during Stalk camouflage, with a brief linger after exiting. F1 provides the class selector and configurable dummies. All passive/QWER mechanics are active for both classes. Keys 1–4 remain unbound; replay tooling is later work.
+Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are brush zones: Hunter can leap from them or during Stalk camouflage, with a brief linger after exiting. Tools / Tab provides the class selector and configurable dummies. All passive/QWER mechanics are active for both classes. Keys 1–4 remain unbound; replay tooling is later work.
 
 The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written back to source resource files. Explicit export can save a separate snapshot. F1 includes an **Open Animation Lab** button and exposes class ability values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; Captain Ration and empowered Hunter Howl can cleanse stun. F5 clears all statuses and cooldowns.
 
@@ -100,3 +102,8 @@ Files appear in `~/Projects/blood-powder/debug_exports/` (or the same folder ins
 Kegs expire after 25 s without exploding. They cannot be placed in walls or within 0.8 m of another keg. Pending ghosts are not attackable until materialized. Stun interrupts placement; the committed charge/cooldown remains spent. Q is homing and passes walls; a dead/removed target causes the shot to fizzle. The current barrels and explosion rings are procedural prototypes; full prop/VFX/audio polish comes later.
 
 The M1 Training Pulse resource and fixture remain only for regression testing. The normal arena starts as Captain; F1 can switch to Hunter and back. Captain movement/attack timing and the accepted red outfit remain preserved.
+
+
+## If function keys do not reach the game
+
+Use the visible toolbar: **Tools**, Ranges, States, Log, Reset, Slower/Faster, Pause/Resume, and Step. **Tab** also toggles Tools. Reserved debug keys are handled before GUI focus can consume them; movement/abilities still respect GUI editing. Keyboard Fn/media mode or shortcuts outside the game may intercept function keys, which the game cannot override. No desktop or keyboard configuration is changed.
