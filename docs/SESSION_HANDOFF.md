@@ -10,6 +10,8 @@ The project repository contains the used assets and vendored GUT. On the PC, clo
 
 On 15 November Ishak explicitly requested pushing everything to GitHub, superseding the earlier no-retry instruction for this synchronization. The existing editor serialization of `project.godot` is included in the migration checkpoint, separately from the M4 implementation commit.
 
+GitHub synchronization attempt failed on DNS (`Could not resolve host: github.com`); no successful remote synchronization is claimed. All changes are locally committed. A transfer bundle is available at `/home/aurelius/Downloads/blood-powder-migration.bundle`, containing all local branches and tags. It can be cloned on the PC with `git clone blood-powder-migration.bundle blood-powder`, then `git switch feature/m4-pve`; replace the bundle origin with `https://github.com/IshakSmajic/blood-powder.git` before later pushes. To upload from this machine once DNS works: `git push origin --all` and `git push origin --tags`.
+
 ## Resume checkpoint
 
 - Project: `/home/aurelius/Projects/blood-powder`.
