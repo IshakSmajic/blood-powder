@@ -1,4 +1,4 @@
-# Session handoff — 14 November 2026
+# Session handoff — 15 November 2026
 
 Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide section before continuing. This file is a concise restart aid; the dated work log is in PROGRESS.md.
 
@@ -7,7 +7,8 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 - Workspace: `/home/aurelius/Projects/blood-powder`.
 - Branch: `feature/m2-captain-kegs`, based on local tag `m1-approved`.
 - M0 and M1 accepted. User explicitly deferred finer animation calibration; keep current markers and do not invent calibrated values.
-- M2 first slice is being implemented: Q Flintlock + E keg placement, decay, charges, graph, and chains. **M2 is not complete.** Searing Edge, W Ration, and R Broadside are later M2 work.
+- On November 15, Ishak confirmed Q/E functionality after playtesting and explicitly deferred polish. No specific defects were reported; this is not full M2 approval.
+- M2 first slice is being implemented: Q Flintlock + E keg placement, decay, charges, graph, and chains. **M2 is not complete.** W Ration is now implemented as a separate slice. Searing Edge and R Broadside remain later M2 work.
 - User wants local progress; GitHub pushes have never succeeded because this session cannot resolve GitHub. Do not repeatedly interrupt work for pushes.
 
 ## Implemented Q/E slice (code checkpoint on current branch)
@@ -23,7 +24,7 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 
 ## Final verification
 
-- **68/68 tests passed**, **2,231 assertions**; all **132 scripts** load; all **8 stock asset scenes** import; the actual main scene runs **600 consecutive ticks** without runtime errors.
+- **72/72 tests passed**, **2,256 assertions**; all **132 scripts** load; all **8 stock asset scenes** import; the actual main scene runs **600 consecutive ticks** without runtime errors.
 - Includes actual melee keg detonation, a Q target removed in flight, empty-charge failure, Q facing its target, two/three-keg propagation, pending-keg one-part combo at ticks 166/186, snapshot damage, serial recharge, decay/lifetime boundaries, reset/stun cleanup, and the retained M1 regression fixture.
 - `python tools/verify.py` still exits failed only because editor import attempts a debugger TCP listener blocked by this restricted session. Do not suppress unknown errors or claim strict success here. The user previously ran checks in a normal terminal and verified this environment distinction.
 - Logs: `.local/gut-suite.log`, `.local/600-tick-main-scene-smoke-test.log`, `.local/all-script-parse.log`, `.local/stock-asset-imports.log`. No test process is left running.
@@ -41,9 +42,9 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 ## Next steps
 
 1. The tested Q/E implementation and documentation are committed on `feature/m2-captain-kegs`; inspect `git log -1` for the checkpoint. Only pre-existing editor serialization in `project.godot` should remain unstaged.
-2. User playtest: restart Godot/F5, E over clear ground, wait for one pip, place a linked keg, Q/RMB detonate. Use F2 for radii and F4 for the tick log. Test two/three-keg chains and buffered Q→E; F5 resets all charges/kegs/projectiles.
-3. Address any reported gameplay/feel defects. Preserve accepted movement/attack timings and character appearance.
-4. Continue later M2 slices with Searing Edge passive/reset, W Ration/cleanse, and R Broadside. M2 is incomplete; do not start Hunter/M3 before M2 approval.
+2. Q/E has been user-playtested: functionality confirmed, polish deferred. Detailed individual scenario results were not supplied. Revisit polish later when specific feedback is available.
+3. Preserve accepted movement/attack timings and character appearance while continuing the remaining M2 abilities.
+4. Playtest W Ration: F1 Burn to lose HP, W to heal; Root/Slow then W to cleanse; burn remains. Existing global stun rules block/interrupt W (the guide conflict is recorded in PROGRESS.md). Continue later M2 slices with Searing Edge passive/reset and R Broadside. M2 is incomplete; do not start Hunter/M3 before M2 approval.
 5. Keep all progress local as requested. No successful push has occurred; no AI co-author/authorship trailers are permitted.
 
 ## Persistent user constraints
@@ -52,3 +53,9 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 - Preserve the accepted movement/attack feel and red stock character appearance.
 - Keep PROGRESS.md updated each session/handoff.
 - Never add AI authorship/co-authorship to commits or GitHub submissions.
+
+## November 15 Ration checkpoint
+
+W Ration is implemented: 15-tick cast, 1080-tick cooldown, 100 + 13% missing HP healing on completion (capped), shared cleanse, W HUD/tuning, green healing feedback. Root/slow are removed and burn retained. The guide's global stun prohibition is preserved; a W-specific exception needs approval before implementation. New simulation coverage checks completion boundaries, healing/cap, cooldown failure, burn retention, stun interruption, movement resumption, death, and reset. No changes to Q/E timing or accepted visuals.
+
+Ration verification: 132 scripts, 8 stock scenes, 72 tests / 2,256 assertions, and 600 runtime ticks passed. Strict editor import still fails only with the known restricted-session socket errors.

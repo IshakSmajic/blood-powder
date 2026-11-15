@@ -289,6 +289,13 @@ func apply_status(kind: StringName, tick: int, duration: int, magnitude: float =
 		_last_repath = -999
 
 
+func heal(amount: float) -> void:
+	if not alive(): return
+	var previous := health
+	health = minf(stat(&"max_health"), health + maxf(0.0, amount))
+	EventBus.publish(&"healing_received", {"source": unit_id, "target": unit_id, "amount": health - previous, "position": global_position})
+
+
 func cleanse() -> void:
 	for kind in statuses.cleanse():
 		EventBus.publish(&"status_expired", {"unit": unit_id, "status": kind, "reason": "cleanse"})

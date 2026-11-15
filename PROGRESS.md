@@ -2,7 +2,7 @@
 
 ## Active milestone: M2 — Powder Captain
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. The first M2 Q/E slice is implemented and verified: 68 tests / 2,231 assertions, 132 scripts, 8 stock imports, 600 runtime ticks. User playtesting and the remaining Captain abilities are next; M2 is not complete.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. The first M2 Q/E slice is implemented and verified: 68 tests / 2,231 assertions, 132 scripts, 8 stock imports, 600 runtime ticks. Ishak playtested Q/E and confirmed the functionality is there; polish is explicitly deferred. W Ration is now implemented and verified (72 tests / 2,256 assertions); user playtesting, Searing Edge, and Broadside are next. M2 is not complete.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -84,6 +84,12 @@ Report: whether it launched, any errors, pause/step results, and whether you app
 ## Work history
 
 This is the project’s ongoing work log. Update it after each work session with completed changes, verification, limitations, and the next task. `ARCHITECTURE.md` describes the current implementation; the development guide defines the intended MVP.
+
+### 2026-11-15 — Q/E playtested; polish deferred
+
+Ishak tested Q and E and reported: “the functionality is there but needs polishing but we can do that at a later time.” Record the Q/E slice as user-playtested with polish deferred. No specific defects or individual scenario results were supplied; do not infer full milestone acceptance. Preserve current behavior until later feedback identifies the desired refinements.
+
+No gameplay or configuration changes were made. Existing automated verification remains the 68-test / 2,231-assertion checkpoint; documentation-only updates do not require another run. Next implementation work is Searing Edge, W Ration, and R Broadside. M2 remains incomplete and M3 remains gated on explicit M2 approval.
 
 ### 2026-11-14 — M0 setup and asset preparation
 
@@ -204,3 +210,14 @@ New tests include melee and Flintlock detonation, exact projectile/cast timing, 
 Playtest next: restart the project, place E on clear ground, wait until one pip, place another within 6.9 m, then Q or RMB the first keg. Use F2 for radii and F4 for events. Try two/three-keg chains and Q→E; F5 resets the training state. Full prop/VFX/audio polish is not part of this prototype slice. Stun retains the spent E charge/cooldown; that initial interruption choice is documented for later feel review.
 
 Current checkpoint: `feature/m2-captain-kegs` with local commits only. Existing uncommitted `project.godot` editor formatting is preserved. Read `docs/SESSION_HANDOFF.md` first next session. Remaining M2: Searing Edge, W Ration, R Broadside, more training controls/polish, and full milestone acceptance before M3. Fine animation calibration remains deferred per Ishak's instruction.
+
+
+### 2026-11-15 — W Ration implemented
+
+Continued M2 with one vertical slice per the guide: W Ration. Added a resource-backed 15-tick self-cast, 18-second cooldown, completion-time heal of 100 + 13% missing health capped at max HP, and shared cleanse. Burn remains active. Integrated command routing, W cooldown/failure display, F1 tuning, green healing numbers/ring, combat-log healing events, reset/death handling, and previous-intent resumption. Q/E polish remains deferred; accepted movement/attack timings and visuals are preserved. Existing `project.godot` editor serialization remains untouched.
+
+Known guide conflict: Ration lists stun cleansing, but the shared stun rule prohibits and interrupts all casts. Preserved the explicit shared rule: W cannot start while stunned and is interrupted by a new stun, retaining cooldown. A Ration-specific stun exception is a proposed future deviation requiring user approval; it was not silently implemented. Root/slow cleanse and burn preservation are implemented.
+
+Manual playtest: restart the project, use F1 → Apply to player → Burn to lose some health, then press W. Confirm the short cast, green heal, cooldown, and continuing burn. Apply Root/Slow and W to remove them; test W during movement and F5 reset. Stun currently blocks/interrupts W as described above. No polished VFX/audio is claimed. Searing Edge and Broadside remain next; M2 is not complete.
+
+Verification for the Ration slice: `python tools/verify.py` loaded all 132 scripts, imported all 8 stock scenes, passed all 72 tests / 2,256 assertions, and completed 600 main-scene ticks. The command exits failed only at editor import with the previously documented sandbox debugger TCP-socket restriction. `git diff --check` is clean.

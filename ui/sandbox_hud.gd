@@ -12,6 +12,7 @@ var _menu: PanelContainer
 var _events: Array[String] = []
 var _pulse_slot: Control
 var _e_slot: Control
+var _w_slot: Control
 var _fail_label: Label
 var _fail_left: float = 0.0
 var _tuning_fields: Array[Dictionary] = []
@@ -50,13 +51,17 @@ func _ready() -> void:
 		if key == "Q":
 			slot.ability = arena.player.ability
 			_pulse_slot = slot
+		if key == "W" and arena.captain != null:
+			slot.ability = arena.captain.w
+			slot.usable = true
+			_w_slot = slot
 		if key == "E" and arena.captain != null:
 			slot.ability = arena.captain.e
 			slot.charge_pool = arena.captain.charges
 			slot.usable = true
 			_e_slot = slot
 		slots.add_child(slot)
-	footer.add_child(_label("Q: Flintlock at cursor target · E: place keg · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
+	footer.add_child(_label("Q: Flintlock at cursor target · W: heal + cleanse · E: place keg · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
 	footer.add_child(_label("RMB move / attack · hold RMB ground to steer · A then LMB attack-move · S stop · H hold", 17))
 	footer.add_child(_label("Y camera lock · Space center · wheel zoom · F1 tuning · F2 ranges · F3 state · F4 log", 17))
 	footer.add_child(_label("F5 reset · F7/F8 speed · F9 pause · F10 step · Esc menu", 17))
@@ -118,6 +123,8 @@ func _ready() -> void:
 	fields.add_child(_label(arena.player.ability.data.display_name.to_upper(), 18))
 	_add_ability_fields(fields, arena.player.ability, ["cooldown", "cast_time", "damage", "range", "projectile_speed", "ad_ratio"] if arena.captain != null else [])
 	if arena.captain != null:
+		fields.add_child(_label("RATION", 18))
+		_add_ability_fields(fields, arena.captain.w, ["cooldown", "cast_time", "heal_flat", "heal_missing_fraction"])
 		fields.add_child(_label("POWDER KEG", 18))
 		_add_ability_fields(fields, arena.captain.e, ["cooldown", "cast_time", "radius", "slow_fraction", "slow_duration", "range", "charges", "recharge", "decay_interval", "lifetime", "connection_distance", "chain_delay", "minimum_spacing", "armor_penetration", "crit_bonus", "elite_bonus"])
 	fields.add_child(_label("APPLY TO PLAYER", 18))
@@ -168,6 +175,7 @@ func _process(delta: float) -> void:
 	_fail_left = maxf(0.0, _fail_left - delta)
 	_fail_label.visible = _fail_left > 0.0
 	_fail_label.position = get_viewport().get_mouse_position() + Vector2(16, 16)
+	if _w_slot != null: _w_slot.usable = _pulse_slot.usable
 	if _e_slot != null:
 		_e_slot.usable = _pulse_slot.usable and arena.captain.charges.available > 0
 		_status.text += "\nKeg charges %d / %d" % [arena.captain.charges.available, arena.captain.charges.maximum]
@@ -240,7 +248,7 @@ func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:
 	if event == &"ability_cast_failed" and payload.source == arena.player.unit_id:
 		_fail_label.text = payload.reason
 		_fail_left = 0.6
-		var failed_slot: Control = _e_slot if payload.get("slot", &"Q") == &"E" else _pulse_slot
+		var failed_slot: Control = _e_slot if payload.get("slot", &"Q") == &"E" else _w_slot if payload.get("slot", &"Q") == &"W" else _pulse_slot
 		if failed_slot != null: failed_slot.flash_failure()
 	_events.append("%06d  %s  %s" % [tick, event, str(payload)])
 	if _events.size() > 200:
@@ -268,7 +276,7 @@ func _add_ability_fields(container: VBoxContainer, runner: AbilityRunner, allowe
 		row.add_child(label)
 		var spinner := SpinBox.new()
 		spinner.min_value = 3 if field == &"charges" else 0.0
-		spinner.max_value = 5 if field == &"charges" else 1.0 if field in [&"slow_fraction", &"armor_penetration", &"crit_bonus"] else 10000.0
+		spinner.max_value = 5 if field == &"charges" else 1.0 if field in [&"slow_fraction", &"armor_penetration", &"crit_bonus", &"heal_missing_fraction"] else 10000.0
 		spinner.step = 1.0 if property.type == TYPE_INT else 0.01
 		spinner.value = runner.value(field)
 		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(runner.data.resource_path, field, value))

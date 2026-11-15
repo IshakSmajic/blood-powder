@@ -160,6 +160,14 @@ func _on_action(action: StringName) -> void:
 				player.queue_command(command, SimClock.state.tick)
 			else:
 				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead"})
+		&"ability_w":
+			if captain == null: return
+			if not player.alive():
+				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"W"})
+				return
+			var command := UnitCommand.create(UnitCommand.Kind.CAST)
+			command.slot = &"W"
+			player.queue_command(command, SimClock.state.tick)
 		&"ability_e":
 			if captain == null: return
 			if not player.alive():
@@ -353,15 +361,17 @@ func _on_combat_event(tick: int, event: StringName, payload: Dictionary) -> void
 		_click_ring(payload.position, Color("f09d46"), payload.radius, true)
 	if event == &"ability_cast_completed" and payload.get("ability", "") == "training_pulse":
 		_click_ring(payload.position, Color("6cb8dc"), payload.radius, true)
-	if event != &"damage_dealt":
+	if event == &"ability_cast_completed" and payload.get("ability", "") == "ration":
+		_click_ring(payload.position, Color("80cf79"), 1.0, true)
+	if event not in [&"damage_dealt", &"healing_received"]:
 		return
 	var number := Label3D.new()
-	number.text = str(roundi(payload.amount)) + ("!" if payload.crit else "")
+	number.text = str(roundi(payload.amount)) + ("!" if payload.get("crit", false) else "")
 	number.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	number.font_size = 64 if payload.crit else 46
+	number.font_size = 64 if payload.get("crit", false) else 46
 	number.pixel_size = 0.005
 	var type: StringName = payload.get("type", &"physical")
-	number.modulate = Color("7db9ef") if type == &"magic" else Color("ef9b4d") if type == &"true" else Color.WHITE
+	number.modulate = Color("80cf79") if event == &"healing_received" else Color("7db9ef") if type == &"magic" else Color("ef9b4d") if type == &"true" else Color.WHITE
 	number.position = payload.position + Vector3(0, 2.0, 0)
 	_effects.add_child(number)
 	var tween := number.create_tween()

@@ -74,4 +74,10 @@ Debug export slice:
 - Q starts a 15-tick cast and 270-tick cooldown; its projectile advances at 26 m/s starting the tick after launch. It re-aims at the valid target each tick. Removed/dead targets fizzle; kegs take exactly one health damage. E has a 15-tick cast, 30-tick recast lock, three charges and serial 780-tick recharge. Decay interval locks when materialized; lifetime defaults to 1500 ticks.
 - The HUD supports Q/E cooldowns, charge pips/recharge progress, selection of owned kegs, correct-slot failure flashes, and Q/E tuning. Stock pistol-shot/throw animations and a procedural pistol support the new casts; all visuals remain simulation-independent.
 
-Still pending in M2: Searing Edge passive/reset, W Ration/cleanse, R Broadside, more training controls and polished VFX/audio/props. No Hunter/M3 work is authorized yet.
+## M2 Ration slice
+
+- CaptainController owns W Ration alongside Q/E. `data/abilities/ration.tres` defines a 15-tick cast, 1080-tick cooldown, and healing of 100 + 13% missing health, calculated on completion and capped at maximum health. W is self-cast and requires no cursor target.
+- Successful completion heals and invokes the shared cleanse (slow/root/stun removed; burn and buffs retained). Existing global stun rules still block starting W and interrupt it without refunding cooldown. The guide's stun-cleanse wording conflicts with that global rule; no unapproved exception was introduced.
+- W uses the existing cast buffer, resumes previous intent, and clears on death/reset/respawn. The HUD exposes W cooldown/failure feedback and live tuning. Healing emits a tick-stamped log event, green number, and prototype green ring, with no simulation dependency on presentation.
+
+Still pending in M2: Searing Edge passive/reset, R Broadside, more training controls and polished VFX/audio/props. No Hunter/M3 work is authorized yet.

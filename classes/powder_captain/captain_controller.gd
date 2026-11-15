@@ -5,6 +5,7 @@ var unit: CombatUnit
 var arena: Node3D
 var kegs: KegManager
 var e := AbilityRunner.new()
+var w := AbilityRunner.new()
 var charges := ChargePool.new()
 var projectiles: Array[Dictionary] = []
 var _command: UnitCommand
@@ -15,6 +16,7 @@ func configure(world: Node3D, owner_unit: CombatUnit) -> void:
 	arena = world
 	unit = owner_unit
 	unit.ability.data = preload("res://data/abilities/flintlock.tres")
+	w.data = preload("res://data/abilities/ration.tres")
 	e.data = preload("res://data/abilities/powder_keg.tres")
 	kegs = KegManager.new()
 	kegs.name = "Kegs"
@@ -27,6 +29,7 @@ func configure(world: Node3D, owner_unit: CombatUnit) -> void:
 func reset() -> void:
 	unit.ability.reset()
 	e.reset()
+	w.reset()
 	charges.reset(clampi(int(e.value(&"charges")), 3, 5), maxi(1, roundi(e.value(&"recharge") * 60)))
 	kegs.reset()
 	for shot in projectiles:
@@ -43,14 +46,14 @@ func pre_tick(tick: int) -> void:
 
 
 func request(command: UnitCommand, tick: int) -> Dictionary:
-	if command.slot not in [&"Q", &"E"]: return {"reason": "Unavailable"}
-	var runner: AbilityRunner = e if command.slot == &"E" else unit.ability
+	if command.slot not in [&"Q", &"W", &"E"]: return {"reason": "Unavailable"}
+	var runner: AbilityRunner = e if command.slot == &"E" else w if command.slot == &"W" else unit.ability
 	if tick < runner.ready_tick: return {"reason": "On cooldown"}
 	if command.slot == &"E":
 		if charges.available <= 0: return {"reason": "No charges"}
 		if not can_place(command.point): return {"reason": "Invalid placement"}
 		if unit.position.distance_to(command.point) > e.value(&"range") + 0.001: return {"approach": true}
-	else:
+	elif command.slot == &"Q":
 		if not is_instance_valid(command.target) or not command.target.alive(): return {"reason": "No target"}
 		if command.target is CombatUnit and command.target.team == unit.team: return {"reason": "No target"}
 		var range_limit: float = unit.ability.value(&"range") + unit.stat(&"gameplay_radius") + command.target.stat(&"gameplay_radius")
@@ -61,7 +64,7 @@ func request(command: UnitCommand, tick: int) -> Dictionary:
 	if command.slot == &"E":
 		charges.spend(tick)
 		_pending_keg = kegs.reserve(command.point, runner.completion_tick).id
-	return {"runner": runner, "name": "powder_keg" if command.slot == &"E" else "flintlock"}
+	return {"runner": runner, "name": "powder_keg" if command.slot == &"E" else "ration" if command.slot == &"W" else "flintlock"}
 
 
 func can_place(point: Vector3) -> bool:
@@ -88,6 +91,11 @@ func complete(tick: int) -> void:
 		kegs.materialize(_pending_keg, tick)
 		EventBus.publish(&"ability_cast_completed", {"source": unit.unit_id, "ability": "powder_keg", "position": _command.point})
 		_pending_keg = -1
+	elif _command.slot == &"W":
+		var missing := maxf(0.0, unit.stat(&"max_health") - unit.health)
+		unit.heal(maxf(0.0, w.value(&"heal_flat")) + missing * clampf(w.value(&"heal_missing_fraction"), 0.0, 1.0))
+		unit.cleanse()
+		EventBus.publish(&"ability_cast_completed", {"source": unit.unit_id, "ability": "ration", "position": unit.global_position})
 	elif is_instance_valid(_command.target) and _command.target.alive():
 		var visual := MeshInstance3D.new()
 		var sphere := SphereMesh.new()

@@ -203,3 +203,83 @@ func test_empty_charges_fail_without_creating_another_pending_keg() -> void:
 	assert_eq(failures.size(), 1)
 	assert_eq(failures[0].payload.reason, "No charges")
 	assert_eq(failures[0].payload.slot, &"E")
+
+
+func queue_w() -> void:
+	var command := UnitCommand.create(UnitCommand.Kind.CAST)
+	command.slot = &"W"
+	player.queue_command(command, current_tick)
+
+
+func test_ration_exact_completion_missing_health_cleanse_and_cooldown() -> void:
+	player.health = 600.0
+	player.apply_status(&"slow", 0, 120, 0.4)
+	player.apply_status(&"root", 0, 120)
+	player.apply_status(&"burn", 0, 150, 24.0)
+	queue_w()
+	await advance(1)
+	assert_eq(arena.captain.w.ready_tick, 1081)
+	await advance(15)
+	assert_eq(player.health, 600.0)
+	assert_true(player.statuses.has(&"root"))
+	await advance(16)
+	assert_almost_eq(player.health, 778.0, 0.0001)
+	assert_false(player.statuses.has(&"root"))
+	assert_false(player.statuses.has(&"slow"))
+	assert_true(player.statuses.has(&"burn"))
+	queue_w()
+	await advance(17)
+	assert_eq(player.health, 778.0)
+	var failures: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool: return row.event == "ability_cast_failed")
+	assert_eq(failures[-1].payload.slot, &"W")
+	assert_eq(failures[-1].payload.reason, "On cooldown")
+	await advance(30)
+	assert_eq(player.health, 754.0)
+
+
+func test_ration_caps_heal_and_reset_restores_cooldown() -> void:
+	player.health = 1190.0
+	queue_w()
+	await advance(16)
+	assert_eq(player.health, 1200.0)
+	var heals: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool: return row.event == "healing_received")
+	assert_eq(heals.size(), 1)
+	assert_eq(heals[0].payload.amount, 10.0)
+	arena.reset_arena()
+	assert_eq(arena.captain.w.ready_tick, 0)
+	assert_eq(arena.captain.w.completion_tick, -1)
+
+
+func test_ration_stun_interrupts_without_heal_or_cooldown_refund() -> void:
+	player.health = 600.0
+	queue_w()
+	await advance(5)
+	player.apply_status(&"stun", 5, 60)
+	await advance(16)
+	assert_eq(player.health, 600.0)
+	assert_eq(arena.captain.w.ready_tick, 1081)
+	assert_eq(arena.captain.w.completion_tick, -1)
+	queue_w()
+	await advance(17)
+	assert_true(player.statuses.has(&"stun"))
+	var failures: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool: return row.event == "ability_cast_failed")
+	assert_eq(failures[-1].payload.reason, "Stunned")
+
+
+func test_ration_resumes_movement_and_death_cancels_completion() -> void:
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, Vector3(0, 0, 11)), 0)
+	await advance(2)
+	queue_w()
+	await advance(3)
+	var cast_position := player.position
+	await advance(17)
+	assert_eq(player.position, cast_position)
+	await advance(19)
+	assert_gt(player.position.z, cast_position.z)
+	arena.reset_arena()
+	queue_w()
+	await advance(20)
+	player.receive_damage(5000.0, 20, 1)
+	await advance(36)
+	assert_eq(player.health, 0.0)
+	assert_eq(player.active_cast, null)
