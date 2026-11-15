@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AbilityData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/abilities/ability_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Searing Edge"
+cooldown = 15.0
+cast_time = 0.0
+radius = 0.0
+damage = 24.0
+burn_duration = 2.5
+speed_fraction = 0.25
+speed_duration = 2.0

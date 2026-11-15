@@ -12,6 +12,7 @@ var _menu: PanelContainer
 var _events: Array[String] = []
 var _pulse_slot: Control
 var _e_slot: Control
+var _passive_slot: Control
 var _w_slot: Control
 var _fail_label: Label
 var _fail_left: float = 0.0
@@ -51,6 +52,9 @@ func _ready() -> void:
 		if key == "Q":
 			slot.ability = arena.player.ability
 			_pulse_slot = slot
+		if key == "P" and arena.captain != null:
+			slot.ability = arena.captain.passive
+			_passive_slot = slot
 		if key == "W" and arena.captain != null:
 			slot.ability = arena.captain.w
 			slot.usable = true
@@ -123,6 +127,8 @@ func _ready() -> void:
 	fields.add_child(_label(arena.player.ability.data.display_name.to_upper(), 18))
 	_add_ability_fields(fields, arena.player.ability, ["cooldown", "cast_time", "damage", "range", "projectile_speed", "ad_ratio"] if arena.captain != null else [])
 	if arena.captain != null:
+		fields.add_child(_label("SEARING EDGE (damage per burn pulse)", 18))
+		_add_ability_fields(fields, arena.captain.passive, ["cooldown", "damage", "burn_duration", "speed_fraction", "speed_duration"])
 		fields.add_child(_label("RATION", 18))
 		_add_ability_fields(fields, arena.captain.w, ["cooldown", "cast_time", "heal_flat", "heal_missing_fraction"])
 		fields.add_child(_label("POWDER KEG", 18))
@@ -175,6 +181,7 @@ func _process(delta: float) -> void:
 	_fail_left = maxf(0.0, _fail_left - delta)
 	_fail_label.visible = _fail_left > 0.0
 	_fail_label.position = get_viewport().get_mouse_position() + Vector2(16, 16)
+	if _passive_slot != null: _passive_slot.usable = player.alive() and SimClock.state.tick >= arena.captain.passive.ready_tick
 	if _w_slot != null: _w_slot.usable = _pulse_slot.usable
 	if _e_slot != null:
 		_e_slot.usable = _pulse_slot.usable and arena.captain.charges.available > 0

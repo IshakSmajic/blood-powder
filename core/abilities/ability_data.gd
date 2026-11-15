@@ -15,3 +15,7 @@ extends Resource
 
 @export var heal_flat: float = 0.0
 @export var heal_missing_fraction: float = 0.0
+
+@export var burn_duration: float = 2.5
+@export var speed_fraction: float = 0.25
+@export var speed_duration: float = 2.0

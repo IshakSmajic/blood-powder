@@ -81,4 +81,11 @@ Debug export slice:
 - InputRouter forwards physical W through `ability_w` to the arena; casting at full health is allowed and consumes cooldown. A physical-key regression covers the router-to-arena path.
 - W uses the existing cast buffer, resumes previous intent, and clears on death/reset/respawn. The HUD exposes W cooldown/failure feedback and live tuning. Healing emits a tick-stamped log event, green number, and prototype green ring, with no simulation dependency on presentation.
 
-Still pending in M2: Searing Edge passive/reset, R Broadside, more training controls and polished VFX/audio/props. No Hunter/M3 work is authorized yet.
+## M2 Searing Edge slice
+
+- CaptainController owns a passive AbilityRunner used only for cooldown display/deadlines, never an active cast. A landed basic attack against an enemy CombatUnit consumes readiness and starts a 900-tick cooldown; cancelled/missed attacks, Flintlock, and attacks against kegs do not consume it. Lethal melee still consumes readiness and grants speed; dead targets cannot receive new statuses.
+- `data/abilities/searing_edge.tres` defines 24 true damage per half-second burn pulse for 150 ticks (five pulses, 120 total), plus a 25% speed buff for 120 ticks. The shared burn and buff helpers handle expiry/cleanse; repeating the same speed source refreshes rather than stacks it. Basic attack timing is unchanged.
+- KegManager emits a direct simulation signal at the first explosion of each chain, guarded by a flag in that chain's existing state. Captain resets readiness and grants the speed buff once. Child explosions cannot reset a passive consumed between chain nodes. This logic does not depend on EventBus listeners; EventBus only records passive hit/reset notifications.
+- P shows passive cooldown/readiness; F1 exposes passive resource fields (damage is per pulse). CharacterAvatar adds an orange blade emission while ready; it reads state and never mutates simulation. Full flame/VFX/audio polish remains later work.
+
+Still pending in M2: R Broadside, more training controls and polished VFX/audio/props. No Hunter/M3 work is authorized yet.

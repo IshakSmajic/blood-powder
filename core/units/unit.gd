@@ -247,6 +247,7 @@ func _hit(tick: int) -> void:
 	else:
 		var damage := DamageResolver.resolve(raw, _victim.stat(&"armor"))
 		_victim.receive_damage(damage, tick, unit_id, crit)
+		if cast_controller != null: cast_controller.basic_hit(_victim, tick)
 
 
 func receive_damage(amount: float, tick: int, source: int, crit: bool = false, damage_type: StringName = &"physical") -> void:

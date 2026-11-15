@@ -1,6 +1,8 @@
 class_name KegManager
 extends Node3D
 
+signal chain_detonated(tick: int)
+
 var data: KegData = preload("res://data/abilities/powder_keg.tres")
 var graph := KegGraph.new()
 var views: Dictionary = {}
@@ -116,6 +118,9 @@ func explode(id: int, tick: int) -> void:
 	var state: KegState = graph.nodes[id]
 	if state.pending: return
 	var chain: Dictionary = chains[state.chain_id]
+	if not chain.get("passive_reset", false):
+		chain.passive_reset = true
+		chain_detonated.emit(tick)
 	for neighbor in graph.neighbors(id):
 		var next: KegState = graph.nodes[neighbor]
 		if next.scheduled_tick >= 0: continue

@@ -31,6 +31,7 @@ var _blend_from: Array[Transform3D] = []
 var _blend_left: float = 0.0
 var _blend_duration: float = 0.05
 var _cast_role: StringName = &"cast"
+var _blade_material: StandardMaterial3D
 var _sword: Node3D
 var _pistol: Node3D
 
@@ -143,6 +144,7 @@ func _add_weapon() -> void:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = part[2]
 		piece.material_override = material
+		if _sword.get_child_count() == 0: _blade_material = material
 		_sword.add_child(piece)
 	_pistol = Node3D.new()
 	attachment.add_child(_pistol)
@@ -207,6 +209,11 @@ func preview(role: StringName, time: float, elapsed: float = 0.0) -> void:
 func _process(delta: float) -> void:
 	if not is_instance_valid(unit): return
 	var tick := SimClock.state.tick
+	if _blade_material != null:
+		var ready: bool = unit.alive() and unit.cast_controller != null and tick >= unit.cast_controller.passive.ready_tick
+		_blade_material.emission_enabled = ready
+		_blade_material.emission = Color("f48c35")
+		_blade_material.emission_energy_multiplier = 1.5 if ready else 0.0
 	var previous := _visual_tick
 	_visual_tick = float(tick) if SimClock.state.paused else clampf(_visual_tick + delta * 60.0 * SimClock.state.speed_tenths / 10.0, tick, tick + 1.0)
 	_loop_time += maxf(0.0, _visual_tick - previous) / 60.0

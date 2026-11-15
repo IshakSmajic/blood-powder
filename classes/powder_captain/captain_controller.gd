@@ -6,6 +6,7 @@ var arena: Node3D
 var kegs: KegManager
 var e := AbilityRunner.new()
 var w := AbilityRunner.new()
+var passive := AbilityRunner.new()
 var charges := ChargePool.new()
 var projectiles: Array[Dictionary] = []
 var _command: UnitCommand
@@ -16,11 +17,13 @@ func configure(world: Node3D, owner_unit: CombatUnit) -> void:
 	arena = world
 	unit = owner_unit
 	unit.ability.data = preload("res://data/abilities/flintlock.tres")
+	passive.data = preload("res://data/abilities/searing_edge.tres")
 	w.data = preload("res://data/abilities/ration.tres")
 	e.data = preload("res://data/abilities/powder_keg.tres")
 	kegs = KegManager.new()
 	kegs.name = "Kegs"
 	kegs.units = arena.units
+	kegs.chain_detonated.connect(_on_chain_detonated)
 	arena.add_child(kegs)
 	unit.cast_controller = self
 	reset()
@@ -30,6 +33,7 @@ func reset() -> void:
 	unit.ability.reset()
 	e.reset()
 	w.reset()
+	passive.reset()
 	charges.reset(clampi(int(e.value(&"charges")), 3, 5), maxi(1, roundi(e.value(&"recharge") * 60)))
 	kegs.reset()
 	for shot in projectiles:
@@ -142,3 +146,23 @@ func post_tick(tick: int) -> void:
 			remaining.append(shot)
 	projectiles = remaining
 	kegs.process_queue(tick)
+
+
+func basic_hit(target: CombatUnit, tick: int) -> void:
+	if target.team == unit.team or tick < passive.ready_tick: return
+	passive.start(tick)
+	passive.interrupt() # Passive cooldown only; never locks the unit in a cast.
+	target.apply_status(&"burn", tick, maxi(0, roundi(passive.value(&"burn_duration") * 60)), maxf(0.0, passive.value(&"damage")), &"searing_edge", unit.unit_id)
+	_grant_edge_speed(tick)
+	EventBus.publish(&"searing_edge_hit", {"source": unit.unit_id, "target": target.unit_id, "ready_tick": passive.ready_tick})
+
+
+func _grant_edge_speed(tick: int) -> void:
+	unit.apply_status(&"speed_buff", tick, maxi(0, roundi(passive.value(&"speed_duration") * 60)), maxf(0.0, passive.value(&"speed_fraction")), &"searing_edge", unit.unit_id)
+
+
+func _on_chain_detonated(tick: int) -> void:
+	if not unit.alive(): return
+	passive.ready_tick = tick
+	_grant_edge_speed(tick)
+	EventBus.publish(&"searing_edge_reset", {"source": unit.unit_id})

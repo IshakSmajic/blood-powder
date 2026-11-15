@@ -8,7 +8,7 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 - Branch: `feature/m2-captain-kegs`, based on local tag `m1-approved`.
 - M0 and M1 accepted. User explicitly deferred finer animation calibration; keep current markers and do not invent calibrated values.
 - On November 15, Ishak confirmed Q/E functionality after playtesting and explicitly deferred polish. No specific defects were reported; this is not full M2 approval.
-- M2 first slice is being implemented: Q Flintlock + E keg placement, decay, charges, graph, and chains. **M2 is not complete.** W Ration is now implemented as a separate slice. Searing Edge and R Broadside remain later M2 work.
+- M2 first slice is being implemented: Q Flintlock + E keg placement, decay, charges, graph, and chains. **M2 is not complete.** W Ration is now implemented as a separate slice. Searing Edge is now implemented; R Broadside remains later M2 work.
 - User wants local progress; GitHub pushes have never succeeded because this session cannot resolve GitHub. Do not repeatedly interrupt work for pushes.
 
 ## Implemented Q/E slice (code checkpoint on current branch)
@@ -24,7 +24,7 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 
 ## Final verification
 
-- **72/72 tests passed**, **2,256 assertions**; all **132 scripts** load; all **8 stock asset scenes** import; the actual main scene runs **600 consecutive ticks** without runtime errors.
+- **77/77 tests passed**, **2,295 assertions**; all **132 scripts** load; all **8 stock asset scenes** import; the actual main scene runs **600 consecutive ticks** without runtime errors.
 - Includes actual melee keg detonation, a Q target removed in flight, empty-charge failure, Q facing its target, two/three-keg propagation, pending-keg one-part combo at ticks 166/186, snapshot damage, serial recharge, decay/lifetime boundaries, reset/stun cleanup, and the retained M1 regression fixture.
 - `python tools/verify.py` still exits failed only because editor import attempts a debugger TCP listener blocked by this restricted session. Do not suppress unknown errors or claim strict success here. The user previously ran checks in a normal terminal and verified this environment distinction.
 - Logs: `.local/gut-suite.log`, `.local/600-tick-main-scene-smoke-test.log`, `.local/all-script-parse.log`, `.local/stock-asset-imports.log`. No test process is left running.
@@ -44,7 +44,7 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 1. The tested Q/E implementation and documentation are committed on `feature/m2-captain-kegs`; inspect `git log -1` for the checkpoint. Only pre-existing editor serialization in `project.godot` should remain unstaged.
 2. Q/E has been user-playtested: functionality confirmed, polish deferred. Detailed individual scenario results were not supplied. Revisit polish later when specific feedback is available.
 3. Preserve accepted movement/attack timings and character appearance while continuing the remaining M2 abilities.
-4. Playtest W Ration: F1 Burn to lose HP, W to heal; Root/Slow then W to cleanse; burn remains. Existing global stun rules block/interrupt W (the guide conflict is recorded in PROGRESS.md). Continue later M2 slices with Searing Edge passive/reset and R Broadside. M2 is incomplete; do not start Hunter/M3 before M2 approval.
+4. Playtest W Ration: F1 Burn to lose HP, W to heal; Root/Slow then W to cleanse; burn remains. Existing global stun rules block/interrupt W (the guide conflict is recorded in PROGRESS.md). Playtest Searing Edge, then continue with R Broadside. M2 is incomplete; do not start Hunter/M3 before M2 approval.
 5. Keep all progress local as requested. No successful push has occurred; no AI co-author/authorship trailers are permitted.
 
 ## Persistent user constraints
@@ -66,3 +66,12 @@ Ration verification: 132 scripts, 8 stock scenes, 72 tests / 2,256 assertions, a
 The first Ration checkpoint missed `ability_w` in InputRouter's forwarded action list. Fixed after Ishak's playtest report; restart the running game to load it. W is usable at full HP and consumes cooldown. The new regression uses a physical W key through the router and real arena rather than issuing a Command directly.
 
 W input fix verification: all 73 tests passed (2,261 assertions), all 132 scripts loaded, all 8 stock scenes imported, and the main scene ran 600 ticks. Strict verification still exits failed only for the known editor-import sandbox socket errors.
+
+User subsequently confirmed “It works” after the W input fix. W activation is desktop-playtest confirmed; no full M2 approval is implied. Searing Edge and Broadside remain next.
+
+
+## Searing Edge checkpoint
+
+Passive implemented: next landed enemy basic attack burns for 5 × 24 true damage at 30-tick intervals, grants 25% speed for 120 ticks, and starts 900-tick cooldown. Q/keg hits do not consume/apply it. KegManager's direct chain signal resets passive and grants speed on the first explosion only; child nodes cannot reset it again. Same-source speed refreshes without stacking. P HUD, F1 tuning (damage per pulse), and ready blade glow are present. Playtest melee → stop/burn → keg detonation/reset; R Broadside remains next. Q/E polish and full VFX/audio remain deferred.
+
+Searing Edge verification: `python tools/verify.py` loaded all 132 scripts, imported all 8 stock scenes, passed 77/77 tests (2,295 assertions), and completed 600 main-scene ticks. Strict editor import fails only with the previously documented restricted-session TCP socket errors. `git diff --check` passed. Desktop glow/feel still requires user playtesting.

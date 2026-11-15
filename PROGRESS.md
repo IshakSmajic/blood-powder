@@ -2,7 +2,7 @@
 
 ## Active milestone: M2 — Powder Captain
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. The first M2 Q/E slice is implemented and verified: 68 tests / 2,231 assertions, 132 scripts, 8 stock imports, 600 runtime ticks. Ishak playtested Q/E and confirmed the functionality is there; polish is explicitly deferred. W Ration is now implemented and verified (72 tests / 2,256 assertions); user playtesting, Searing Edge, and Broadside are next. M2 is not complete.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. Q/E functionality is user-playtested with polish deferred; W activation is user-confirmed after its keyboard fix. Searing Edge is now implemented; its playtest and R Broadside are next. M2 is not complete.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -230,3 +230,19 @@ Ishak reported that W did not activate. Traced the defect to InputRouter's actio
 Manual check: stop and restart the running game, focus the viewport, press W at full HP, and confirm the W cooldown and green ring. Use F1 Burn to lose HP, close the panel, then W after cooldown or F5 reset followed by Burn. Project settings and Q/E timing are unchanged.
 
 W input fix verification: all 73 tests passed (2,261 assertions), all 132 scripts loaded, all 8 stock scenes imported, and the main scene ran 600 ticks. Strict verification still exits failed only for the known editor-import sandbox socket errors.
+
+
+### 2026-11-15 — W input fix confirmed by user
+
+Ishak reported “It works” after the W keyboard-routing fix. Record W activation as confirmed in desktop playtesting. No additional individual healing/cleanse scenarios or full M2 approval were reported. No code changes; latest verification remains 73 passing tests / 2,261 assertions and the 600-tick smoke check, with the documented editor-import sandbox socket limitation. Next M2 slices remain Searing Edge and Broadside; Q/E polish stays deferred.
+
+
+### 2026-11-15 — Searing Edge slice
+
+Implemented the Captain passive: a landed basic attack on an enemy applies a 150-tick burn (five 24 true-damage pulses), grants 25% movement speed for 120 ticks, and starts a 900-tick cooldown. Misses/cancellations, Q, and keg hits do not consume the passive. The first explosion of each keg chain resets readiness and grants the same nonstacking speed buff; child explosions do not repeat the reset. A direct KegManager signal drives gameplay and EventBus only logs results. Added P cooldown/readiness, F1 tuning, and orange blade emission while ready. Accepted attack timing and character appearance otherwise remain unchanged. Q/E polish remains deferred.
+
+Added simulation checks for exact melee/burn timing and true damage, speed expiry, cancellation/Q exclusions, chain reset followed by a melee before the child explosion (no second reset), cooldown boundary, and reset cleanup.
+
+Manual check: restart the game; P and the blade should indicate readiness. RMB a dummy, then S after one hit; watch five orange burn numbers and P's 15-second cooldown. Move during the two-second speed buff. Place linked kegs, wait for one pip and detonate; P should become ready again and speed should refresh. Q alone should not burn a dummy or consume P. F5 resets. Full flame particles/audio remain deferred; Broadside remains the next M2 slice. No M2 approval or M3 work is implied.
+
+Searing Edge verification: `python tools/verify.py` loaded all 132 scripts, imported all 8 stock scenes, passed 77/77 tests (2,295 assertions), and completed 600 main-scene ticks. Strict editor import fails only with the previously documented restricted-session TCP socket errors. `git diff --check` passed. Desktop glow/feel still requires user playtesting.

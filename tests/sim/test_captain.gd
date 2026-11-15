@@ -299,3 +299,79 @@ func test_physical_w_key_activates_ration_at_full_health() -> void:
 	var completions: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool:
 		return row.event == "ability_cast_completed" and row.payload.get("ability") == "ration")
 	assert_eq(completions.size(), 1)
+
+
+func test_searing_edge_melee_burn_exact_pulses_and_speed_expiry() -> void:
+	dummy.position = Vector3(2, 0, 8)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, dummy), 0)
+	await advance(15)
+	assert_false(dummy.statuses.has(&"burn"))
+	assert_eq(arena.captain.passive.ready_tick, 0)
+	await advance(16)
+	assert_eq(arena.captain.passive.ready_tick, 916)
+	assert_eq(player.attack.ready_tick, 92)
+	assert_eq(player.active_cast, null)
+	assert_almost_eq(player.statuses.move_multiplier(), 1.25, 0.0001)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), 16)
+	var after_hit := dummy.health
+	await advance(45)
+	assert_eq(dummy.health, after_hit)
+	for pulse in range(1, 6):
+		await advance(16 + 30 * pulse)
+		assert_almost_eq(dummy.health, after_hit - 24.0 * pulse, 0.0001)
+		if pulse == 4: assert_eq(player.statuses.move_multiplier(), 1.0)
+	assert_false(dummy.statuses.has(&"burn"))
+	assert_eq(arena.captain.passive.ready_tick, 916)
+
+
+func test_searing_edge_cancel_and_pistol_do_not_consume_or_apply() -> void:
+	dummy.position = Vector3(2, 0, 8)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, dummy), 0)
+	await advance(5)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), 5)
+	await advance(16)
+	assert_eq(arena.captain.passive.ready_tick, 0)
+	assert_false(dummy.statuses.has(&"burn"))
+	queue_q(dummy)
+	await advance(40)
+	assert_lt(dummy.health, 2000.0)
+	assert_false(dummy.statuses.has(&"burn"))
+	assert_eq(arena.captain.passive.ready_tick, 0)
+
+
+func test_searing_edge_resets_once_per_chain_and_not_on_child() -> void:
+	var manager: KegManager = arena.captain.kegs
+	var root := manager.reserve(Vector3(1, 0, 8), 0)
+	manager.materialize(root.id, 0)
+	root.health = 1
+	var child := manager.reserve(Vector3(6, 0, 8), 0)
+	manager.materialize(child.id, 0)
+	arena.captain.passive.ready_tick = 900
+	manager.hit(root.id, 0, {"raw": 70.0, "crit": false, "source": 0})
+	assert_eq(arena.captain.passive.ready_tick, 0)
+	assert_almost_eq(player.statuses.move_multiplier(), 1.25, 0.0001)
+	assert_false(dummy.statuses.has(&"burn"))
+	dummy.position = Vector3(2, 0, 8)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, dummy), 0)
+	await advance(16)
+	assert_eq(arena.captain.passive.ready_tick, 916)
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), 16)
+	await advance(20)
+	assert_eq(arena.captain.passive.ready_tick, 916)
+	var resets: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool: return row.event == "searing_edge_reset")
+	assert_eq(resets.size(), 1)
+	assert_eq(player.statuses.effects["speed_buff:searing_edge"].expires, 136)
+	arena.reset_arena()
+	assert_eq(arena.captain.passive.ready_tick, 0)
+	assert_false(player.statuses.has(&"speed_buff"))
+	assert_false(dummy.statuses.has(&"burn"))
+
+
+func test_searing_edge_rearms_on_exact_cooldown_boundary() -> void:
+	arena.captain.basic_hit(dummy, 1)
+	assert_eq(arena.captain.passive.ready_tick, 901)
+	arena.captain.basic_hit(dummy, 900)
+	assert_eq(arena.captain.passive.ready_tick, 901)
+	arena.captain.basic_hit(dummy, 901)
+	assert_eq(arena.captain.passive.ready_tick, 1801)
+	assert_almost_eq(player.statuses.move_multiplier(), 1.25, 0.0001)
