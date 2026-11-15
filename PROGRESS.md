@@ -361,3 +361,10 @@ Ishak confirmed the debug-control workaround works “amazingly” and requested
 Added integration checks for automatic display with F2 off, brush/linger expiry, root/in-flight hiding, R warmup, range tuning, class-switch cleanup, and rendering RNG isolation. Manual check: restart/select Hunter, enter/exit brush, and cast R outside brush; the circle should appear in brush and turn gold when R grants camouflage after two seconds. This feedback does not imply full M3 approval.
 
 Automatic leap-circle verification: all 119 tests passed (2,791 assertions), all 145 scripts loaded, 8 stock scenes imported, and both Captain/Hunter 600-tick runtime checks passed. Strict verification retains only the known sandbox editor-import socket failure. `git diff --check` passed. Desktop appearance remains for user inspection.
+
+
+### 2026-11-15 — end-of-session handoff saved
+
+At Ishak's request, consolidated docs/SESSION_HANDOFF.md for the next session with milestone status, exact gameplay checkpoints/branch, launch commands, Tools/Tab/mouse alternatives, Hunter/Captain mechanics and training, approved/deferred choices, asset sourcing schedule, final verification, and persistent workspace/Git constraints. User positively confirmed the debug-control workaround and automatic jump circle. M3 is implemented/verified and awaiting explicit final milestone approval; M4 has not begun. Do not infer a full manual combo sign-off from individual positive feedback.
+
+Latest gameplay commit is 1a4610d on feature/m3-hunter. Latest complete verification remains 119 passing tests / 2,791 assertions, 145 scripts, 8 stock scenes, and separate Captain/Hunter 600-tick smoke checks; only the known sandbox editor-import socket error remains. No code changed in this handoff and no unchanged tests were rerun. Pre-existing project.godot editor serialization remains unstaged and preserved. Next work is M3 feedback/approval, then guide-defined M4; M5 art/textures/audio/export remain later.
