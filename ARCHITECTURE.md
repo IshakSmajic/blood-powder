@@ -78,6 +78,7 @@ Debug export slice:
 
 - CaptainController owns W Ration alongside Q/E. `data/abilities/ration.tres` defines a 15-tick cast, 1080-tick cooldown, and healing of 100 + 13% missing health, calculated on completion and capped at maximum health. W is self-cast and requires no cursor target.
 - Successful completion heals and invokes the shared cleanse (slow/root/stun removed; burn and buffs retained). Existing global stun rules still block starting W and interrupt it without refunding cooldown. The guide's stun-cleanse wording conflicts with that global rule; no unapproved exception was introduced.
+- InputRouter forwards physical W through `ability_w` to the arena; casting at full health is allowed and consumes cooldown. A physical-key regression covers the router-to-arena path.
 - W uses the existing cast buffer, resumes previous intent, and clears on death/reset/respawn. The HUD exposes W cooldown/failure feedback and live tuning. Healing emits a tick-stamped log event, green number, and prototype green ring, with no simulation dependency on presentation.
 
 Still pending in M2: Searing Edge passive/reset, R Broadside, more training controls and polished VFX/audio/props. No Hunter/M3 work is authorized yet.

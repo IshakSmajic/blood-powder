@@ -221,3 +221,12 @@ Known guide conflict: Ration lists stun cleansing, but the shared stun rule proh
 Manual playtest: restart the project, use F1 → Apply to player → Burn to lose some health, then press W. Confirm the short cast, green heal, cooldown, and continuing burn. Apply Root/Slow and W to remove them; test W during movement and F5 reset. Stun currently blocks/interrupts W as described above. No polished VFX/audio is claimed. Searing Edge and Broadside remain next; M2 is not complete.
 
 Verification for the Ration slice: `python tools/verify.py` loaded all 132 scripts, imported all 8 stock scenes, passed all 72 tests / 2,256 assertions, and completed 600 main-scene ticks. The command exits failed only at editor import with the previously documented sandbox debugger TCP-socket restriction. `git diff --check` is clean.
+
+
+### 2026-11-15 — W keyboard routing fix
+
+Ishak reported that W did not activate. Traced the defect to InputRouter's action whitelist: `ability_w` existed in the input map and arena but was missing from the forwarded actions. Added W to the router. Full HP is allowed and still starts the cast/cooldown (healing is capped at max HP). Prior tests issued Commands directly and missed the raw keyboard path; added a physical KEY_W regression through InputRouter and the real arena, asserting W begins at full health and completes after 15 ticks.
+
+Manual check: stop and restart the running game, focus the viewport, press W at full HP, and confirm the W cooldown and green ring. Use F1 Burn to lose HP, close the panel, then W after cooldown or F5 reset followed by Burn. Project settings and Q/E timing are unchanged.
+
+W input fix verification: all 73 tests passed (2,261 assertions), all 132 scripts loaded, all 8 stock scenes imported, and the main scene ran 600 ticks. Strict verification still exits failed only for the known editor-import sandbox socket errors.

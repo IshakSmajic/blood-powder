@@ -283,3 +283,19 @@ func test_ration_resumes_movement_and_death_cancels_completion() -> void:
 	await advance(36)
 	assert_eq(player.health, 0.0)
 	assert_eq(player.active_cast, null)
+
+
+func test_physical_w_key_activates_ration_at_full_health() -> void:
+	var key := InputEventKey.new()
+	key.physical_keycode = KEY_W
+	key.pressed = true
+	assert_true(key.is_action_pressed("ability_w"))
+	InputRouter._unhandled_input(key)
+	await advance(1)
+	assert_same(player.active_cast, arena.captain.w)
+	assert_eq(arena.captain.w.ready_tick, 1081)
+	await advance(16)
+	assert_eq(player.health, 1200.0)
+	var completions: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool:
+		return row.event == "ability_cast_completed" and row.payload.get("ability") == "ration")
+	assert_eq(completions.size(), 1)

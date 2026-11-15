@@ -59,3 +59,10 @@ Read `AGENTS.md`, `PROGRESS.md`, `ARCHITECTURE.md`, and the relevant guide secti
 W Ration is implemented: 15-tick cast, 1080-tick cooldown, 100 + 13% missing HP healing on completion (capped), shared cleanse, W HUD/tuning, green healing feedback. Root/slow are removed and burn retained. The guide's global stun prohibition is preserved; a W-specific exception needs approval before implementation. New simulation coverage checks completion boundaries, healing/cap, cooldown failure, burn retention, stun interruption, movement resumption, death, and reset. No changes to Q/E timing or accepted visuals.
 
 Ration verification: 132 scripts, 8 stock scenes, 72 tests / 2,256 assertions, and 600 runtime ticks passed. Strict editor import still fails only with the known restricted-session socket errors.
+
+
+### W keyboard correction
+
+The first Ration checkpoint missed `ability_w` in InputRouter's forwarded action list. Fixed after Ishak's playtest report; restart the running game to load it. W is usable at full HP and consumes cooldown. The new regression uses a physical W key through the router and real arena rather than issuing a Command directly.
+
+W input fix verification: all 73 tests passed (2,261 assertions), all 132 scripts loaded, all 8 stock scenes imported, and the main scene ran 600 ticks. Strict verification still exits failed only for the known editor-import sandbox socket errors.
