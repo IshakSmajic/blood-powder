@@ -8,7 +8,7 @@ Restart the running game after updating. F1 contains dummy settings, keg tuning,
 2. E: three pips, then two and one. Try each F1 decay tier (2/1/0.5 seconds); existing kegs retain their placement tier. Charges cap at 3/4/5 as tuned and recharge serially. Invalid/wall/too-close placement should not consume a charge.
 3. Q: dummy damage and homing; one pip removed on a keg. Removing the target before projectile arrival should fizzle safely.
 4. Passive: melee once then S. Five burn pulses, speed buff and P cooldown. Keg explosion resets P once per chain; Q/keg damage does not apply passive burn.
-5. W: use F1 Burn to lose HP, then W to heal. Root/slow are cleansed, burn remains. Current shared stun rule blocks/interrupts W; the guide conflict is recorded in PROGRESS.md.
+5. W: use F1 Burn to lose HP, then W to heal. Root/slow are cleansed, burn remains. Apply Stun, then W: the 15-tick cast should complete through stun and cleanse it. A new stun during W should not interrupt it. Q/E/R remain blocked/interrupted by stun. This Ration-only exception was explicitly approved.
 6. R: fixed area for eight seconds; four clusters of three waves, dense cannonball visuals, magic damage/slow and cooldown. Walk away, pause/step, and F5 during the barrage.
 
 ## Keg combos
@@ -31,4 +31,4 @@ Use F2 for links/radii and F4 for tick events. F5 gives a fresh attempt with ful
 - LMB a dummy: total resolved damage and average DPS since the first hit, measured in simulation ticks. The average includes idle time until reset; finite-target totals follow combat-log damage (including overkill).
 - F1 → Restore player health heals a living player on the next tick.
 
-Stationary dummies are implemented; strafe/chase behavior and enemy keg-attacking toggle remain later training/PvE work. Final map assets, audio, and full VFX remain M5/deferred polish. M3 must wait for explicit M2 approval; this checklist does not record approval automatically.
+F1 Behavior offers Stationary, Strafe (three-meter span at 3.45 m/s), and Chase slowly (1.5 m/s by default); speeds/span are tunable. Root/stun/slow still apply. Enemies attack kegs defaults Off; On makes dummies attack live kegs already within melee reach, removing one pip per hit and destroying without an explosion. They do not chase kegs or attack the player. Final map assets, audio, and full VFX remain M5/deferred polish. M3 must wait for explicit M2 approval; this checklist does not record approval automatically.

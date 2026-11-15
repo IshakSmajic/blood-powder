@@ -12,6 +12,7 @@ var training_enabled: bool = true
 var training_settings: TrainingSettings = preload("res://data/training/defaults.tres")
 var _training_signature: Dictionary = {}
 var _training_actions: Array[StringName] = []
+var _strafe_direction: Dictionary = {}
 var captain_enabled: bool = true
 var captain: CaptainController
 var navigation_ready: bool = false
@@ -152,6 +153,7 @@ func simulate_tick(tick: int) -> void:
 	if _right_ground_held and not _menu_open and tick - _last_hold_tick >= 6:
 		_issue_ground_move()
 		_last_hold_tick = tick
+	if training_enabled: _drive_training(tick)
 	for unit in units:
 		unit.simulate(tick, units)
 	if captain != null: captain.post_tick(tick)
@@ -313,6 +315,7 @@ func reset_arena() -> void:
 	attack_move_armed = false
 	_queued_debug_statuses.clear()
 	_training_actions.clear()
+	_strafe_direction.clear()
 	_hud.show_menu(false)
 	_hud.clear_log()
 	combat_log.clear()
@@ -399,11 +402,12 @@ func queue_training_action(action: StringName) -> void:
 
 func _sync_training() -> void:
 	var settings := {}
-	for field in [&"dummy_count", &"dummy_armor", &"dummy_health", &"infinite_health", &"elite"]:
+	for field in [&"dummy_count", &"dummy_armor", &"dummy_health", &"infinite_health", &"elite", &"behavior", &"strafe_distance", &"strafe_speed", &"chase_speed", &"chase_stop_distance", &"enemies_attack_kegs"]:
 		settings[field] = DebugConfig.resolve(training_settings.resource_path, field, training_settings.get(field))
 	settings.dummy_count = clampi(int(settings.dummy_count), 1, 5)
 	if settings == _training_signature: return
 	_training_signature = settings.duplicate()
+	_strafe_direction.clear()
 	while units.size() > settings.dummy_count + 1:
 		var removed: CombatUnit = units.pop_back()
 		if selected == removed: selected = player
@@ -415,8 +419,44 @@ func _sync_training() -> void:
 	for i in range(1, units.size()):
 		var target: CombatUnit = units[i]
 		target.spawn_point = Vector3((i - 1 - (settings.dummy_count - 1) * 0.5) * 3.0, 0, -8)
-		target.stat_adjustments = {&"max_health": maxf(1.0, float(settings.dummy_health)), &"armor": float(settings.dummy_armor)}
+		target.stat_adjustments = {&"max_health": maxf(1.0, float(settings.dummy_health)), &"armor": float(settings.dummy_armor), &"move_speed": maxf(0.0, float(settings.chase_speed if int(settings.behavior) == 2 else settings.strafe_speed))}
 		target.training_infinite = bool(settings.infinite_health)
 		target.counts_as_elite = bool(settings.elite)
 		target.reset_unit()
 	EventBus.publish(&"training_settings_changed", settings)
+
+
+func _drive_training(tick: int) -> void:
+	for target in units:
+		if target == player or not target.alive() or target._pending != null: continue
+		var keg: PowderKeg
+		if captain != null and bool(_training_signature.get(&"enemies_attack_kegs", false)):
+			var best := INF
+			for view in captain.kegs.views.values():
+				if not view.alive() or not target.in_attack_range(view): continue
+				var distance: float = target.position.distance_squared_to(view.position)
+				if distance < best:
+					best = distance
+					keg = view
+		if keg != null:
+			if target.order.kind != UnitCommand.Kind.ATTACK or target.order.target != keg:
+				target.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, keg), tick)
+			continue
+		var behavior := int(_training_signature.get(&"behavior", 0))
+		if behavior == 0:
+			if target.order.kind != UnitCommand.Kind.STOP: target.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), tick)
+			continue
+		var point := player.position
+		if behavior == 1:
+			var direction := int(_strafe_direction.get(target.unit_id, 1))
+			var half_span := maxf(0.0, float(_training_signature.strafe_distance)) * 0.5
+			point = target.spawn_point + Vector3.RIGHT * half_span * direction
+			if target.position.distance_to(point) <= 0.12:
+				direction = -direction
+				point = target.spawn_point + Vector3.RIGHT * half_span * direction
+			_strafe_direction[target.unit_id] = direction
+		elif not player.alive() or target.position.distance_to(player.position) <= maxf(0.0, float(_training_signature.chase_stop_distance)):
+			if target.order.kind != UnitCommand.Kind.STOP: target.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), tick)
+			continue
+		if target.order.kind != UnitCommand.Kind.MOVE or (tick % 6 == 0 and target.order.point.distance_to(point) > 0.1):
+			target.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, point), tick)

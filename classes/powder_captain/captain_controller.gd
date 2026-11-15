@@ -184,3 +184,11 @@ func _on_chain_detonated(tick: int) -> void:
 	passive.ready_tick = tick
 	_grant_edge_speed(tick)
 	EventBus.publish(&"searing_edge_reset", {"source": unit.unit_id})
+
+
+func can_cast_while_stunned(slot: StringName) -> bool:
+	return slot == &"W"
+
+
+func cast_survives_stun(runner: AbilityRunner) -> bool:
+	return runner == w

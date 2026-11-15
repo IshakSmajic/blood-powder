@@ -174,3 +174,15 @@ func _process(_delta: float) -> void:
 			mesh.surface_add_vertex(a.point + Vector3.UP * 0.05)
 			mesh.surface_add_vertex(b.point + Vector3.UP * 0.05)
 	if drawing: mesh.surface_end()
+
+
+func enemy_hit(id: int) -> void:
+	if not graph.nodes.has(id): return
+	var state: KegState = graph.nodes[id]
+	if state.pending: return
+	state.health -= 1
+	if state.health <= 0:
+		EventBus.publish(&"keg_destroyed", {"unit": 1000 + id, "position": state.point})
+		remove(id) # Enemy destruction never triggers an owned explosion or passive reset.
+	else:
+		EventBus.publish(&"keg_hit", {"unit": 1000 + id, "value": state.health})

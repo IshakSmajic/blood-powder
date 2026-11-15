@@ -132,12 +132,20 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 	if _pending != null and tick >= _pending_expires:
 		_pending = null
 	if statuses.has(&"stun"):
-		if _pending != null and _pending.kind == UnitCommand.Kind.CAST:
-			_cast_failed("Stunned", _pending.slot)
+		var protected_cast: bool = active_cast != null and cast_controller != null and cast_controller.cast_survives_stun(active_cast)
+		if not protected_cast and _pending != null and _pending.kind == UnitCommand.Kind.CAST and tick >= _pending_tick:
+			var command := _pending
 			_pending = null
-		state = "Stunned"
-		movement.stop()
-		return
+			if cast_controller != null and cast_controller.can_cast_while_stunned(command.slot):
+				_approach_cast = null
+				_request_cast(command, tick, units)
+				protected_cast = active_cast != null and cast_controller.cast_survives_stun(active_cast)
+			else:
+				_cast_failed("Stunned", command.slot)
+		if statuses.has(&"stun") and not protected_cast:
+			state = "Stunned"
+			movement.stop()
+			return
 	health = minf(health, stat(&"max_health"))
 	# A command on the hit tick cannot cancel a hit already committed that tick.
 	if attack.take_hit(tick):
@@ -248,7 +256,8 @@ func _hit(tick: int) -> void:
 	var raw := stat(&"attack_damage") * (stat(&"crit_multiplier") if crit else 1.0)
 	EventBus.publish(&"attack_hit", {"source": unit_id, "target": _victim.unit_id})
 	if _victim is PowderKeg:
-		_victim.manager.hit(_victim.state.id, tick, {"raw": raw, "crit": crit, "source": unit_id})
+		if team == _victim.team: _victim.manager.hit(_victim.state.id, tick, {"raw": raw, "crit": crit, "source": unit_id})
+		else: _victim.manager.enemy_hit(_victim.state.id)
 	else:
 		var damage := DamageResolver.resolve(raw, _victim.stat(&"armor"))
 		_victim.receive_damage(damage, tick, unit_id, crit)
@@ -289,7 +298,7 @@ func apply_status(kind: StringName, tick: int, duration: int, magnitude: float =
 			attack.hit_tick = -1
 			attack.ready_tick = tick
 			EventBus.publish(&"attack_cancelled", {"source": unit_id})
-		if active_cast != null:
+		if active_cast != null and (cast_controller == null or not cast_controller.cast_survives_stun(active_cast)):
 			active_cast.interrupt()
 			active_cast = null
 			if cast_controller != null: cast_controller.interrupt()

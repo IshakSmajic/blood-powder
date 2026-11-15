@@ -223,7 +223,7 @@ func _process(delta: float) -> void:
 		preview(&"death", elapsed * (1.2 if unit.team == 1 else 1.0), elapsed_sim)
 		var duration := 2.0 if unit.team == 1 else 3.0
 		_model.position.y = -0.5 * clampf((elapsed - duration + 0.3) / 0.3, 0.0, 1.0)
-	elif unit.statuses.has(&"stun"):
+	elif unit.statuses.has(&"stun") and not (unit.active_cast != null and unit.cast_controller != null and unit.cast_controller.cast_survives_stun(unit.active_cast)):
 		return # Freeze the current visual pose while simulation handles the stun.
 	elif unit.state in ["Attack windup", "Attack backswing"]:
 		var profile: AnimProfile = AvatarLibrary.PROFILES[_attack_role]

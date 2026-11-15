@@ -10,3 +10,5 @@
 - Keep downloaded raw asset packs outside this repository. Record used assets and licenses in `CREDITS.md`.
 - Before handoff run `python tools/verify.py`. Report failures and incomplete dependencies honestly.
 - Avoid silently changing the guide. Record proposed deviations in `PROGRESS.md` for approval.
+
+- Communication preference (Ishak, 2026-11-15): work autonomously through the current milestone according to the guide. Do not send per-feature completion reports or routine progress updates. Notify Ishak when the milestone implementation is ready for inspection; report any actual blocker or required design decision when necessary. Keep detailed changes and checks in project docs. Explicit milestone approval is still required before starting the next milestone.

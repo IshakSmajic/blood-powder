@@ -251,19 +251,53 @@ func test_ration_caps_heal_and_reset_restores_cooldown() -> void:
 	assert_eq(arena.captain.w.completion_tick, -1)
 
 
-func test_ration_stun_interrupts_without_heal_or_cooldown_refund() -> void:
+func test_ration_survives_new_stun_and_cleanses_on_completion() -> void:
 	player.health = 600.0
 	queue_w()
 	await advance(5)
 	player.apply_status(&"stun", 5, 60)
-	await advance(16)
+	assert_same(player.active_cast, arena.captain.w)
+	await advance(15)
 	assert_eq(player.health, 600.0)
+	assert_true(player.statuses.has(&"stun"))
+	await advance(16)
+	assert_eq(player.health, 778.0)
+	assert_false(player.statuses.has(&"stun"))
 	assert_eq(arena.captain.w.ready_tick, 1081)
-	assert_eq(arena.captain.w.completion_tick, -1)
+
+
+func test_ration_physical_w_starts_during_stun_and_preserves_buffered_order() -> void:
+	player.apply_status(&"stun", 0, 120)
+	player.apply_status(&"root", 0, 120)
+	var key := InputEventKey.new()
+	key.physical_keycode = KEY_W
+	key.pressed = true
+	InputRouter._unhandled_input(key)
+	await advance(1)
+	assert_same(player.active_cast, arena.captain.w)
+	assert_true(player.statuses.has(&"stun"))
+	player.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, Vector3(0, 0, 11)), 1)
+	await advance(15)
+	assert_eq(player.position.z, 8.0)
+	await advance(18)
+	assert_false(player.statuses.has(&"stun"))
+	assert_false(player.statuses.has(&"root"))
+	assert_gt(player.position.z, 8.0)
+
+
+func test_stun_still_blocks_flintlock_while_ration_is_on_cooldown() -> void:
+	queue_w()
+	await advance(16)
+	player.apply_status(&"stun", 16, 120)
 	queue_w()
 	await advance(17)
+	assert_eq(player.active_cast, null)
 	assert_true(player.statuses.has(&"stun"))
+	queue_q(dummy)
+	await advance(18)
+	assert_eq(player.ability.ready_tick, 0)
 	var failures: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool: return row.event == "ability_cast_failed")
+	assert_eq(failures[-2].payload.reason, "On cooldown")
 	assert_eq(failures[-1].payload.reason, "Stunned")
 
 

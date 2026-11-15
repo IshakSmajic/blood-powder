@@ -3540,3 +3540,8 @@ Mixamo and alternatives, 2026
 # User-directed amendment — 14 November 2026
 
 Ishak accepts the current animation appearance and explicitly defers further manual animation fine-tuning unless later playtesting reveals a need. The mandatory manual attack hit-frame marking step in sections 4 and 13 (M1) is therefore deferred rather than treated as completed. Keep the current provisional markers and authoritative combat timing unchanged. The original DOCX remains an unmodified historical copy; this amendment records the effective project instruction.
+
+
+# User-directed amendment — 15 November 2026: Ration during stun
+
+Ishak approved a Ration-specific exception to the shared stun rule: W may begin its 15-tick cast while stunned and completes through existing or newly applied stun, then heals and cleanses slow/root/stun. Other abilities remain blocked/interrupted by stun. Death still cancels Ration. Cooldown and cast buffering rules remain unchanged. This resolves the conflict between section 7's general cast prohibition and section 8's Ration stun cleanse. The original DOCX remains an unmodified historical copy.

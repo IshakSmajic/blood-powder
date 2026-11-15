@@ -2,7 +2,7 @@
 
 ## Active milestone: M2 — Powder Captain
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. Q/E functionality is user-playtested with polish deferred; W activation is user-confirmed after its keyboard fix. Searing Edge is implemented and user-playtested successfully; Broadside density feedback is accepted; training controls are implemented and verified (88 tests / 2,624 assertions). Final M2 manual acceptance checks remain. M2 is not complete.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. **M2 implementation is ready for user inspection; milestone approval remains pending.** Captain passive/Q/W/E/R, combo mechanics, and full training controls are implemented. Ration's stun exception is explicitly approved and implemented. Final checks: 93 passing tests / 2,652 assertions, 136 scripts, 8 stock asset imports, and 600 runtime ticks. Strict editor import retains the known sandbox socket limitation. Use [docs/M2_PLAYTEST.md](docs/M2_PLAYTEST.md) for final inspection; do not begin M3 until explicit M2 approval.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -284,3 +284,29 @@ Added dedicated default-training tests for infinite lethal hits, burn retention,
 Stationary targets are implemented; strafe/chase behavior and enemy keg-attacking toggle remain later training/PvE work. Q/E polish is deferred and final map art stays M5. M2 manual acceptance still requires the guide's five consecutive three-keg chains on three dummies, plus explicit milestone approval before M3.
 
 Training slice verification: all 88 tests passed (2,624 assertions), 136 scripts loaded, all 8 stock scenes imported, and the 600-tick main-scene smoke check passed. Full `python tools/verify.py` exits failed only at editor import with the known sandbox debugger TCP-socket errors. `git diff --check` passed. No desktop UI/playtest approval is claimed.
+
+
+### 2026-11-15 — milestone-level communication requested
+
+Ishak instructed continued autonomous work according to the docs and requested notifications at milestone inspection checkpoints rather than per-feature updates. Recorded in AGENTS.md. Maintain detailed implementation/verification records here, finish the current milestone implementation before inspection handoff, and retain the explicit approval gate before the next milestone. This communication preference is not automatic M2 approval.
+
+
+### 2026-11-15 — final M2 training behavior and implementation audit
+
+Continued autonomously per the milestone-level communication preference. Completed the remaining training behavior selector: Stationary / Strafe (3 m span at 3.45 m/s) / Chase slowly (1.5 m/s, stops at 2 m). All parameters live in TrainingSettings and are exposed in F1. Driver commands use existing integer-tick movement, pathfinding, and root/stun/slow behavior; pending commands are preserved. F5/settings changes reset patrol direction. Added the default-Off enemy keg-attacking toggle: dummies attack the nearest live in-range keg with normal melee timing; hits remove one pip and enemy destruction never explodes/reset-passives. Dummies do not attack the player or chase kegs. This is training-only behavior, not M3/Hunter or M4 challenge AI.
+
+Added simulation coverage for strafe reversals/bounds/root/reset, slow chase/stop-mode switching, and Off→On keg destruction without an explosion. Updated final M2 playtest checklist. Existing accepted movement/abilities/visual density remain unchanged. Final inspection must still include the five consecutive three-keg chains and the known W guide conflict: global stun currently prevents its cast even though its ability table lists stun cleanse. Do not silently implement an exception or claim full milestone approval.
+
+
+### 2026-11-15 — Ration stun exception approved and implemented
+
+Asked Ishak to resolve the actual guide conflict: whether Ration should complete its 0.25-second cast while stunned and cleanse it. Ishak answered “yes,” approving the recommended Ration-only exception. Appended the effective amendment to the guide before implementation. W now starts during stun, survives newly applied stun, and heals/cleanses at its original completion tick. Normal cast lock/buffering, cooldown, death cancellation, and Q/E/R stun restrictions remain. W's HUD availability and avatar casting reflect the exception. Tests now cover physical W during stun, exact cleanse timing, retained buffered movement, new stun during W, W cooldown failure while stunned, and Q still rejected. The earlier conflict/approval limitation is resolved; historical log entries remain unchanged.
+
+
+### 2026-11-15 — M2 implementation inspection checkpoint
+
+All Captain implementation and training controls are ready for milestone inspection, with user-approved Ration stun exception included. Added docs/M2_ACCEPTANCE.md mapping each section-8 automated gate to its tests and refreshed SESSION_HANDOFF.md to reflect current behavior without stale decision requests. Initial patrol coverage exposed an incorrect test comparison between different phases of a full patrol; replaced that comparison with actual reversal/positive-negative span checks. Final verification has no test failures.
+
+Final `python tools/verify.py`: 136 scripts load, 8 stock scenes import, 93/93 tests pass with 2,652 assertions, and main scene runs 600 consecutive ticks. Strict command exits failed only for the previously documented editor-import debugger TCP-socket restriction. `git diff --check` passed. No system/application configuration was changed; pre-existing project.godot serialization remains unstaged. Work remains local with no milestone merge/tag.
+
+Remaining gate is user inspection/approval, including five consecutive three-keg chains on three dummies. Desktop feel and manual reliability cannot be claimed by headless checks. Preserve deferred Q/E/animation polish and M5 environment/VFX/audio schedule. No Hunter/M3 work was started.

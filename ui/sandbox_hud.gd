@@ -111,6 +111,10 @@ func _ready() -> void:
 	fields.add_child(_export_status)
 	if arena.training_enabled:
 		fields.add_child(_label("TRAINING DUMMIES", 18))
+		_add_training_option(fields, "Behavior", arena.training_settings, &"behavior", [0, 1, 2], ["Stationary", "Strafe", "Chase slowly"])
+		for field in [&"strafe_distance", &"strafe_speed", &"chase_speed", &"chase_stop_distance"]:
+			_add_training_numeric(fields, field)
+		_add_training_option(fields, "Enemies attack kegs", arena.training_settings, &"enemies_attack_kegs", [false, true], ["Off", "On"])
 		_add_training_option(fields, "Count", arena.training_settings, &"dummy_count", [1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"])
 		_add_training_option(fields, "Armor", arena.training_settings, &"dummy_armor", [0.0, 50.0, 100.0], ["0", "50", "100"])
 		_add_training_option(fields, "Health", arena.training_settings, &"dummy_health", [2000.0, 10000.0], ["2000", "10,000"])
@@ -205,7 +209,7 @@ func _process(delta: float) -> void:
 	_fail_label.position = get_viewport().get_mouse_position() + Vector2(16, 16)
 	if _passive_slot != null: _passive_slot.usable = player.alive() and SimClock.state.tick >= arena.captain.passive.ready_tick
 	if _r_slot != null: _r_slot.usable = _pulse_slot.usable
-	if _w_slot != null: _w_slot.usable = _pulse_slot.usable
+	if _w_slot != null: _w_slot.usable = player.alive() and player.active_cast == null
 	if _e_slot != null:
 		_e_slot.usable = _pulse_slot.usable and arena.captain.charges.available > 0
 		_status.text += "\nKeg charges %d / %d" % [arena.captain.charges.available, arena.captain.charges.maximum]
@@ -330,3 +334,20 @@ func _add_training_option(container: VBoxContainer, title: String, data: Resourc
 	option.item_selected.connect(func(index: int) -> void: DebugConfig.set_override(data.resource_path, field, values[index]))
 	row.add_child(option)
 	_training_fields.append({"control": option, "resource": data, "field": field, "values": values})
+
+
+func _add_training_numeric(container: VBoxContainer, field: StringName) -> void:
+	var data: Resource = arena.training_settings
+	var row := HBoxContainer.new()
+	container.add_child(row)
+	var label := _label(String(field).replace("_", " ").capitalize(), 14)
+	label.custom_minimum_size.x = 170
+	row.add_child(label)
+	var spinner := SpinBox.new()
+	spinner.min_value = 0.0
+	spinner.max_value = 100.0
+	spinner.step = 0.05
+	spinner.value = float(DebugConfig.resolve(data.resource_path, field, data.get(field)))
+	spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(data.resource_path, field, value))
+	row.add_child(spinner)
+	_tuning_fields.append({"control": spinner, "resource": data, "field": field})
