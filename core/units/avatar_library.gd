@@ -32,7 +32,8 @@ static func library_for(key: String, skeleton: Skeleton3D) -> AnimationLibrary:
 	if _libraries.has(key): return _libraries[key]
 	var library := AnimationLibrary.new()
 	for entry in [[&"idle", 1, &"Idle"], [&"run", 1, &"Jog_Fwd"],
-		[&"death", 1, &"Death01"], [&"cast", 1, &"Spell_Simple_Shoot"], [&"rest", 1, &"A_TPose"]]:
+		[&"death", 1, &"Death01"], [&"cast", 1, &"Spell_Simple_Shoot"], [&"shoot", 1, &"Pistol_Shoot"],
+		[&"throw", 2, &"OverhandThrow"], [&"leap", 1, &"Jump"], [&"rest", 1, &"A_TPose"]]:
 		var data := source(entry[1])
 		var clip := adapt(data.clips[entry[2]], data.bones, skeleton)
 		clip.loop_mode = Animation.LOOP_LINEAR if entry[0] in [&"idle", &"run"] else Animation.LOOP_NONE

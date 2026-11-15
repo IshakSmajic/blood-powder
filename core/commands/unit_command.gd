@@ -6,6 +6,7 @@ enum Kind { MOVE, ATTACK, ATTACK_MOVE, STOP, HOLD, CAST }
 var kind: Kind = Kind.STOP
 var point: Vector3 = Vector3.ZERO
 var target: Node3D
+var slot: StringName = &"Q"
 
 
 static func create(type: Kind, at: Vector3 = Vector3.ZERO, unit: Node3D = null) -> UnitCommand:

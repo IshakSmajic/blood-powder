@@ -22,7 +22,7 @@ func test_stock_character_has_head_skeleton_and_expected_animation_roles() -> vo
 	assert_eq(avatar.skeleton.get_bone_count(), 65)
 	assert_gt(avatar.head_triangle_count, 100)
 	assert_between(avatar.model_height, 1.7, 2.0)
-	for role in [&"idle", &"run", &"attack_a", &"attack_b", &"cast", &"death", &"rest"]:
+	for role in [&"idle", &"run", &"attack_a", &"attack_b", &"cast", &"shoot", &"throw", &"death", &"rest"]:
 		assert_true(avatar.animation_player.has_animation(role), String(role))
 	for mesh in avatar.find_children("*", "MeshInstance3D", true, false):
 		assert_false(mesh.mesh is CapsuleMesh, "Stock visual must replace the placeholder capsule")
@@ -90,7 +90,7 @@ func test_animation_samples_have_finite_bounded_bone_poses() -> void:
 	var avatar := make_avatar()
 	var finite: bool = true
 	var max_distance: float = 0.0
-	for role in [&"idle", &"run", &"attack_a", &"attack_b", &"cast", &"death"]:
+	for role in [&"idle", &"run", &"attack_a", &"attack_b", &"cast", &"shoot", &"throw", &"death"]:
 		var length := avatar.animation_player.get_animation(role).length
 		for fraction in [0.0, 0.25, 0.5, 0.75, 0.99]:
 			avatar.preview(role, length * fraction)

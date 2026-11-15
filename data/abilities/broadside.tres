@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BroadsideData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/abilities/broadside_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Broadside"
+cooldown = 30.0
+cast_time = 0.25
+radius = 5.8
+damage = 40.0
+slow_fraction = 0.3
+slow_duration = 0.5

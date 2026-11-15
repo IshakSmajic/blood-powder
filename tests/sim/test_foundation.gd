@@ -10,6 +10,8 @@ var current_tick: int = 0
 func before_each() -> void:
 	DebugConfig.clear_overrides()
 	arena = Arena.instantiate()
+	arena.training_enabled = false
+	arena.captain_enabled = false # Preserve the accepted M1 test-ability regression fixture.
 	add_child_autofree(arena)
 	SimClock.state.set_paused(true)
 	await get_tree().physics_frame

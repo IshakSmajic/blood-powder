@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UnitStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/units/unit_stats.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_health = 2200.0
+attack_damage = 60.0
+armor = 60.0
+magic_resist = 40.0
+move_speed = 2.9
+attack_range = 1.5
+attack_speed = 0.6
+windup_fraction = 0.3
+gameplay_radius = 0.8
+crit_chance = 0.0

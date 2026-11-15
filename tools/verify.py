@@ -55,14 +55,16 @@ def main():
         ("Import and editor parse", common + ["--import"], None),
         ("All-script parse", common + ["--script", "res://tools/parse_all.gd"], "PARSE PASS:"),
         ("Stock asset imports", common + ["--script", "res://tools/check_assets.gd"], "ASSETS PASS:"),
-        ("GUT suite", common + ["--script", "res://addons/gut/gut_cmdln.gd"], "All tests passed!"),
+        ("GUT suite", common + ["--script", "res://addons/gut/gut_cmdln.gd", "--fixed-fps", "60"], "All tests passed!"),
         ("600-tick main-scene smoke test", common + ["--script", "res://tools/smoke.gd",
             "--fixed-fps", "60"], "SMOKE PASS:"),
     ]
+    checks.append(("600-tick Hunter smoke test", common + ["--script", "res://tools/smoke_hunter.gd", "--fixed-fps", "60"], "SMOKE PASS:"))
+    checks.append(("600-tick Challenge smoke test", common + ["--script", "res://tools/smoke_challenge.gd", "--fixed-fps", "60"], "SMOKE PASS:"))
     failures = []
     for label, command, marker in checks:
         try:
-            run(label, command, env, marker)
+            run(label, command, env, marker, timeout=300 if label == "GUT suite" else 120)
         except (RuntimeError, OSError, subprocess.SubprocessError) as error:
             failures.append(str(error))
             print(f"CHECK FAILED: {error}", flush=True)

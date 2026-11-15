@@ -1,0 +1,10 @@
+# M4 automated gate mapping
+
+- `tests/sim/test_challenge.gd`: exact initial/inter-wave deadlines and compositions; Elite flag/stats; Victory/Defeat/reset/Training restoration; no Challenge respawn; Chaser acquisition/melee/sight memory/return; Kiter retreat and projectile delay; projectile wall interception and opt-in ranged keg destruction without explosion; Elite warning deadline, control immunity, damage/stun, fixed-center dodge and death cancellation; crowd spacing; Hunter brush/camouflage and Captain brush/recent-hit reveal.
+- `tests/sim/test_replay.gd`: command target/position/tick/slot recording, save/load, seed/tuning initialization, exact whole-log byte comparison, playback pause, existing-file rejection, malformed-file rejection without resetting gameplay, debug-mutation invalidation.
+- `tests/sim/test_challenge_clear.gd`: both classes clear all three waves at unmodified resource stats through ordinary player commands, then saved full-run replays reproduce Victory and identical combat-log bytes. Pilots choose targets, cast, and dodge using public game state; no artificial damage, healing, teleports, enemy deletion or tuning in these runs. Their timing and state knowledge are stronger than human play, so results establish feasibility, not final human difficulty.
+- Existing Captain/Hunter/foundation/training/debug tests remain regression gates.
+- `tools/smoke_challenge.gd`: the actual arena runs 600 consecutive ticks with four real first-wave enemies; Captain and Hunter smoke stages remain.
+- `python tools/verify.py`: editor import, every script, stock assets, full GUT suite, and all three smoke stages. GUT runs with fixed render delta to accelerate frame-driven tests while simulation steps remain 60 Hz; a 300-second suite timeout accommodates full Challenge replays. No import errors are suppressed.
+
+Manual gate: follow `M4_PLAYTEST.md`, especially human balance/feel with both classes and readability of retreat/slam/crowding. No user playtest result is implied by automated gates. M5 remains gated on explicit M4 approval.

@@ -4,6 +4,8 @@ signal resume_requested
 signal restart_requested
 
 var arena: Node3D
+var _result_panel: PanelContainer
+var _result_label: Label
 var _status: Label
 var _selected: Label
 var _log: Label
@@ -11,9 +13,15 @@ var _debug: PanelContainer
 var _menu: PanelContainer
 var _events: Array[String] = []
 var _pulse_slot: Control
+var _e_slot: Control
+var _passive_slot: Control
+var _r_slot: Control
+var _w_slot: Control
 var _fail_label: Label
 var _fail_left: float = 0.0
 var _tuning_fields: Array[Dictionary] = []
+var _training_fields: Array[Dictionary] = []
+var _hunter_slots: Dictionary = {}
 var _export_status: Label
 const Slot = preload("res://ui/ability_slot.gd")
 
@@ -27,11 +35,55 @@ func _ready() -> void:
 	header.position = Vector2(24, 18)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(header)
-	header.add_child(_label("BLOOD & POWDER   /   M1 FOUNDATION", 24, Color("e8d6bb")))
+	header.add_child(_label("BLOOD & POWDER   /   " + "M4 PVE VALIDATION", 24, Color("e8d6bb")))
 	_status = _label("Baking navigation…", 16)
 	header.add_child(_status)
 	_selected = _label("", 16)
 	header.add_child(_selected)
+	var toolbar := HFlowContainer.new()
+	toolbar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	toolbar.custom_minimum_size.x = 820
+	header.add_child(toolbar)
+	for item in [["Tools (Tab / F1)", &"debug_panel"], ["Ranges", &"debug_ranges"], ["States", &"debug_states"], ["Log", &"debug_log"], ["Reset", &"debug_reset"], ["Slower", &"debug_slower"], ["Faster", &"debug_faster"], ["Pause / Resume", &"debug_pause"], ["Step", &"debug_step"]]:
+		var button := Button.new()
+		button.text = item[0]
+		button.name = String(item[1])
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(func() -> void: InputRouter.activate_debug(item[1]))
+		toolbar.add_child(button)
+	for label in ["Training", "Challenge"]:
+		var button := Button.new()
+		button.text = label
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(func() -> void: arena.queue_mode(label))
+		toolbar.add_child(button)
+	for label in ["Save replay", "Load replay"]:
+		var button := Button.new()
+		button.text = label
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(_save_replay if label == "Save replay" else _choose_replay)
+		toolbar.add_child(button)
+	_result_panel = PanelContainer.new()
+	_result_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_result_panel.offset_left = -270
+	_result_panel.offset_right = 270
+	_result_panel.offset_top = -100
+	root.add_child(_result_panel)
+	var result_box := VBoxContainer.new()
+	_result_panel.add_child(result_box)
+	_result_label = _label("", 24, Color("e8d6bb"))
+	_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_box.add_child(_result_label)
+	for label in ["Retry Challenge", "Back to Training", "Save replay"]:
+		var button := Button.new()
+		button.text = label
+		button.focus_mode = Control.FOCUS_NONE
+		match label:
+			"Retry Challenge": button.pressed.connect(func() -> void: restart_requested.emit())
+			"Back to Training": button.pressed.connect(func() -> void: arena.queue_mode("Training"))
+			_: button.pressed.connect(_save_replay)
+		result_box.add_child(button)
+	_result_panel.hide()
 	var footer := VBoxContainer.new()
 	footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	footer.offset_top = -220
@@ -49,13 +101,37 @@ func _ready() -> void:
 		if key == "Q":
 			slot.ability = arena.player.ability
 			_pulse_slot = slot
+		if key == "P" and arena.captain != null:
+			slot.ability = arena.captain.passive
+			_passive_slot = slot
+		if key == "R" and arena.captain != null:
+			slot.ability = arena.captain.r
+			slot.usable = true
+			_r_slot = slot
+		if key == "W" and arena.captain != null:
+			slot.ability = arena.captain.w
+			slot.usable = true
+			_w_slot = slot
+		if key == "E" and arena.captain != null:
+			slot.ability = arena.captain.e
+			slot.charge_pool = arena.captain.charges
+			slot.usable = true
+			_e_slot = slot
+		if arena.hunter != null:
+			_hunter_slots[key] = slot
+			if key != "P": slot.ability = arena.hunter.runner_for(StringName(key))
+			slot.usable = true
+			slot.ferocity = 0 if key == "P" else -1
+			if key == "W": _w_slot = slot
+			if key == "E": _e_slot = slot
+			if key == "R": _r_slot = slot
 		slots.add_child(slot)
-	footer.add_child(_label("Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
+	footer.add_child(_label("Q: Rend · W: Howl · E: Bola · R: Stalk · brush + RMB enemy: leap · 4 Ferocity: empowered ability" if arena.hunter != null else "Q: Flintlock at cursor target · W: heal + cleanse · E: place keg · R: Broadside at cursor · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
 	footer.add_child(_label("RMB move / attack · hold RMB ground to steer · A then LMB attack-move · S stop · H hold", 17))
-	footer.add_child(_label("Y camera lock · Space center · wheel zoom · F1 tuning · F2 ranges · F3 state · F4 log", 17))
+	footer.add_child(_label("Y camera lock · Space center · wheel zoom · Tab / F1 tuning · F2 ranges · F3 state · F4 log", 17))
 	footer.add_child(_label("F5 reset · F7/F8 speed · F9 pause · F10 step · Esc menu", 17))
 	_log = _label("", 14)
-	_log.position = Vector2(24, 160)
+	_log.position = Vector2(24, 220)
 	_log.visible = false
 	root.add_child(_log)
 	_debug = PanelContainer.new()
@@ -72,6 +148,13 @@ func _ready() -> void:
 	fields.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(fields)
 	fields.add_child(_label("PLAYER LIVE TUNING", 20))
+	if arena.captain != null or arena.hunter != null:
+		var class_select := OptionButton.new()
+		class_select.add_item("Powder Captain")
+		class_select.add_item("Apex Hunter")
+		class_select.select(1 if arena.hunter != null else 0)
+		class_select.item_selected.connect(func(index: int) -> void: arena.queue_class("Hunter" if index == 1 else "Captain"))
+		fields.add_child(class_select)
 	var animation_lab := Button.new()
 	animation_lab.text = "Open Animation Lab"
 	animation_lab.pressed.connect(func() -> void: get_tree().call_deferred("change_scene_to_file", "res://debug/anim_lab.tscn"))
@@ -88,6 +171,23 @@ func _ready() -> void:
 	_export_status.custom_minimum_size.x = 270
 	_export_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	fields.add_child(_export_status)
+	if arena.training_enabled:
+		fields.add_child(_label("TRAINING DUMMIES", 18))
+		_add_training_option(fields, "Behavior", arena.training_settings, &"behavior", [0, 1, 2], ["Stationary", "Strafe", "Chase slowly"])
+		for field in [&"strafe_distance", &"strafe_speed", &"chase_speed", &"chase_stop_distance"]:
+			_add_training_numeric(fields, field)
+		_add_training_option(fields, "Enemies attack kegs", arena.training_settings, &"enemies_attack_kegs", [false, true], ["Off", "On"])
+		_add_training_option(fields, "Count", arena.training_settings, &"dummy_count", [1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"])
+		_add_training_option(fields, "Armor", arena.training_settings, &"dummy_armor", [0.0, 50.0, 100.0], ["0", "50", "100"])
+		_add_training_option(fields, "Health", arena.training_settings, &"dummy_health", [2000.0, 10000.0], ["2000", "10,000"])
+		_add_training_option(fields, "Infinite health", arena.training_settings, &"infinite_health", [false, true], ["Off", "On"])
+		_add_training_option(fields, "Counts as Elite", arena.training_settings, &"elite", [false, true], ["Off", "On"])
+		for action in [&"reset_damage", &"restore_player"]:
+			var button := Button.new()
+			button.text = "Reset damage / DPS" if action == &"reset_damage" else "Restore player health"
+			button.pressed.connect(func() -> void: arena.queue_training_action(action))
+			fields.add_child(button)
+		fields.add_child(_label("Dummy changes reset targets on the next tick.", 12))
 	for property in arena.player.stats.get_property_list():
 		if not property.usage & PROPERTY_USAGE_EDITOR or property.type != TYPE_FLOAT:
 			continue
@@ -109,23 +209,34 @@ func _ready() -> void:
 		_tuning_fields.append({"control": spinner, "resource": arena.player.stats, "field": field})
 		row.add_child(spinner)
 	_debug.hide()
-	fields.add_child(_label("TRAINING PULSE", 18))
-	for property in arena.player.ability.data.get_property_list():
-		if not property.usage & PROPERTY_USAGE_EDITOR or property.type != TYPE_FLOAT: continue
-		var field := StringName(property.name)
-		var row := HBoxContainer.new()
-		fields.add_child(row)
-		var label := _label(String(field).replace("_", " "), 14)
-		label.custom_minimum_size.x = 170
-		row.add_child(label)
-		var spinner := SpinBox.new()
-		spinner.min_value = 0.0
-		spinner.max_value = 1.0 if field == &"slow_fraction" else 10000.0
-		spinner.step = 0.05
-		spinner.value = arena.player.ability.value(field)
-		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(arena.player.ability.data.resource_path, field, value))
-		_tuning_fields.append({"control": spinner, "resource": arena.player.ability.data, "field": field})
-		row.add_child(spinner)
+	fields.add_child(_label(arena.player.ability.data.display_name.to_upper(), 18))
+	_add_ability_fields(fields, arena.player.ability, ["cooldown", "cast_time", "damage", "range", "projectile_speed", "ad_ratio"] if arena.captain != null else ["cooldown", "damage", "empowered_damage", "duration", "attack_speed_bonus", "empowered_attack_speed", "empowered_duration", "bonus_range", "range_loss_delay"] if arena.hunter != null else [])
+	if arena.captain != null:
+		fields.add_child(_label("SEARING EDGE (damage per burn pulse)", 18))
+		_add_ability_fields(fields, arena.captain.passive, ["cooldown", "damage", "burn_duration", "speed_fraction", "speed_duration"])
+		fields.add_child(_label("BROADSIDE", 18))
+		_add_ability_fields(fields, arena.captain.r, ["cooldown", "cast_time", "radius", "damage", "slow_fraction", "slow_duration", "duration", "first_wave_delay", "cluster_interval", "wave_interval", "cluster_count", "waves_per_cluster", "cannonballs_per_wave"])
+		fields.add_child(_label("RATION", 18))
+		_add_ability_fields(fields, arena.captain.w, ["cooldown", "cast_time", "heal_flat", "heal_missing_fraction"])
+		fields.add_child(_label("POWDER KEG", 18))
+		_add_training_option(fields, "Decay tier", arena.captain.e.data, &"decay_interval", [2.0, 1.0, 0.5], ["2.0 seconds", "1.0 second", "0.5 seconds"])
+		_add_ability_fields(fields, arena.captain.e, ["cooldown", "cast_time", "radius", "slow_fraction", "slow_duration", "range", "charges", "recharge", "decay_interval", "lifetime", "connection_distance", "chain_delay", "minimum_spacing", "armor_penetration", "crit_bonus", "elite_bonus", "link_width", "link_border"])
+	if arena.hunter != null:
+		var sections := [
+			[arena.hunter.passive, ["leap_range", "leap_ring_width", "leap_speed", "leap_linger", "landing_gap", "arc_height", "ferocity_decay", "empowered_speed", "empowered_speed_duration", "brush_reveal_range", "brush_hide_delay", "brush_hit_reveal"]],
+			[arena.hunter.w, ["cooldown", "radius", "damage", "empowered_damage", "grey_fraction", "grey_window"]],
+			[arena.hunter.e, ["cooldown", "cast_time", "range", "width", "projectile_speed", "damage", "empowered_damage", "slow_fraction", "slow_duration", "root_duration"]],
+			[arena.hunter.r, ["cooldown", "duration", "speed_fraction", "camouflage_delay", "detection_range", "mark_range", "mark_ad_ratio", "armor_reduction", "armor_duration"]]]
+		for section in sections:
+			fields.add_child(_label(section[0].data.display_name.to_upper(), 18))
+			_add_ability_fields(fields, section[0], section[1])
+	fields.add_child(_label("CHALLENGE ENEMIES", 18))
+	fields.add_child(_label("Reset after tuning before saving a replay.", 14))
+	for kind in ["chaser", "kiter", "elite"]:
+		fields.add_child(_label(kind.to_upper(), 16))
+		_add_resource_fields(fields, load("res://data/stats/%s.tres" % kind), ["max_health", "attack_damage", "armor", "magic_resist", "attack_speed", "windup_fraction", "attack_range", "move_speed"])
+	fields.add_child(_label("ENEMY BEHAVIOR (timers in ticks)", 16))
+	_add_resource_fields(fields, preload("res://data/encounters/enemy_behavior.tres"), [])
 	fields.add_child(_label("APPLY TO PLAYER", 18))
 	var status_grid := GridContainer.new()
 	status_grid.columns = 3
@@ -162,24 +273,51 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var player: CombatUnit = arena.player
+	_result_panel.visible = arena.mode == "Challenge" and not arena.challenge.outcome.is_empty() and not _menu.visible
+	if _result_panel.visible:
+		_result_label.text = "%s\nWave %d / 3  ·  %.2f seconds\nDamage taken: %.0f" % [arena.challenge.outcome.to_upper(), arena.challenge.wave, arena.challenge.end_tick / 60.0, arena.challenge.damage_taken]
 	_status.text = "%s · tick %06d · %.1f× · %s · HP %d/%d · %s" % [
 		"PAUSED" if SimClock.state.paused else "TRAINING", SimClock.state.tick,
 		SimClock.state.speed_tenths / 10.0, "CAM LOCKED" if arena.camera.locked else "CAM FREE",
 		ceili(player.health), ceili(player.stat(&"max_health")), "A + click armed" if arena.attack_move_armed else ""]
+	if arena.mode == "Challenge": _status.text += "\n" + arena.challenge.summary(SimClock.state.tick)
+	if arena.replay.playing: _status.text += "\n" + (arena.replay.result if not arena.replay.result.is_empty() else "REPLAY RUNNING")
 	if not arena.navigation_ready:
 		_status.text = "Baking navigation…"
 	var status_text := player.statuses.summary(SimClock.state.tick)
 	if not status_text.is_empty(): _status.text += "\n" + status_text
-	_pulse_slot.usable = player.alive() and not player.statuses.has(&"stun") and player.ability.completion_tick < 0
+	_pulse_slot.usable = player.alive() and not player.statuses.has(&"stun") and player.active_cast == null
 	_fail_left = maxf(0.0, _fail_left - delta)
 	_fail_label.visible = _fail_left > 0.0
 	_fail_label.position = get_viewport().get_mouse_position() + Vector2(16, 16)
-	var unit: CombatUnit = arena.selected
+	if _passive_slot != null: _passive_slot.usable = player.alive() and SimClock.state.tick >= arena.captain.passive.ready_tick
+	if _r_slot != null: _r_slot.usable = _pulse_slot.usable
+	if _w_slot != null: _w_slot.usable = player.alive() and player.active_cast == null
+	if _e_slot != null and arena.captain != null:
+		_e_slot.usable = _pulse_slot.usable and arena.captain.charges.available > 0
+		_status.text += "\nKeg charges %d / %d" % [arena.captain.charges.available, arena.captain.charges.maximum]
+	if arena.hunter != null:
+		var hunter: HunterController = arena.hunter
+		for key in _hunter_slots:
+			var slot: Control = _hunter_slots[key]
+			slot.empowered = hunter.ferocity.empowered() and key in ["Q", "W", "E"]
+			if key == "P":
+				slot.ferocity = hunter.ferocity.stacks
+				slot.usable = hunter.leap_eligible(SimClock.state.tick)
+			else:
+				slot.usable = player.alive() and (not player.statuses.has(&"stun") or (key == "W" and hunter.ferocity.empowered()))
+				if hunter.ferocity.empowered(): slot.usable = slot.usable and SimClock.state.tick >= int(hunter.ferocity.empowered_lock.get(StringName(key), 0))
+				else: slot.usable = slot.usable and SimClock.state.tick >= int(hunter.ferocity.base_lock.get(StringName(key), 0))
+		_status.text += "\nFerocity %d/4 · Leap %s · Grey HP %.1f · %s" % [hunter.ferocity.stacks, "READY" if hunter.leap_eligible(SimClock.state.tick) else "—", hunter.grey_health(SimClock.state.tick), "CAMOUFLAGED" if hunter.camouflaged(SimClock.state.tick) else ""]
+	var unit: Node3D = arena.selected if is_instance_valid(arena.selected) else null
 	_selected.text = "%s · HP %d · armor %.0f · MR %.0f" % [unit.unit_name, ceili(unit.health), unit.stat(&"armor"), unit.stat(&"magic_resist")] if is_instance_valid(unit) else "LMB inspect a unit"
+	if is_instance_valid(unit) and unit is CombatUnit and unit.team != 0:
+		_selected.text += " · %s · Damage %.1f · DPS %.1f" % ["Infinite HP" if unit.training_infinite else "Finite HP", unit.training_damage, unit.training_dps(SimClock.state.tick)]
+	if is_instance_valid(unit) and unit is EnemyUnit: _selected.text += " · AI: " + unit.driver.state
 	if arena.show_states:
 		_selected.text += "\n%s · ready in %d ticks · hit tick %d" % [player.state, maxi(0, player.attack.ready_tick - SimClock.state.tick), player.attack.hit_tick]
-	if is_instance_valid(unit):
-		var effects := unit.statuses.summary(SimClock.state.tick)
+	if is_instance_valid(unit) and unit is CombatUnit:
+		var effects: String = unit.statuses.summary(SimClock.state.tick)
 		if not effects.is_empty(): _selected.text += "\n" + effects
 	if _log.visible:
 		_log.text = "\n".join(_events.slice(maxi(0, _events.size() - 14)))
@@ -202,6 +340,8 @@ func clear_log() -> void:
 
 
 func _sync_tuning_fields() -> void:
+	for binding in _training_fields:
+		binding.control.select(binding.values.find(binding.resource.get(binding.field)))
 	for binding in _tuning_fields:
 		binding.control.set_value_no_signal(binding.resource.get(binding.field))
 
@@ -243,7 +383,8 @@ func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:
 	if event == &"ability_cast_failed" and payload.source == arena.player.unit_id:
 		_fail_label.text = payload.reason
 		_fail_left = 0.6
-		_pulse_slot.flash_failure()
+		var failed_slot: Control = _e_slot if payload.get("slot", &"Q") == &"E" else _w_slot if payload.get("slot", &"Q") == &"W" else _r_slot if payload.get("slot", &"Q") == &"R" else _pulse_slot
+		if failed_slot != null: failed_slot.flash_failure()
 	_events.append("%06d  %s  %s" % [tick, event, str(payload)])
 	if _events.size() > 200:
 		_events.pop_front()
@@ -256,3 +397,98 @@ func _label(text: String, size: int, color: Color = Color("d3dae1")) -> Label:
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
 	return label
+
+
+func _add_ability_fields(container: VBoxContainer, runner: AbilityRunner, allowed: Array) -> void:
+	for property in runner.data.get_property_list():
+		if not property.usage & PROPERTY_USAGE_EDITOR or property.type not in [TYPE_FLOAT, TYPE_INT]: continue
+		var field := StringName(property.name)
+		if not allowed.is_empty() and not allowed.has(String(field)): continue
+		var row := HBoxContainer.new()
+		container.add_child(row)
+		var label := _label(String(field).replace("_", " "), 14)
+		label.custom_minimum_size.x = 170
+		row.add_child(label)
+		var spinner := SpinBox.new()
+		spinner.min_value = 3 if field == &"charges" else 0.0
+		spinner.max_value = 32 if field == &"cannonballs_per_wave" else 5 if field == &"charges" else 1.0 if field in [&"slow_fraction", &"armor_penetration", &"crit_bonus", &"heal_missing_fraction"] else 10000.0
+		spinner.step = 1.0 if property.type == TYPE_INT else 0.01
+		spinner.value = runner.value(field)
+		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(runner.data.resource_path, field, value))
+		_tuning_fields.append({"control": spinner, "resource": runner.data, "field": field})
+		row.add_child(spinner)
+
+
+func _add_training_option(container: VBoxContainer, title: String, data: Resource, field: StringName, values: Array, labels: Array) -> void:
+	var row := HBoxContainer.new()
+	container.add_child(row)
+	var label := _label(title, 14)
+	label.custom_minimum_size.x = 170
+	row.add_child(label)
+	var option := OptionButton.new()
+	for text in labels: option.add_item(text)
+	option.select(values.find(DebugConfig.resolve(data.resource_path, field, data.get(field))))
+	option.item_selected.connect(func(index: int) -> void: DebugConfig.set_override(data.resource_path, field, values[index]))
+	row.add_child(option)
+	_training_fields.append({"control": option, "resource": data, "field": field, "values": values})
+
+
+func _add_training_numeric(container: VBoxContainer, field: StringName) -> void:
+	var data: Resource = arena.training_settings
+	var row := HBoxContainer.new()
+	container.add_child(row)
+	var label := _label(String(field).replace("_", " ").capitalize(), 14)
+	label.custom_minimum_size.x = 170
+	row.add_child(label)
+	var spinner := SpinBox.new()
+	spinner.min_value = 0.0
+	spinner.max_value = 100.0
+	spinner.step = 0.05
+	spinner.value = float(DebugConfig.resolve(data.resource_path, field, data.get(field)))
+	spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(data.resource_path, field, value))
+	row.add_child(spinner)
+	_tuning_fields.append({"control": spinner, "resource": data, "field": field})
+
+
+func _save_replay() -> void:
+	var path := _export_path("replay", "bpr")
+	if path.is_empty(): return
+	var error: Error = arena.replay.save_run(arena, path)
+	_export_status.text = "Saved: " + path if error == OK else "Replay unavailable: Reset after changing class, tuning or debug state. Error %d" % error
+	_debug.show()
+
+func _choose_replay() -> void:
+	var dialog := FileDialog.new()
+	dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	dialog.access = FileDialog.ACCESS_FILESYSTEM
+	dialog.filters = PackedStringArray(["*.bpr ; Blood & Powder replay"])
+	dialog.current_dir = ProjectSettings.globalize_path("res://debug_exports")
+	add_child(dialog)
+	dialog.file_selected.connect(func(path: String) -> void:
+		var error: Error = arena.load_replay(path)
+		if error != OK:
+			_export_status.text = "Invalid or incompatible replay: %d" % error
+			_debug.show()
+		dialog.queue_free())
+	dialog.canceled.connect(dialog.queue_free)
+	dialog.popup_centered_ratio(0.6)
+
+
+func _add_resource_fields(container: VBoxContainer, data: Resource, allowed: Array) -> void:
+	for property in data.get_property_list():
+		if not property.usage & PROPERTY_USAGE_EDITOR or property.type not in [TYPE_FLOAT, TYPE_INT]: continue
+		var field := StringName(property.name)
+		if not allowed.is_empty() and String(field) not in allowed: continue
+		var row := HBoxContainer.new()
+		container.add_child(row)
+		var label := _label(String(field).replace("_", " "), 14)
+		label.custom_minimum_size.x = 170
+		row.add_child(label)
+		var spinner := SpinBox.new()
+		spinner.min_value = 0.01 if field in [&"max_health", &"attack_speed"] else 0.0
+		spinner.max_value = 1.0 if field == &"windup_fraction" else 10000.0
+		spinner.step = 1.0 if property.type == TYPE_INT else 0.01
+		spinner.value = DebugConfig.resolve(data.resource_path, field, data.get(field))
+		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(data.resource_path, field, value))
+		_tuning_fields.append({"control": spinner, "resource": data, "field": field})
+		row.add_child(spinner)

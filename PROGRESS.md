@@ -1,6 +1,8 @@
 # Progress
 
-## Active milestone: M2 — Powder Captain
+## Active milestone: M4 — PvE validation
+
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m4-pve`. M0–M3 are approved. M4 implements real enemy AI, telegraphed Elite slam, shared vision, three-wave Challenge, results/reset and binary command replay. M4 is ready for inspection: 134/134 tests and 2,863 assertions passed, 155 scripts loaded, 8 stock scenes imported, and Captain/Hunter/Challenge each passed 600-tick smoke checks. Strict editor import retains the known sandbox TCP restriction; M5 remains gated on explicit approval. See [M4 playtest](docs/M4_PLAYTEST.md) and [gate mapping](docs/M4_ACCEPTANCE.md).
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -82,6 +84,12 @@ Report: whether it launched, any errors, pause/step results, and whether you app
 ## Work history
 
 This is the project’s ongoing work log. Update it after each work session with completed changes, verification, limitations, and the next task. `ARCHITECTURE.md` describes the current implementation; the development guide defines the intended MVP.
+
+### 2026-11-15 — Q/E playtested; polish deferred
+
+Ishak tested Q and E and reported: “the functionality is there but needs polishing but we can do that at a later time.” Record the Q/E slice as user-playtested with polish deferred. No specific defects or individual scenario results were supplied; do not infer full milestone acceptance. Preserve current behavior until later feedback identifies the desired refinements.
+
+No gameplay or configuration changes were made. Existing automated verification remains the 68-test / 2,231-assertion checkpoint; documentation-only updates do not require another run. Next implementation work is Searing Edge, W Ration, and R Broadside. M2 remains incomplete and M3 remains gated on explicit M2 approval.
 
 ### 2026-11-14 — M0 setup and asset preparation
 
@@ -181,3 +189,221 @@ No gameplay/source resource/system configuration changes were made. The latest i
 ### 2026-11-14 — M1 accepted; M2 keg slice started
 
 Following acceptance of movement/visuals and explicit deferral of fine animation calibration, Ishak instructed “Lets just keep going.” Treat this as approval to move beyond the M1 checkpoint and begin M2. Preserve current movement, attack timing, visuals, and deferred marker values. Work continues locally; do not spend effort retrying GitHub pushes in this slice. First M2 slice: E charge-based keg placement/decay/graph/chaining plus targeted Q Flintlock and homing projectile. Searing Edge, Ration, Broadside, and further polish follow as later M2 slices.
+
+### 2026-11-14 — M2 work-in-progress handoff saved
+
+At Ishak's request, saved `docs/SESSION_HANDOFF.md` before finishing the current slice so another session can resume without reconstructing tool history. Current branch is `feature/m2-captain-kegs`. Implemented Q/E controllers, pending/placed keg graph, decay, serial charges, exact chain queue, damage snapshots/hit-once tracking, homing projectiles, owned-keg attacks, prototype barrels/pips/rings/links, HUD/tuning, and pistol/throw animation roles. Searing Edge/W/R remain unimplemented. First complete integration verification passed 65 tests (2,214 assertions), all 132 scripts, 8 stock assets, and 600 runtime ticks; strict import failed only at the known sandbox debugger socket. Final expanded run is still to be collected. This handoff is not a claim that M2 is complete or that the user has playtested the new mechanics.
+
+
+### 2026-11-14 — M2 Q/E keg slice verified and ready for playtest
+
+Implemented targeted Q Flintlock and E powder-keg combos with guide-default cast times/ranges/cooldowns. Q homes at 26 m/s, crits physical damage, hits enemy units or owned live kegs, and fizzles if its target disappears. E reserves a pending ghost during the cast, validates walls/spacing, spends one of three charges, and serially recharges every 780 ticks. Out-of-range casts approach first and new move/attack input cancels that pending intent.
+
+Kegs materialize after 15 ticks, decay from 3→2→1 at their locked-in tier, expire after 1500 ticks, connect within 6.9 m, and chain in a tick-keyed queue at 20-tick intervals. Pending nodes can join chains before materialization, supporting the one-part Q→E combo. Each chain snapshots damage/penetration/crit/slow parameters and tracks hit units once. A scheduled keg destroyed early keeps its original chain and cannot explode twice. Removed nodes and orphan chain payloads are cleaned up. Reset/respawn clears the controller, ghosts, schedules, projectiles, and charges.
+
+Added prototype barrel geometry, health pips, decay rings, links, explosion radius overlay, orange blast feedback, targeted selection, Q/E cooldown/failure UI, E recharge progress, and resource-backed Q/E tuning. Pistol-shot/throw animation roles use existing stock libraries; a simple right-hand pistol swaps with the sword for shooting. Casts face their target. W/R/passive remain inactive in this first M2 slice. Existing movement/basic-attack defaults and the accepted red character appearance are unchanged.
+
+Final verification: all 132 scripts load, all 8 stock scenes import, all 68 GUT tests pass (2,231 assertions), and the main scene completes 600 consecutive ticks without runtime errors. The M1 temporary-pulse regression fixture remains explicitly isolated with `captain_enabled=false`; the real arena and new Captain tests enable the controller. Strict editor import fails only at the already documented restricted-session debugger socket. No process is left running.
+
+New tests include melee and Flintlock detonation, exact projectile/cast timing, target removal in flight, invalid placement/spacing, charge exhaustion/serial recharge, exact decay/expiry/graph boundaries, overlap hit-once behavior, scheduled-node double-explosion safety, live chain extension, pending materialization, snapshot offense, stun interruption, reset cleanup, and the one-part combo (root at tick 166, second keg at 186).
+
+Playtest next: restart the project, place E on clear ground, wait until one pip, place another within 6.9 m, then Q or RMB the first keg. Use F2 for radii and F4 for events. Try two/three-keg chains and Q→E; F5 resets the training state. Full prop/VFX/audio polish is not part of this prototype slice. Stun retains the spent E charge/cooldown; that initial interruption choice is documented for later feel review.
+
+Current checkpoint: `feature/m2-captain-kegs` with local commits only. Existing uncommitted `project.godot` editor formatting is preserved. Read `docs/SESSION_HANDOFF.md` first next session. Remaining M2: Searing Edge, W Ration, R Broadside, more training controls/polish, and full milestone acceptance before M3. Fine animation calibration remains deferred per Ishak's instruction.
+
+
+### 2026-11-15 — W Ration implemented
+
+Continued M2 with one vertical slice per the guide: W Ration. Added a resource-backed 15-tick self-cast, 18-second cooldown, completion-time heal of 100 + 13% missing health capped at max HP, and shared cleanse. Burn remains active. Integrated command routing, W cooldown/failure display, F1 tuning, green healing numbers/ring, combat-log healing events, reset/death handling, and previous-intent resumption. Q/E polish remains deferred; accepted movement/attack timings and visuals are preserved. Existing `project.godot` editor serialization remains untouched.
+
+Known guide conflict: Ration lists stun cleansing, but the shared stun rule prohibits and interrupts all casts. Preserved the explicit shared rule: W cannot start while stunned and is interrupted by a new stun, retaining cooldown. A Ration-specific stun exception is a proposed future deviation requiring user approval; it was not silently implemented. Root/slow cleanse and burn preservation are implemented.
+
+Manual playtest: restart the project, use F1 → Apply to player → Burn to lose some health, then press W. Confirm the short cast, green heal, cooldown, and continuing burn. Apply Root/Slow and W to remove them; test W during movement and F5 reset. Stun currently blocks/interrupts W as described above. No polished VFX/audio is claimed. Searing Edge and Broadside remain next; M2 is not complete.
+
+Verification for the Ration slice: `python tools/verify.py` loaded all 132 scripts, imported all 8 stock scenes, passed all 72 tests / 2,256 assertions, and completed 600 main-scene ticks. The command exits failed only at editor import with the previously documented sandbox debugger TCP-socket restriction. `git diff --check` is clean.
+
+
+### 2026-11-15 — W keyboard routing fix
+
+Ishak reported that W did not activate. Traced the defect to InputRouter's action whitelist: `ability_w` existed in the input map and arena but was missing from the forwarded actions. Added W to the router. Full HP is allowed and still starts the cast/cooldown (healing is capped at max HP). Prior tests issued Commands directly and missed the raw keyboard path; added a physical KEY_W regression through InputRouter and the real arena, asserting W begins at full health and completes after 15 ticks.
+
+Manual check: stop and restart the running game, focus the viewport, press W at full HP, and confirm the W cooldown and green ring. Use F1 Burn to lose HP, close the panel, then W after cooldown or F5 reset followed by Burn. Project settings and Q/E timing are unchanged.
+
+W input fix verification: all 73 tests passed (2,261 assertions), all 132 scripts loaded, all 8 stock scenes imported, and the main scene ran 600 ticks. Strict verification still exits failed only for the known editor-import sandbox socket errors.
+
+
+### 2026-11-15 — W input fix confirmed by user
+
+Ishak reported “It works” after the W keyboard-routing fix. Record W activation as confirmed in desktop playtesting. No additional individual healing/cleanse scenarios or full M2 approval were reported. No code changes; latest verification remains 73 passing tests / 2,261 assertions and the 600-tick smoke check, with the documented editor-import sandbox socket limitation. Next M2 slices remain Searing Edge and Broadside; Q/E polish stays deferred.
+
+
+### 2026-11-15 — Searing Edge slice
+
+Implemented the Captain passive: a landed basic attack on an enemy applies a 150-tick burn (five 24 true-damage pulses), grants 25% movement speed for 120 ticks, and starts a 900-tick cooldown. Misses/cancellations, Q, and keg hits do not consume the passive. The first explosion of each keg chain resets readiness and grants the same nonstacking speed buff; child explosions do not repeat the reset. A direct KegManager signal drives gameplay and EventBus only logs results. Added P cooldown/readiness, F1 tuning, and orange blade emission while ready. Accepted attack timing and character appearance otherwise remain unchanged. Q/E polish remains deferred.
+
+Added simulation checks for exact melee/burn timing and true damage, speed expiry, cancellation/Q exclusions, chain reset followed by a melee before the child explosion (no second reset), cooldown boundary, and reset cleanup.
+
+Manual check: restart the game; P and the blade should indicate readiness. RMB a dummy, then S after one hit; watch five orange burn numbers and P's 15-second cooldown. Move during the two-second speed buff. Place linked kegs, wait for one pip and detonate; P should become ready again and speed should refresh. Q alone should not burn a dummy or consume P. F5 resets. Full flame particles/audio remain deferred; Broadside remains the next M2 slice. No M2 approval or M3 work is implied.
+
+Searing Edge verification: `python tools/verify.py` loaded all 132 scripts, imported all 8 stock scenes, passed 77/77 tests (2,295 assertions), and completed 600 main-scene ticks. Strict editor import fails only with the previously documented restricted-session TCP socket errors. `git diff --check` passed. Desktop glow/feel still requires user playtesting.
+
+
+### 2026-11-15 — Searing Edge playtest confirmed
+
+Ishak reported “Works perfectly” after the Searing Edge handoff. Record the passive slice as confirmed in user playtesting. No implementation changes or additional verification run were needed; latest checks remain 77 passing tests / 2,295 assertions, 132 scripts, 8 asset scenes, and 600 runtime ticks, with the documented sandbox editor-import socket limitation. R Broadside is next. Q/E polish remains deferred, and M2 still requires completion and explicit milestone approval before M3.
+
+
+### 2026-11-15 — R Broadside implemented
+
+Implemented resource-backed R quick cast anywhere inside the arena: 15-tick cast, 1800-tick cooldown, 5.8 m fixed area for 480 ticks, twelve waves of 40 magic damage and 30% slow for 30 ticks. Wave offsets are measured from cast completion: +30/+45/+60 and three more clusters 120 ticks apart (last wave +420). Radius intersects target gameplay radius, consistent with existing area effects. Allies/kegs are excluded and no passive burn is applied. Cast parameters snapshot at zone creation; custom waves outside the tuned duration are excluded. Stun interrupts pending R, retaining cooldown; a completed zone continues through stun/death until expiry or controller reset/respawn. F5 clears all zones and cooldown.
+
+Added R input routing (including the physical key), cooldown/failure UI, F1 tuning, full-duration ground ring, tick-based falling streaks/impact flashes, and seeded uniform-circle impact points. Cosmetic positions are drawn from the simulation RNG at creation; rendering never consumes gameplay RNG. Full VFX/audio remain later polish. Existing Q/E polish remains deferred.
+
+Manual playtest: restart, point near a dummy and press R. Confirm short cast, orange area ring, falling cannonballs, blue damage in four clusters of three, slow, and 30-second cooldown. Walk away after casting; the area stays fixed. Cast at distant arena ground to confirm no approach. F4 shows wave ticks; F9/F10 pause/step the effect. F5 mid-bombardment must clear it and restore R. No M2 approval is inferred; final combo acceptance still needs user playtesting.
+
+Broadside verification: `python tools/verify.py` loaded all 134 scripts, imported all 8 stock scenes, passed all 82 tests (2,352 assertions), and completed 600 main-scene ticks. Strict editor import still fails only with the documented sandbox TCP-socket errors. New tests cover all 12 exact wave ticks, full ring duration, slow expiry, area boundaries/moving targets, damage snapshot, global range, interruption/cooldown/reset, physical R forwarding, invalid ground, seeded impacts, and render RNG isolation. `git diff --check` passed. Desktop effects/feel await user playtest.
+
+
+### 2026-11-15 — denser Broadside cannonball visuals
+
+Ishak requested “much much more” falling models. Increased visuals from one to sixteen cannonballs per damage wave: 192 per default cast, with seeded positions across the area and ±5-tick stagger for a denser barrage. Added F1 `cannonballs_per_wave` tuning (1–32, snapshotted on cast completion), shared low-poly meshes/materials, and a 2048-visual cap for extreme custom wave settings. Cosmetic expansion uses a local RNG seeded from each existing wave anchor, so changing visual density preserves simulation RNG consumption, future crits, damage waves, slows, and cooldowns. This is a requested visual refinement, not a change to combat balance.
+
+Added a regression comparing dense/sparse casts with the same seed, confirming equal simulation RNG state, wave anchors and relative schedules; checks default count and circle bounds. Manual check: restart, cast R near dummies, and inspect the denser staggered rain; use F1 cannonballs_per_wave for preference tuning. Rendering smoothness still needs desktop playtesting.
+
+Density verification: all 83 tests passed (2,572 assertions), 134 scripts loaded, 8 stock scenes imported, and the 600-tick runtime check passed. Full `python tools/verify.py` still exits failed only for the known editor-import sandbox socket restriction. `git diff --check` passed.
+
+2026-11-15: Ishak confirmed the denser Broadside visuals are “Much better” and authorized continued work, asking first for the documented map-art schedule and sourcing process. Record density feedback as accepted; this is not explicit full M2 milestone approval. Environment dressing is scheduled for M5, using the guide’s Quaternius dungeon/nature packs and Kenney Pirate Kit; verify actual archives/licenses before integration.
+
+
+### 2026-11-15 — M2 training targets and final playtest aid
+
+Added resource-backed F1 dummy controls: count 1–5, armor presets, 2000/10000 finite HP, infinite HP (default), Elite flag, selected-target damage/DPS, Reset damage / DPS, Restore player health, and explicit keg decay-tier selection. Settings apply on the next simulation tick; target settings reset/recenter dummies and preserve source resources. F5 preserves session settings and clears target damage; Reset tuning restores defaults. Damage/DPS use resolved amounts and simulation ticks, include idle time from first hit, and match combat-log overkill semantics for finite targets.
+
+Added dedicated default-training tests for infinite lethal hits, burn retention, next-tick options, count/shared-target-array/selection safety, source-resource preservation, finite death/reset/default restoration, Elite keg bonus, player healing, and locked keg tiers. Existing M1/Captain combat fixtures explicitly opt out of training defaults so their finite-health assertions remain meaningful. Added docs/M2_PLAYTEST.md with final combo and training checks.
+
+Stationary targets are implemented; strafe/chase behavior and enemy keg-attacking toggle remain later training/PvE work. Q/E polish is deferred and final map art stays M5. M2 manual acceptance still requires the guide's five consecutive three-keg chains on three dummies, plus explicit milestone approval before M3.
+
+Training slice verification: all 88 tests passed (2,624 assertions), 136 scripts loaded, all 8 stock scenes imported, and the 600-tick main-scene smoke check passed. Full `python tools/verify.py` exits failed only at editor import with the known sandbox debugger TCP-socket errors. `git diff --check` passed. No desktop UI/playtest approval is claimed.
+
+
+### 2026-11-15 — milestone-level communication requested
+
+Ishak instructed continued autonomous work according to the docs and requested notifications at milestone inspection checkpoints rather than per-feature updates. Recorded in AGENTS.md. Maintain detailed implementation/verification records here, finish the current milestone implementation before inspection handoff, and retain the explicit approval gate before the next milestone. This communication preference is not automatic M2 approval.
+
+
+### 2026-11-15 — final M2 training behavior and implementation audit
+
+Continued autonomously per the milestone-level communication preference. Completed the remaining training behavior selector: Stationary / Strafe (3 m span at 3.45 m/s) / Chase slowly (1.5 m/s, stops at 2 m). All parameters live in TrainingSettings and are exposed in F1. Driver commands use existing integer-tick movement, pathfinding, and root/stun/slow behavior; pending commands are preserved. F5/settings changes reset patrol direction. Added the default-Off enemy keg-attacking toggle: dummies attack the nearest live in-range keg with normal melee timing; hits remove one pip and enemy destruction never explodes/reset-passives. Dummies do not attack the player or chase kegs. This is training-only behavior, not M3/Hunter or M4 challenge AI.
+
+Added simulation coverage for strafe reversals/bounds/root/reset, slow chase/stop-mode switching, and Off→On keg destruction without an explosion. Updated final M2 playtest checklist. Existing accepted movement/abilities/visual density remain unchanged. Final inspection must still include the five consecutive three-keg chains and the known W guide conflict: global stun currently prevents its cast even though its ability table lists stun cleanse. Do not silently implement an exception or claim full milestone approval.
+
+
+### 2026-11-15 — Ration stun exception approved and implemented
+
+Asked Ishak to resolve the actual guide conflict: whether Ration should complete its 0.25-second cast while stunned and cleanse it. Ishak answered “yes,” approving the recommended Ration-only exception. Appended the effective amendment to the guide before implementation. W now starts during stun, survives newly applied stun, and heals/cleanses at its original completion tick. Normal cast lock/buffering, cooldown, death cancellation, and Q/E/R stun restrictions remain. W's HUD availability and avatar casting reflect the exception. Tests now cover physical W during stun, exact cleanse timing, retained buffered movement, new stun during W, W cooldown failure while stunned, and Q still rejected. The earlier conflict/approval limitation is resolved; historical log entries remain unchanged.
+
+
+### 2026-11-15 — M2 implementation inspection checkpoint
+
+All Captain implementation and training controls are ready for milestone inspection, with user-approved Ration stun exception included. Added docs/M2_ACCEPTANCE.md mapping each section-8 automated gate to its tests and refreshed SESSION_HANDOFF.md to reflect current behavior without stale decision requests. Initial patrol coverage exposed an incorrect test comparison between different phases of a full patrol; replaced that comparison with actual reversal/positive-negative span checks. Final verification has no test failures.
+
+Final `python tools/verify.py`: 136 scripts load, 8 stock scenes import, 93/93 tests pass with 2,652 assertions, and main scene runs 600 consecutive ticks. Strict command exits failed only for the previously documented editor-import debugger TCP-socket restriction. `git diff --check` passed. No system/application configuration was changed; pre-existing project.godot serialization remains unstaged. Work remains local with no milestone merge/tag.
+
+Remaining gate is user inspection/approval, including five consecutive three-keg chains on three dummies. Desktop feel and manual reliability cannot be claimed by headless checks. Preserve deferred Q/E/animation polish and M5 environment/VFX/audio schedule. No Hunter/M3 work was started.
+
+
+### 2026-11-15 — barrel-link visibility feedback
+
+Ishak requested more visible links during M2 inspection. Replaced the thin dark line with an amber ground ribbon and dark border; scheduled links brighten to pale gold. Default core width is 0.16 m plus 0.06 m border each side, tunable under F1 Powder Keg. Double-sided unshaded triangle strips provide stable thickness instead of hardware-dependent line widths. No graph, collision, or combat logic changed. Manual check: restart, place linked kegs and inspect the brighter/thicker trail; F1 link_width/link_border adjust thickness. M2 approval remains pending.
+
+Link-visibility verification: 93 tests / 2,652 assertions passed, 136 scripts loaded, 8 asset scenes imported, and 600 runtime ticks passed. Strict verification retains only the known sandbox editor-import socket error. `git diff --check` passed; desktop visibility awaits inspection.
+
+
+### 2026-11-15 — M2 inspection approved; M3 authorized
+
+After final M2 inspection and the requested barrel-link visibility fix, Ishak said “Great, you may proceed.” Treat this as approval of the inspected M2 implementation and authorization for M3. No individual five-chain result was reported; do not invent that playtest detail. Preserve accepted Captain feel/visuals and deferred polish. New work branch: feature/m3-hunter. M3 is Apex Hunter and remains gated before M4. Milestone-only communication continues.
+
+### 2026-11-15 — M3 Hunter implementation and audit
+
+Implemented HunterController, Ferocity, HunterData resources/stats, brush Area3D center containment/vision rules, fixed-destination colliding leaps and visual arcs, airborne ability commands/movement buffer, Rend reset/protected first windup/AS/range/bonus, Howl grey HP/empowered cleanse, swept Bola cast/projectile/slow/root, Stalk camouflage/mark/armor shred, class switching, and Hunter HUD/tuning/visual adaptations. Preserved Captain scene defaults and shared combat regressions. Hunter is selected with F1; provisional green hooded stock human uses existing assets. Added grey health bar, claw/Ferocity state, leap/mark/aim overlays, jump animation and a substitute Howl cast pose. Final audio/VFX/map dressing remain M5; M4 AI/challenge was not started.
+
+M3-specific checks cover section-9 timing/range/linger/ground-vs-airborne cast/reset/Ferocity/grey-health gates plus walls, dead/moving targets, protected first windup, buffered movement, camouflage/vision/armor expiry, Bola width/wall/launch origin, full Ferocity combo/empowered cooldown bypass, AS buff persistence, class switching, render RNG isolation, and reset cleanup. Initial validation caught Godot's imported `_Loop` suffix removal on Jump; corrected to the imported Jump clip. Existing accepted animation markers remain untouched.
+
+Interpretations are recorded in ARCHITECTURE.md: leap distance is actual origin-to-landing-point travel, wall-blocked impact retains its original deadline, grey health remains reusable inside its rolling window, and the specific empowered Howl cleanse permits W during stun. No manual calibration or user feel approval is fabricated. See docs/M3_PLAYTEST.md for milestone inspection.
+
+Local milestone provenance: created annotated m2-approved at cd07c59, the inspected barrel-link refinement checkpoint, after Ishak approved proceeding. Hunter implementation remains on feature/m3-hunter and has not been merged/tagged as approved.
+
+
+### 2026-11-15 — M3 implementation ready for inspection
+
+Completed the guide's M3 implementation and section-9 gate mapping in docs/M3_ACCEPTANCE.md, refreshed README/architecture/credits/session handoff, and retained Captain as the default startup class. F1 class selection exposes the completed Hunter with a provisional green hooded human. No M4/M5 implementation was started. Prior accepted Captain mechanics, Q/E polish deferral, and animation marker deferral remain intact.
+
+Final full `python tools/verify.py` run: 143 scripts loaded, all 8 stock scenes imported, 113/113 tests passed with 2,758 assertions, Captain main scene and Hunter each completed 600 consecutive runtime ticks. Strict import failed only at the known restricted-session debugger TCP listener. A focused Hunter follow-up passed all 18 tests / 96 assertions after matching Hunter armor to the guide's 30 and adding a regression assertion. `git diff --check` and staged whitespace checks passed. Logs are in .local/m3-final-verification.log, .local/gut-suite.log, .local/hunter-final-focused.log, and per-stage verification logs. No verification process remains running.
+
+M3 is an implementation inspection checkpoint, not fabricated feel approval. User must inspect brush leap → airborne Bola → Rend reset → empowered ability, Hunter look/camouflage/mark/grey health, interruptions and class-switch/reset cleanup, then explicitly approve M3 before M4. The stock Howl pose and provisional visuals are documented; final roar/audio/full VFX/map dressing remain M5. Existing unstaged project.godot serialization was preserved and excluded from the implementation commit; no system/application config changes or remote pushes were made.
+
+
+### 2026-11-15 — function-key accessibility during M3 inspection
+
+Ishak reported that F keys do not work in the game and asked whether Arch Linux is responsible. The exact desktop/hardware cause is unconfirmed. Project bindings are present, but the router previously handled debug keys only after GUI input, allowing focused controls to consume them. Routed reserved debug shortcuts before GUI handling, retained gameplay after GUI, and centralized dispatch for mouse controls. Added visible Tools (Tab/F1), Ranges, States, Log, Reset, Slower/Faster, Pause/Resume and Step buttons. Tab supports physical/logical events, ignores echo and preserves menu blocking. Buttons do not grab keyboard focus and blank toolbar area does not intercept world clicks. Existing input map and all system/editor/keyboard settings remain untouched.
+
+Tests inject real viewport keyboard events with a focused SpinBox to verify Tab/F1, single-toggle/echo behavior; exercise toolbar signals for overlays/clock/reset, menu blocking, and class-switch persistence. Updated active playtest docs with function-key-free instructions. External Fn/media/desktop/editor interception remains possible; no unverified platform diagnosis is claimed.
+
+Also connected the previously mapped but unforwarded F6 class-switch action. The focused input test exercises F6 through the real viewport, then steps the queued class change and verifies toolbar availability after the HUD rebuild. Synthetic input tests explicitly flush Godot’s buffered events before asserting state and release injected keys after each test.
+
+Debug-control verification: all 117 tests passed (2,779 assertions), all 144 scripts loaded, 8 stock asset scenes imported, and Captain/Hunter each ran 600 ticks. Focused debug-input checks passed 4/4 tests (20 assertions). Full verification retains only the known sandbox editor-import TCP-listener error. `git diff --check` passed. Exact host F-key interception remains unconfirmed; Tools/Tab/mouse alternatives are ready for desktop inspection.
+
+
+### 2026-11-15 — automatic Hunter jump-range circle
+
+Ishak confirmed the debug-control workaround works “amazingly” and requested a character-centered leap-range circle from brush or R. Added a bright outlined ring independent of F2, automatically green for brush/linger and gold for Stalk camouflage after the two-second warmup. It follows the interpolated actor, reads actual leap eligibility, and hides during flight/root/stun/death or Captain selection. Radius uses the same configured edge range plus Hunter gameplay radius (8.1 m default); width is visual-only tuning in Tools. Cached annulus geometry has no collision or RNG influence. Removed the duplicate F2 leap ring while retaining other overlays.
+
+Added integration checks for automatic display with F2 off, brush/linger expiry, root/in-flight hiding, R warmup, range tuning, class-switch cleanup, and rendering RNG isolation. Manual check: restart/select Hunter, enter/exit brush, and cast R outside brush; the circle should appear in brush and turn gold when R grants camouflage after two seconds. This feedback does not imply full M3 approval.
+
+Automatic leap-circle verification: all 119 tests passed (2,791 assertions), all 145 scripts loaded, 8 stock scenes imported, and both Captain/Hunter 600-tick runtime checks passed. Strict verification retains only the known sandbox editor-import socket failure. `git diff --check` passed. Desktop appearance remains for user inspection.
+
+
+### 2026-11-15 — end-of-session handoff saved
+
+At Ishak's request, consolidated docs/SESSION_HANDOFF.md for the next session with milestone status, exact gameplay checkpoints/branch, launch commands, Tools/Tab/mouse alternatives, Hunter/Captain mechanics and training, approved/deferred choices, asset sourcing schedule, final verification, and persistent workspace/Git constraints. User positively confirmed the debug-control workaround and automatic jump circle. M3 is implemented/verified and awaiting explicit final milestone approval; M4 has not begun. Do not infer a full manual combo sign-off from individual positive feedback.
+
+Latest gameplay commit is 1a4610d on feature/m3-hunter. Latest complete verification remains 119 passing tests / 2,791 assertions, 145 scripts, 8 stock scenes, and separate Captain/Hunter 600-tick smoke checks; only the known sandbox editor-import socket error remains. No code changed in this handoff and no unchanged tests were rerun. Pre-existing project.godot editor serialization remains unstaged and preserved. Next work is M3 feedback/approval, then guide-defined M4; M5 art/textures/audio/export remain later.
+
+## 2026-11-15 — M3 approved; M4 authorized
+
+Ishak explicitly approved M3 and instructed completion of M4, reporting at the milestone checkpoint or when information is needed. Working on `feature/m4-pve`; M5 remains gated. Existing unstaged project.godot serialization is preserved.
+
+
+## 2026-11-15 — M4 implementation and inspection preparation
+
+- Implemented guide-stat Chaser, Kiter and Elite resources/AI; ranged travel/wall interception; fixed-center uninterruptible slam and stun; brush/camouflage sight memory and return; opt-in keg attacks; fixed-tick crowd spreading.
+- Added resource-backed waves, exact opening/inter-wave delays, Victory/Defeat statistics and panels, no Challenge respawn, class-aware reset, persistent mode controls and return to configured Training.
+- Added exact-precision command recordings and validated binary save/load with seed/class/mode/tuning initialization and byte-for-byte whole-log comparison. Full successful stock-stat runs for both classes reproduce. Runtime tuning/debug changes require Reset before recording; playback rejects gameplay input and interrupts on tuning changes.
+- Fixed navigation initialization exposed by replay: the first movement queried a map before synchronization; replay could therefore follow a different route. Navigation map iterations now initialize synchronously and readiness waits for map synchronization; retargeted path queries refresh before finished checks. Existing navigation clearance and player movement stats are preserved.
+- Added focused challenge/replay tests, full-run command pilots and Challenge smoke stage. Existing Captain, Hunter, movement, training and debug gates remain required. `verify.py` accelerates frame-driven tests with fixed render delta and gives the expanded suite a 300-second timeout.
+- **Proposed deviation requiring approval with M4 inspection:** replace the guide's asynchronous NavigationAgent avoidance velocity solver with synchronous stable-order crowd separation. This keeps combat motion on admitted 60 Hz ticks and supports exact replay/pause/slow/step. NavigationAgents remain for paths; chase repaths remain six ticks. The original guide was not changed. See ARCHITECTURE and M4_PLAYTEST for details.
+- Automated pilots use ordinary player commands and unmodified resource stats, with no artificial healing/damage/teleports. Their exact state/timing knowledge is stronger than human play; human balance/feel remains an inspection limitation. Environment art, final enemy costumes, final VFX/audio and exports remain M5. No external assets or network writes were needed.
+- Existing unstaged `project.godot` editor serialization is preserved and excluded from implementation commits. No system/application settings were changed. Work remains local; no GitHub retry was attempted.
+
+Latest required run: `python tools/verify.py`, full output in `.local/m4-inspection-verification.log`.
+
+- **134/134 GUT tests passed, 2,863 assertions across 17 scripts** (68.614 seconds).
+- All **155 scripts** loaded; all **8 stock asset scenes** imported.
+- Captain, Hunter and Challenge each completed **600 consecutive simulation ticks**.
+- Both full successful class recordings replayed with identical serialized combat-log bytes. A focused replay scenario also passes with extra physics/render frames between playback ticks.
+- Strict verification exits failed **only at editor import**, with the previously documented sandbox TCP listener errors (`_sock == -1`, `ERR_CANT_CREATE`). No gameplay/import errors were suppressed. Run `python tools/verify.py` from an unrestricted normal terminal for a strict editor-import result.
+- `git diff --check` passed. All verification processes completed. Documentation-only handoff edits do not require repeating gameplay checks.
+
+M4 is ready for inspection. Full command pilots: Captain clear 110.02 s / 1,757 damage taken / 313.01 HP remaining; Hunter clear 100.35 s / 319 damage taken / 690.38 HP remaining. Both saved full runs reproduce identical logs and Victory. Human balance and the proposed crowd-avoidance guide refinement await approval. Local `m3-approved` tags accepted checkpoint `1902821`. M4 has not been merged/tagged and M5 has not started.
+
+
+## 2026-11-15 — PC migration and next-session review reminder
+
+Ishak requested that the next session ask for the M4 review after the project moves to his PC, and explicitly requested pushing all work to GitHub. The handoff now starts with that reminder and PC setup instructions. This new request authorizes synchronization despite the earlier no-retry preference. The previously preserved editor serialization in `project.godot` is included in this migration checkpoint, separate from implementation commit `57279d7`. Ignored caches/logs/replay exports and external engine/raw packs are not Git content. M4 approval remains pending; M5 is still gated. Push result is recorded separately below.
+
+GitHub push attempt: `git push origin --all` failed before remote contact because this session cannot resolve `github.com`. No branches or tags were uploaded by that attempt. All work is committed locally. A portable `git bundle --all` transfer copy is being written outside the repository at `/home/aurelius/Downloads/blood-powder-migration.bundle`; it includes all local branches/tags. From a network-enabled terminal, run `git push origin --all` followed by `git push origin --tags`. No force push or milestone merge was attempted.
+
+
+## 2026-11-15 — User-confirmed manual push and PC prerequisites
+
+Ishak reports manually pushing everything to GitHub after the agent's DNS-blocked attempt. Added a prominent next-session checklist to `docs/SESSION_HANDOFF.md`: check/install Git, pinned Godot 4.7.2, and Python 3 on the new PC; then restore `feature/m4-pve`, import/verify, and ask for the M4 review. This checklist was added after the reported manual push, so its commit must also be synchronized for the PC session. No gameplay changed; prior gameplay verification remains applicable.

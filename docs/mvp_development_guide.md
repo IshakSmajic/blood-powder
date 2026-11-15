@@ -3540,3 +3540,23 @@ Mixamo and alternatives, 2026
 # User-directed amendment — 14 November 2026
 
 Ishak accepts the current animation appearance and explicitly defers further manual animation fine-tuning unless later playtesting reveals a need. The mandatory manual attack hit-frame marking step in sections 4 and 13 (M1) is therefore deferred rather than treated as completed. Keep the current provisional markers and authoritative combat timing unchanged. The original DOCX remains an unmodified historical copy; this amendment records the effective project instruction.
+
+
+# User-directed amendment — 15 November 2026: Ration during stun
+
+Ishak approved a Ration-specific exception to the shared stun rule: W may begin its 15-tick cast while stunned and completes through existing or newly applied stun, then heals and cleanses slow/root/stun. Other abilities remain blocked/interrupted by stun. Death still cancels Ration. Cooldown and cast buffering rules remain unchanged. This resolves the conflict between section 7's general cast prohibition and section 8's Ration stun cleanse. The original DOCX remains an unmodified historical copy.
+
+
+# User-directed amendment — 15 November 2026: keg-link visibility
+
+During M2 inspection, Ishak requested more visible barrel links. Replace the faint dark single-pixel trail with a thicker amber ground ribbon and dark border, brightening to pale gold while scheduled. Link width/border remain tunable; connection geometry and combat timing are unchanged. This refines section 11’s visual link specification.
+
+
+# User-directed refinement — 15 November 2026: function-key access
+
+During M3 inspection, Ishak reported function keys unavailable in the game. Provide a persistent clickable debug toolbar and Tab alternative for Tools, while preserving the existing F-key actions. The toolbar covers overlays/log/reset/speed/pause/step. This adds access paths without changing mechanics or desktop/editor configuration.
+
+
+# User-directed refinement — 15 November 2026: automatic Hunter jump circle
+
+Ishak requested a circle around Hunter indicating jump range from brush or the fourth ability. Show the nominal leap-reach ring automatically while brush/linger or Stalk camouflage grants leap eligibility, without requiring the debug range overlay. Use the configured leap range plus Hunter gameplay radius so the ring represents the enemy-edge reach. Hide it while dead, rooted, stunned, airborne, or on another class. This is presentation only.

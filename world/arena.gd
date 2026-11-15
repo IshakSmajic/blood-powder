@@ -4,10 +4,30 @@ const Geometry = preload("res://world/arena_geometry.gd")
 const Camera = preload("res://world/camera_rig/arena_camera.gd")
 const HUD = preload("res://ui/sandbox_hud.gd")
 
+var mode: String = "Training"
+var _queued_mode: String = ""
+var challenge := ChallengeEncounter.new()
+var replay := CommandReplay.new()
+var _loading_replay: bool = false
+var _vision_brush: BrushZone
+var _vision_entry_tick: int = 0
+
 var player: CombatUnit
 var units: Array[CombatUnit] = []
 var camera: Camera3D
-var selected: CombatUnit
+var selected: Node3D
+var training_enabled: bool = true
+var training_settings: TrainingSettings = preload("res://data/training/defaults.tres")
+var _training_signature: Dictionary = {}
+var _training_actions: Array[StringName] = []
+var _strafe_direction: Dictionary = {}
+var captain_enabled: bool = true
+var leap_indicator: LeapRangeIndicator
+var hunter: HunterController
+var active_class: String = "Captain"
+var initial_class: String = "Captain"
+var _queued_class: String = ""
+var captain: CaptainController
 var navigation_ready: bool = false
 var attack_move_armed: bool = false
 var show_states: bool = false
@@ -32,23 +52,36 @@ func _ready() -> void:
 	var geometry := Geometry.new()
 	geometry.name = "Geometry"
 	add_child(geometry)
+	NavigationServer3D.map_set_use_async_iterations(get_world_3d().navigation_map, false)
 	_build_navigation(geometry)
 	player = _add_unit(0, 0, "Powder Captain", Vector3(0, 0, 11), preload("res://data/stats/captain.tres"))
 	for i in range(3):
 		_add_unit(i + 1, 1, "Dummy %d" % (i + 1), Vector3((i - 1) * 3, 0, -8), preload("res://data/stats/dummy.tres"))
+	if training_enabled and mode == "Training": _sync_training()
+	if captain_enabled:
+		captain = CaptainController.new()
+		captain.configure(self, player)
+	if initial_class == "Hunter": _set_class("Hunter")
+	challenge.arena = self
+	player.command_queued.connect(replay.record)
+	replay.begin(self)
 	selected = player
 	camera = Camera.new()
 	camera.name = "Camera"
 	camera.target = player
 	add_child(camera)
 	_effects = Node3D.new()
+	leap_indicator = LeapRangeIndicator.new()
+	leap_indicator.name = "HunterLeapRange"
+	add_child(leap_indicator)
 	_effects.name = "TransientEffects"
 	add_child(_effects)
 	_debug_mesh = MeshInstance3D.new()
 	_debug_mesh.mesh = ImmediateMesh.new()
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color("c9b476")
+	material.albedo_color = Color.WHITE
+	material.vertex_color_use_as_albedo = true
 	_debug_mesh.material_override = material
 	add_child(_debug_mesh)
 	_hud = HUD.new()
@@ -61,9 +94,13 @@ func _ready() -> void:
 	InputRouter.world_action.connect(_on_action)
 	SimClock.tick_advanced.connect(simulate_tick)
 	EventBus.combat_event.connect(_on_combat_event)
+	DebugConfig.override_changed.connect(_on_tuning_override)
+	DebugConfig.overrides_cleared.connect(_on_tuning_cleared)
 	# The navigation server synchronizes the runtime-baked region at a physics boundary.
 	await get_tree().physics_frame
 	await get_tree().physics_frame
+	while NavigationServer3D.map_get_iteration_id(get_world_3d().navigation_map) == 0:
+		await get_tree().physics_frame
 	navigation_ready = _region.navigation_mesh.get_polygon_count() > 0
 	if not navigation_ready:
 		push_error("Arena navigation bake produced no polygons")
@@ -122,6 +159,31 @@ func _add_unit(id: int, team: int, label: String, at: Vector3, data: UnitStats) 
 func simulate_tick(tick: int) -> void:
 	if not navigation_ready:
 		return
+	if not _queued_mode.is_empty():
+		mode = _queued_mode
+		_queued_mode = ""
+		reset_arena()
+		return
+	if replay.playing:
+		if not replay.result.is_empty(): return
+		replay.feed(self, tick)
+	if mode == "Challenge" and not challenge.outcome.is_empty():
+		replay.finish(self, tick)
+		return
+	if not _queued_class.is_empty():
+		var next_class := _queued_class
+		_queued_class = ""
+		_set_class(next_class)
+		if mode == "Challenge":
+			reset_arena()
+			return
+		replay.valid = false
+	if training_enabled and mode == "Training": _sync_training()
+	for action in _training_actions:
+		if action == &"reset_damage":
+			for target in units: target.reset_damage_readout()
+		elif action == &"restore_player" and player.alive(): player.heal(player.stat(&"max_health"))
+	_training_actions.clear()
 	for kind in _queued_debug_statuses:
 		match kind:
 			&"cleanse": player.cleanse()
@@ -130,13 +192,34 @@ func simulate_tick(tick: int) -> void:
 			&"speed_buff": player.apply_status(kind, tick, 180, 0.5)
 			_: player.apply_status(kind, tick, 120)
 	_queued_debug_statuses.clear()
+	var current_brush := brush_at(player.position)
+	if current_brush != _vision_brush:
+		_vision_brush = current_brush
+		_vision_entry_tick = tick
+	if captain != null: captain.pre_tick(tick)
+	if hunter != null: hunter.pre_tick(tick)
 	if attack_move_armed and tick >= _armed_until:
 		attack_move_armed = false
-	if _right_ground_held and not _menu_open and tick - _last_hold_tick >= 6:
+	if not replay.playing and _right_ground_held and not _menu_open and tick - _last_hold_tick >= 6:
 		_issue_ground_move()
 		_last_hold_tick = tick
+	if training_enabled and mode == "Training": _drive_training(tick)
+	if mode == "Challenge": challenge.pre_tick(tick)
 	for unit in units:
+		if unit is EnemyUnit and unit.driver.slam_end >= 0:
+			# Slam is uninterruptible by control effects; death cancels it.
+			for effect in unit.statuses.advance(tick):
+				if effect.event == &"burn_pulse": unit.receive_damage(effect.amount, tick, effect.source_id, false, &"true", true)
+				else: EventBus.publish(&"status_expired", {"unit": unit.unit_id, "status": effect.kind})
+			unit.state = "Slam telegraph"
+			continue
 		unit.simulate(tick, units)
+	if captain != null: captain.post_tick(tick)
+	if hunter != null: hunter.post_tick(tick)
+	if mode == "Challenge":
+		_separate_enemies()
+		challenge.post_tick(tick)
+	replay.finish(self, tick)
 
 
 func _on_action(action: StringName) -> void:
@@ -145,15 +228,46 @@ func _on_action(action: StringName) -> void:
 		return
 	if _menu_open:
 		return
+	if replay.playing and action in [&"ability_q", &"ability_w", &"ability_e", &"ability_r", &"stop", &"hold_position", &"move_attack", &"attack_move", &"debug_class"]: return
 	match action:
 		&"ability_q":
 			if player.alive():
-				player.queue_command(UnitCommand.create(UnitCommand.Kind.CAST), SimClock.state.tick)
+				var command := UnitCommand.create(UnitCommand.Kind.CAST)
+				if captain != null: command.target = _flintlock_target()
+				player.queue_command(command, SimClock.state.tick)
 			else:
 				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead"})
+		&"ability_w":
+			if captain == null and hunter == null: return
+			if not player.alive():
+				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"W"})
+				return
+			var command := UnitCommand.create(UnitCommand.Kind.CAST)
+			command.slot = &"W"
+			player.queue_command(command, SimClock.state.tick)
+		&"ability_e", &"ability_r":
+			if hunter != null and action == &"ability_r":
+				if not player.alive():
+					EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"R"})
+					return
+				var command := UnitCommand.create(UnitCommand.Kind.CAST)
+				command.slot = &"R"
+				player.queue_command(command, SimClock.state.tick)
+				return
+			if captain == null and hunter == null: return
+			if not player.alive():
+				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"R" if action == &"ability_r" else &"E"})
+				return
+			var point: Variant = _ground_point()
+			if point == null: return
+			var command := UnitCommand.create(UnitCommand.Kind.CAST, point)
+			command.slot = &"R" if action == &"ability_r" else &"E"
+			player.queue_command(command, SimClock.state.tick)
 		&"toggle_camera_lock", &"zoom_in", &"zoom_out":
 			camera.handle_action(action)
 		&"debug_panel": _hud.toggle_debug()
+		&"debug_class":
+			if captain != null or hunter != null: queue_class("Hunter" if hunter == null else "Captain")
 		&"debug_ranges": show_ranges = not show_ranges
 		&"debug_states": show_states = not show_states
 		&"debug_log": _hud.toggle_log()
@@ -168,7 +282,7 @@ func _on_action(action: StringName) -> void:
 		&"move_attack":
 			attack_move_armed = false
 			var picked := _pick_unit()
-			if picked != null and picked.team != player.team and picked.alive():
+			if picked != null and (picked is PowderKeg or picked.team != player.team) and picked.alive():
 				_right_ground_held = false
 				player.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, picked), SimClock.state.tick)
 				_click_ring(picked.global_position, Color("c94e43"))
@@ -195,7 +309,9 @@ func _issue_ground_move() -> void:
 
 
 func queue_debug_status(kind: StringName) -> void:
+	if replay.playing: return
 	_queued_debug_statuses.append(kind)
+	replay.valid = false
 
 
 func _ground_point() -> Variant:
@@ -203,13 +319,37 @@ func _ground_point() -> Variant:
 	return Plane(Vector3.UP, 0.0).intersects_ray(camera.project_ray_origin(mouse), camera.project_ray_normal(mouse))
 
 
-func _pick_unit() -> CombatUnit:
+func _targets() -> Array[Node3D]:
+	var targets: Array[Node3D] = []
+	for unit in units: targets.append(unit)
+	if captain != null:
+		for view in captain.kegs.views.values(): targets.append(view)
+	return targets
+
+
+func _flintlock_target() -> Node3D:
+	var point: Variant = _ground_point()
+	if point == null: return null
+	var hovered := _pick_unit()
+	if hovered != null and (hovered is PowderKeg or hovered.team != player.team): return hovered
+	var best: float = 1.5 * 1.5 + 0.00001
+	var nearest: Node3D
+	for target in _targets():
+		if not target.alive() or (target is CombatUnit and target.team == player.team): continue
+		var distance: float = point.distance_squared_to(target.global_position)
+		if distance < best:
+			best = distance
+			nearest = target
+	return nearest
+
+
+func _pick_unit() -> Node3D:
 	var point: Variant = _ground_point()
 	if point == null:
 		return null
-	var nearest: CombatUnit
+	var nearest: Node3D
 	var best: float = INF
-	for unit in units:
+	for unit in _targets():
 		var distance: float = unit.global_position.distance_squared_to(point)
 		if unit.alive() and distance <= pow(unit.stat(&"selection_radius"), 2) and distance < best:
 			best = distance
@@ -238,7 +378,14 @@ func _toggle_menu() -> void:
 
 
 func reset_arena() -> void:
-	SimClock.reset()
+	SimClock.reset(replay.seed_value if _loading_replay else TickState.DEFAULT_SEED)
+	if mode == "Challenge" or (units.size() > 1 and units[1] is EnemyUnit): _clear_opponents()
+	challenge.reset()
+	_vision_brush = null
+	_vision_entry_tick = 0
+	player.respawn_enabled = mode != "Challenge"
+	_training_signature.clear()
+	if mode == "Training" and training_enabled: _sync_training()
 	# Session tuning stays active until the editor/game is restarted.
 	for unit in units:
 		unit.reset_unit()
@@ -250,21 +397,64 @@ func reset_arena() -> void:
 	_right_ground_held = false
 	attack_move_armed = false
 	_queued_debug_statuses.clear()
+	_training_actions.clear()
+	_strafe_direction.clear()
 	_hud.show_menu(false)
 	_hud.clear_log()
 	combat_log.clear()
+	selected = player
 	camera.snap()
+	if not _loading_replay: replay.begin(self)
 
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(player):
 		return
+	leap_indicator.update_visual(player, hunter, SimClock.state.tick)
 	var immediate := _debug_mesh.mesh as ImmediateMesh
 	immediate.clear_surfaces()
+	if hunter != null:
+		immediate.surface_begin(Mesh.PRIMITIVE_LINES)
+		immediate.surface_set_color(Color("90bd8d") if hunter.leap_eligible(SimClock.state.tick) else Color("606e65"))
+		_draw_circle(immediate, player.position, 0.85 if hunter.leap_eligible(SimClock.state.tick) else 0.65)
+		var hovered := _pick_unit()
+		if hovered is CombatUnit and hovered.team != player.team and hunter.leap_eligible(SimClock.state.tick) and not player.in_attack_range(hovered) and SimClock.state.tick >= player.attack.ready_tick:
+			if player.position.distance_to(hovered.position) <= hunter.passive.value(&"leap_range") + player.stat(&"gameplay_radius") + hovered.stat(&"gameplay_radius"):
+				immediate.surface_set_color(Color("ed7064"))
+				_draw_circle(immediate, hovered.position, hovered.stat(&"gameplay_radius") + 0.25 + sin(SimClock.state.tick * 0.2) * 0.08)
+		if is_instance_valid(hunter.marked):
+			immediate.surface_set_color(Color("f4d17e"))
+			_draw_circle(immediate, hunter.marked.position, 1.1)
+			var eye := [Vector3(-0.65, 0.09, 0), Vector3(0, 0.09, -0.35), Vector3(0.65, 0.09, 0), Vector3(0, 0.09, 0.35)]
+			for i in range(4):
+				immediate.surface_add_vertex(hunter.marked.position + eye[i])
+				immediate.surface_add_vertex(hunter.marked.position + eye[(i + 1) % 4])
+			_draw_circle(immediate, hunter.marked.position, 0.15)
+		immediate.surface_end()
+	if mode == "Challenge" and challenge.drivers.any(func(driver: EnemyAI) -> bool: return driver.slam_end >= 0 or not driver.shots.is_empty()):
+		immediate.surface_begin(Mesh.PRIMITIVE_LINES)
+		for driver in challenge.drivers:
+			if driver.slam_end >= 0:
+				immediate.surface_set_color(Color("f04b43"))
+				_draw_circle(immediate, driver.slam_point, driver.slam_radius)
+				_draw_circle(immediate, driver.slam_point, driver.slam_radius * clampf(1.0 - (driver.slam_end - SimClock.state.tick) / float(driver.slam_duration), 0.0, 1.0))
+			for shot in driver.shots:
+				immediate.surface_set_color(Color("f5d58d"))
+				immediate.surface_add_vertex(shot.point)
+				immediate.surface_add_vertex(shot.point + Vector3.UP * 0.25)
+		immediate.surface_end()
 	if show_ranges:
 		immediate.surface_begin(Mesh.PRIMITIVE_LINES)
+		immediate.surface_set_color(Color("c9b476"))
 		_draw_circle(immediate, player.global_position, player.stat(&"attack_range") + player.stat(&"gameplay_radius"))
 		_draw_circle(immediate, player.global_position, player.ability.value(&"radius"))
+		if hunter != null:
+			var aim: Variant = _ground_point()
+			if aim != null:
+				immediate.surface_add_vertex(player.position + Vector3.UP * 0.1)
+				immediate.surface_add_vertex(player.position + (aim - player.position).normalized() * hunter.e.value(&"range") + Vector3.UP * 0.1)
+		if captain != null:
+			for node in captain.kegs.graph.nodes.values(): _draw_circle(immediate, node.point, captain.e.value(&"radius"))
 		for unit in units:
 			_draw_circle(immediate, unit.global_position, unit.stat(&"gameplay_radius"))
 		if player.movement.active:
@@ -303,17 +493,25 @@ func _click_ring(point: Vector3, color: Color, radius: float = 0.31, grow: bool 
 
 func _on_combat_event(tick: int, event: StringName, payload: Dictionary) -> void:
 	combat_log.record(tick, event, payload)
-	if event == &"ability_cast_completed":
+	if mode == "Challenge" and event == &"damage_dealt" and payload.get("target", -1) == 0:
+		challenge.damage_taken += maxf(0.0, float(payload.amount))
+	if hunter != null and event == &"ability_cast_completed" and payload.get("ability", "") == "W":
+		_click_ring(payload.position, Color("d8c47b") if payload.get("empowered", false) else Color("75bdc5"), hunter.w.value(&"radius"), true)
+	if event == &"keg_exploded":
+		_click_ring(payload.position, Color("f09d46"), payload.radius, true)
+	if event == &"ability_cast_completed" and payload.get("ability", "") == "training_pulse":
 		_click_ring(payload.position, Color("6cb8dc"), payload.radius, true)
-	if event != &"damage_dealt":
+	if event == &"ability_cast_completed" and payload.get("ability", "") == "ration":
+		_click_ring(payload.position, Color("80cf79"), 1.0, true)
+	if event not in [&"damage_dealt", &"healing_received"]:
 		return
 	var number := Label3D.new()
-	number.text = str(roundi(payload.amount)) + ("!" if payload.crit else "")
+	number.text = str(roundi(payload.amount)) + ("!" if payload.get("crit", false) else "")
 	number.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	number.font_size = 64 if payload.crit else 46
+	number.font_size = 64 if payload.get("crit", false) else 46
 	number.pixel_size = 0.005
 	var type: StringName = payload.get("type", &"physical")
-	number.modulate = Color("7db9ef") if type == &"magic" else Color("ef9b4d") if type == &"true" else Color.WHITE
+	number.modulate = Color("80cf79") if event == &"healing_received" else Color("7db9ef") if type == &"magic" else Color("ef9b4d") if type == &"true" else Color.WHITE
 	number.position = payload.position + Vector3(0, 2.0, 0)
 	_effects.add_child(number)
 	var tween := number.create_tween()
@@ -321,3 +519,178 @@ func _on_combat_event(tick: int, event: StringName, payload: Dictionary) -> void
 	tween.tween_property(number, "position:y", number.position.y + 0.8, 0.7)
 	tween.tween_property(number, "modulate:a", 0.0, 0.7)
 	tween.chain().tween_callback(number.queue_free)
+
+
+func queue_training_action(action: StringName) -> void:
+	if replay.playing: return
+	_training_actions.append(action)
+	replay.valid = false
+
+
+func _sync_training() -> void:
+	var settings := {}
+	for field in [&"dummy_count", &"dummy_armor", &"dummy_health", &"infinite_health", &"elite", &"behavior", &"strafe_distance", &"strafe_speed", &"chase_speed", &"chase_stop_distance", &"enemies_attack_kegs"]:
+		settings[field] = DebugConfig.resolve(training_settings.resource_path, field, training_settings.get(field))
+	settings.dummy_count = clampi(int(settings.dummy_count), 1, 5)
+	if settings == _training_signature: return
+	_training_signature = settings.duplicate()
+	_strafe_direction.clear()
+	while units.size() > settings.dummy_count + 1:
+		var removed: CombatUnit = units.pop_back()
+		if selected == removed: selected = player
+		removed.health = 0.0
+		removed.queue_free()
+	while units.size() < settings.dummy_count + 1:
+		var id := units.size()
+		_add_unit(id, 1, "Dummy %d" % id, Vector3.ZERO, preload("res://data/stats/dummy.tres"))
+	for i in range(1, units.size()):
+		var target: CombatUnit = units[i]
+		target.spawn_point = Vector3((i - 1 - (settings.dummy_count - 1) * 0.5) * 3.0, 0, -8)
+		target.stat_adjustments = {&"max_health": maxf(1.0, float(settings.dummy_health)), &"armor": float(settings.dummy_armor), &"move_speed": maxf(0.0, float(settings.chase_speed if int(settings.behavior) == 2 else settings.strafe_speed))}
+		target.training_infinite = bool(settings.infinite_health)
+		target.counts_as_elite = bool(settings.elite)
+		target.reset_unit()
+	EventBus.publish(&"training_settings_changed", settings)
+
+
+func _drive_training(tick: int) -> void:
+	for target in units:
+		if target == player or not target.alive() or target._pending != null: continue
+		var keg: PowderKeg
+		if captain != null and bool(_training_signature.get(&"enemies_attack_kegs", false)):
+			var best := INF
+			for view in captain.kegs.views.values():
+				if not view.alive() or not target.in_attack_range(view): continue
+				var distance: float = target.position.distance_squared_to(view.position)
+				if distance < best:
+					best = distance
+					keg = view
+		if keg != null:
+			if target.order.kind != UnitCommand.Kind.ATTACK or target.order.target != keg:
+				target.queue_command(UnitCommand.create(UnitCommand.Kind.ATTACK, Vector3.ZERO, keg), tick)
+			continue
+		var behavior := int(_training_signature.get(&"behavior", 0))
+		if behavior == 0:
+			if target.order.kind != UnitCommand.Kind.STOP: target.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), tick)
+			continue
+		var point := player.position
+		if behavior == 1:
+			var direction := int(_strafe_direction.get(target.unit_id, 1))
+			var half_span := maxf(0.0, float(_training_signature.strafe_distance)) * 0.5
+			point = target.spawn_point + Vector3.RIGHT * half_span * direction
+			if target.position.distance_to(point) <= 0.12:
+				direction = -direction
+				point = target.spawn_point + Vector3.RIGHT * half_span * direction
+			_strafe_direction[target.unit_id] = direction
+		elif not player.alive() or (hunter != null and not hunter.visible_to(target, tick)) or target.position.distance_to(player.position) <= maxf(0.0, float(_training_signature.chase_stop_distance)):
+			if target.order.kind != UnitCommand.Kind.STOP: target.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), tick)
+			continue
+		if target.order.kind != UnitCommand.Kind.MOVE or (tick % 6 == 0 and target.order.point.distance_to(point) > 0.1):
+			target.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, point), tick)
+
+
+func brush_at(point: Vector3) -> BrushZone:
+	for brush in get_node("Geometry").get_children():
+		if brush is BrushZone and brush.contains(point): return brush
+	return null
+
+
+func queue_class(value: String) -> void:
+	if replay.playing: return
+	if value in ["Captain", "Hunter"]: _queued_class = value
+
+
+func _set_class(value: String) -> void:
+	if player.cast_controller != null: player.cast_controller.reset()
+	if captain != null:
+		captain.kegs.queue_free()
+		captain = null
+	hunter = null
+	player.cast_controller = null
+	active_class = value
+	player.stats = load("res://data/stats/hunter.tres" if value == "Hunter" else "res://data/stats/captain.tres")
+	player.unit_name = "Apex Hunter" if value == "Hunter" else "Powder Captain"
+	player.reset_unit()
+	if value == "Hunter":
+		hunter = HunterController.new()
+		hunter.configure(self, player)
+	else:
+		captain = CaptainController.new()
+		captain.configure(self, player)
+	player.avatar.set_hunter_style(value == "Hunter")
+	if is_instance_valid(_hud):
+		_hud.queue_free()
+		_hud = HUD.new()
+		_hud.arena = self
+		add_child(_hud)
+		_hud.resume_requested.connect(_toggle_menu)
+		_hud.restart_requested.connect(reset_arena)
+	selected = player
+	EventBus.publish(&"class_changed", {"source": player.unit_id, "class": value})
+
+
+func queue_mode(value: String) -> void:
+	if value in ["Training", "Challenge"]:
+		_queued_mode = value
+		if SimClock.state.paused: SimClock.state.request_step()
+
+func _clear_opponents() -> void:
+	while units.size() > 1:
+		var unit: CombatUnit = units.pop_back()
+		unit.health = 0.0
+		unit.free()
+	selected = player
+
+func _separate_enemies() -> void:
+	# Synchronous stable-order crowd avoidance: no physics-frame callbacks or RNG.
+	for i in range(1, units.size()):
+		var a: CombatUnit = units[i]
+		if not a.alive() or a.statuses.has(&"root") or a.statuses.has(&"stun") or a.driver.slam_end >= 0: continue
+		for j in range(i):
+			var b: CombatUnit = units[j]
+			if not b.alive(): continue
+			var offset := a.position - b.position
+			offset.y = 0.0
+			var radius := a.stat(&"gameplay_radius") + b.stat(&"gameplay_radius")
+			if offset.length() < radius:
+				var direction := offset.normalized() if offset.length_squared() > 0.00001 else Vector3.RIGHT
+				a.move_and_collide(direction * minf(0.06, radius - offset.length()))
+
+func load_replay(path: String) -> Error:
+	var data := replay.read_run(path)
+	if data.is_empty(): return ERR_INVALID_DATA
+	_loading_replay = true
+	mode = data.mode
+	_queued_mode = ""
+	_queued_class = ""
+	replay.seed_value = data.seed
+	DebugConfig.clear_overrides()
+	DebugConfig._overrides = data.tuning.duplicate(true)
+	_set_class(data.get("class"))
+	reset_arena()
+	replay.commands.assign(data.commands)
+	replay.cursor = 0
+	replay.end_tick = data.end_tick
+	replay.expected_log = data.log
+	replay.result = ""
+	replay.playing = true
+	_loading_replay = false
+	return OK
+
+
+func player_visible_to(observer: CombatUnit, tick: int) -> bool:
+	if hunter != null: return hunter.visible_to(observer, tick)
+	var brush := brush_at(player.position)
+	if brush != null and brush_at(observer.position) != brush and tick - _vision_entry_tick >= 30:
+		return player.position.distance_to(observer.position) <= 1.5 or tick - int(observer.last_damage_by_source.get(0, -9999)) < 60
+	return true
+
+
+func _on_tuning_override(_path: String, _field: StringName) -> void:
+	_on_tuning_cleared()
+
+func _on_tuning_cleared() -> void:
+	replay.valid = false
+	if replay.playing and not _loading_replay:
+		replay.result = "REPLAY INTERRUPTED: tuning changed"
+		SimClock.state.set_paused(true)
