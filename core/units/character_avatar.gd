@@ -31,6 +31,7 @@ var _blend_from: Array[Transform3D] = []
 var _blend_left: float = 0.0
 var _blend_duration: float = 0.05
 var _cast_role: StringName = &"cast"
+var _howl_tick: int = -9999
 var _blade_material: StandardMaterial3D
 var _sword: Node3D
 var _pistol: Node3D
@@ -168,6 +169,7 @@ func set_flash(value: bool) -> void:
 
 
 func reset_pose() -> void:
+	_howl_tick = -9999
 	_attack_serial = 0
 	_loop_time = 0.0
 	_visual_tick = SimClock.state.tick
@@ -210,10 +212,13 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(unit): return
 	var tick := SimClock.state.tick
 	if _blade_material != null:
-		var ready: bool = unit.alive() and unit.cast_controller != null and tick >= unit.cast_controller.passive.ready_tick
+		var ready: bool = unit.alive() and unit.cast_controller != null and not unit.cast_controller is HunterController and tick >= unit.cast_controller.passive.ready_tick
+		if unit.cast_controller is HunterController: ready = unit.alive() and unit.cast_controller.ferocity.empowered()
 		_blade_material.emission_enabled = ready
 		_blade_material.emission = Color("f48c35")
 		_blade_material.emission_energy_multiplier = 1.5 if ready else 0.0
+	if unit.cast_controller is HunterController:
+		set_camouflage(unit.cast_controller.camouflaged(tick))
 	var previous := _visual_tick
 	_visual_tick = float(tick) if SimClock.state.paused else clampf(_visual_tick + delta * 60.0 * SimClock.state.speed_tenths / 10.0, tick, tick + 1.0)
 	_loop_time += maxf(0.0, _visual_tick - previous) / 60.0
@@ -225,6 +230,10 @@ func _process(delta: float) -> void:
 		_model.position.y = -0.5 * clampf((elapsed - duration + 0.3) / 0.3, 0.0, 1.0)
 	elif unit.statuses.has(&"stun") and not (unit.active_cast != null and unit.cast_controller != null and unit.cast_controller.cast_survives_stun(unit.active_cast)):
 		return # Freeze the current visual pose while simulation handles the stun.
+	elif unit.cast_controller is HunterController and tick - _howl_tick < 15:
+		preview(&"cast", animation_player.get_animation(&"cast").length * clampf((tick - _howl_tick) / 15.0, 0.0, 1.0), elapsed_sim)
+	elif unit.state == "Airborne":
+		preview(&"leap", _loop_time, elapsed_sim)
 	elif unit.state in ["Attack windup", "Attack backswing"]:
 		var profile: AnimProfile = AvatarLibrary.PROFILES[_attack_role]
 		var length := animation_player.get_animation(_attack_role).length
@@ -253,6 +262,30 @@ func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:
 		_hit_tick = payload.hit_tick
 		_ready_tick = unit.attack.ready_tick
 	elif event == &"ability_cast_started":
+		if payload.ability == "howl": _howl_tick = tick
 		_cast_start = tick
 		_cast_end = payload.get("completion_tick", unit.ability.completion_tick)
-		_cast_role = &"shoot" if payload.ability == "flintlock" else &"throw" if payload.ability == "powder_keg" else &"cast"
+		_cast_role = &"shoot" if payload.ability == "flintlock" else &"throw" if payload.ability in ["powder_keg", "bola"] else &"cast"
+
+
+func set_hunter_style(hunter: bool) -> void:
+	for mesh in _model.find_children("*", "MeshInstance3D", true, false):
+		var material: StandardMaterial3D = mesh.material_override as StandardMaterial3D
+		if material == null and mesh.mesh.get_surface_count() > 0:
+			material = mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
+			mesh.material_override = material
+		if material == null: continue
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA if hunter else BaseMaterial3D.TRANSPARENCY_DISABLED
+		var color := material.albedo_color
+		color.a = 1.0
+		if mesh.name in ["Male_Ranger_Body", "Male_Ranger_Head_Hood"]: color = Color("426454") if hunter else Color("79383e")
+		material.albedo_color = color
+
+
+func set_camouflage(active: bool) -> void:
+	for mesh in _model.find_children("*", "MeshInstance3D", true, false):
+		var material := mesh.material_override as StandardMaterial3D
+		if material == null: continue
+		var color := material.albedo_color
+		color.a = 0.3 if active else 1.0
+		material.albedo_color = color

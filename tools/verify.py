@@ -59,6 +59,7 @@ def main():
         ("600-tick main-scene smoke test", common + ["--script", "res://tools/smoke.gd",
             "--fixed-fps", "60"], "SMOKE PASS:"),
     ]
+    checks.append(("600-tick Hunter smoke test", common + ["--script", "res://tools/smoke_hunter.gd", "--fixed-fps", "60"], "SMOKE PASS:"))
     failures = []
     for label, command, marker in checks:
         try:

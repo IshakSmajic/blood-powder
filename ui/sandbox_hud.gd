@@ -19,6 +19,7 @@ var _fail_label: Label
 var _fail_left: float = 0.0
 var _tuning_fields: Array[Dictionary] = []
 var _training_fields: Array[Dictionary] = []
+var _hunter_slots: Dictionary = {}
 var _export_status: Label
 const Slot = preload("res://ui/ability_slot.gd")
 
@@ -32,7 +33,7 @@ func _ready() -> void:
 	header.position = Vector2(24, 18)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(header)
-	header.add_child(_label("BLOOD & POWDER   /   " + ("M2 POWDER CAPTAIN" if arena.captain != null else "M1 FOUNDATION"), 24, Color("e8d6bb")))
+	header.add_child(_label("BLOOD & POWDER   /   " + ("M3 APEX HUNTER" if arena.hunter != null else "M2 POWDER CAPTAIN" if arena.captain != null else "M1 FOUNDATION"), 24, Color("e8d6bb")))
 	_status = _label("Baking navigation…", 16)
 	header.add_child(_status)
 	_selected = _label("", 16)
@@ -70,8 +71,16 @@ func _ready() -> void:
 			slot.charge_pool = arena.captain.charges
 			slot.usable = true
 			_e_slot = slot
+		if arena.hunter != null:
+			_hunter_slots[key] = slot
+			if key != "P": slot.ability = arena.hunter.runner_for(StringName(key))
+			slot.usable = true
+			slot.ferocity = 0 if key == "P" else -1
+			if key == "W": _w_slot = slot
+			if key == "E": _e_slot = slot
+			if key == "R": _r_slot = slot
 		slots.add_child(slot)
-	footer.add_child(_label("Q: Flintlock at cursor target · W: heal + cleanse · E: place keg · R: Broadside at cursor · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
+	footer.add_child(_label("Q: Rend · W: Howl · E: Bola · R: Stalk · brush + RMB enemy: leap · 4 Ferocity: empowered ability" if arena.hunter != null else "Q: Flintlock at cursor target · W: heal + cleanse · E: place keg · R: Broadside at cursor · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
 	footer.add_child(_label("RMB move / attack · hold RMB ground to steer · A then LMB attack-move · S stop · H hold", 17))
 	footer.add_child(_label("Y camera lock · Space center · wheel zoom · F1 tuning · F2 ranges · F3 state · F4 log", 17))
 	footer.add_child(_label("F5 reset · F7/F8 speed · F9 pause · F10 step · Esc menu", 17))
@@ -93,6 +102,13 @@ func _ready() -> void:
 	fields.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(fields)
 	fields.add_child(_label("PLAYER LIVE TUNING", 20))
+	if arena.captain != null or arena.hunter != null:
+		var class_select := OptionButton.new()
+		class_select.add_item("Powder Captain")
+		class_select.add_item("Apex Hunter")
+		class_select.select(1 if arena.hunter != null else 0)
+		class_select.item_selected.connect(func(index: int) -> void: arena.queue_class("Hunter" if index == 1 else "Captain"))
+		fields.add_child(class_select)
 	var animation_lab := Button.new()
 	animation_lab.text = "Open Animation Lab"
 	animation_lab.pressed.connect(func() -> void: get_tree().call_deferred("change_scene_to_file", "res://debug/anim_lab.tscn"))
@@ -148,7 +164,7 @@ func _ready() -> void:
 		row.add_child(spinner)
 	_debug.hide()
 	fields.add_child(_label(arena.player.ability.data.display_name.to_upper(), 18))
-	_add_ability_fields(fields, arena.player.ability, ["cooldown", "cast_time", "damage", "range", "projectile_speed", "ad_ratio"] if arena.captain != null else [])
+	_add_ability_fields(fields, arena.player.ability, ["cooldown", "cast_time", "damage", "range", "projectile_speed", "ad_ratio"] if arena.captain != null else ["cooldown", "damage", "empowered_damage", "duration", "attack_speed_bonus", "empowered_attack_speed", "empowered_duration", "bonus_range", "range_loss_delay"] if arena.hunter != null else [])
 	if arena.captain != null:
 		fields.add_child(_label("SEARING EDGE (damage per burn pulse)", 18))
 		_add_ability_fields(fields, arena.captain.passive, ["cooldown", "damage", "burn_duration", "speed_fraction", "speed_duration"])
@@ -159,6 +175,15 @@ func _ready() -> void:
 		fields.add_child(_label("POWDER KEG", 18))
 		_add_training_option(fields, "Decay tier", arena.captain.e.data, &"decay_interval", [2.0, 1.0, 0.5], ["2.0 seconds", "1.0 second", "0.5 seconds"])
 		_add_ability_fields(fields, arena.captain.e, ["cooldown", "cast_time", "radius", "slow_fraction", "slow_duration", "range", "charges", "recharge", "decay_interval", "lifetime", "connection_distance", "chain_delay", "minimum_spacing", "armor_penetration", "crit_bonus", "elite_bonus", "link_width", "link_border"])
+	if arena.hunter != null:
+		var sections := [
+			[arena.hunter.passive, ["leap_range", "leap_speed", "leap_linger", "landing_gap", "arc_height", "ferocity_decay", "empowered_speed", "empowered_speed_duration", "brush_reveal_range", "brush_hide_delay", "brush_hit_reveal"]],
+			[arena.hunter.w, ["cooldown", "radius", "damage", "empowered_damage", "grey_fraction", "grey_window"]],
+			[arena.hunter.e, ["cooldown", "cast_time", "range", "width", "projectile_speed", "damage", "empowered_damage", "slow_fraction", "slow_duration", "root_duration"]],
+			[arena.hunter.r, ["cooldown", "duration", "speed_fraction", "camouflage_delay", "detection_range", "mark_range", "mark_ad_ratio", "armor_reduction", "armor_duration"]]]
+		for section in sections:
+			fields.add_child(_label(section[0].data.display_name.to_upper(), 18))
+			_add_ability_fields(fields, section[0], section[1])
 	fields.add_child(_label("APPLY TO PLAYER", 18))
 	var status_grid := GridContainer.new()
 	status_grid.columns = 3
@@ -210,9 +235,22 @@ func _process(delta: float) -> void:
 	if _passive_slot != null: _passive_slot.usable = player.alive() and SimClock.state.tick >= arena.captain.passive.ready_tick
 	if _r_slot != null: _r_slot.usable = _pulse_slot.usable
 	if _w_slot != null: _w_slot.usable = player.alive() and player.active_cast == null
-	if _e_slot != null:
+	if _e_slot != null and arena.captain != null:
 		_e_slot.usable = _pulse_slot.usable and arena.captain.charges.available > 0
 		_status.text += "\nKeg charges %d / %d" % [arena.captain.charges.available, arena.captain.charges.maximum]
+	if arena.hunter != null:
+		var hunter: HunterController = arena.hunter
+		for key in _hunter_slots:
+			var slot: Control = _hunter_slots[key]
+			slot.empowered = hunter.ferocity.empowered() and key in ["Q", "W", "E"]
+			if key == "P":
+				slot.ferocity = hunter.ferocity.stacks
+				slot.usable = hunter.leap_eligible(SimClock.state.tick)
+			else:
+				slot.usable = player.alive() and (not player.statuses.has(&"stun") or (key == "W" and hunter.ferocity.empowered()))
+				if hunter.ferocity.empowered(): slot.usable = slot.usable and SimClock.state.tick >= int(hunter.ferocity.empowered_lock.get(StringName(key), 0))
+				else: slot.usable = slot.usable and SimClock.state.tick >= int(hunter.ferocity.base_lock.get(StringName(key), 0))
+		_status.text += "\nFerocity %d/4 · Leap %s · Grey HP %.1f · %s" % [hunter.ferocity.stacks, "READY" if hunter.leap_eligible(SimClock.state.tick) else "—", hunter.grey_health(SimClock.state.tick), "CAMOUFLAGED" if hunter.camouflaged(SimClock.state.tick) else ""]
 	var unit: Node3D = arena.selected if is_instance_valid(arena.selected) else null
 	_selected.text = "%s · HP %d · armor %.0f · MR %.0f" % [unit.unit_name, ceili(unit.health), unit.stat(&"armor"), unit.stat(&"magic_resist")] if is_instance_valid(unit) else "LMB inspect a unit"
 	if is_instance_valid(unit) and unit is CombatUnit and unit.team != 0:

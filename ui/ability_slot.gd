@@ -5,6 +5,8 @@ var ability: AbilityRunner
 var charge_pool: ChargePool
 var key_label: String = "Q"
 var usable: bool = true
+var ferocity: int = -1
+var empowered: bool = false
 var _flash_left: float = 0.0
 
 
@@ -31,7 +33,7 @@ func _draw() -> void:
 		draw_circle(center, 15.0, Color("719ec7") if usable else Color("5c6570"), false, 2.0)
 		draw_line(center - Vector2(10, 0), center + Vector2(10, 0), Color("a8c9e6"), 2)
 		draw_line(center - Vector2(0, 10), center + Vector2(0, 10), Color("a8c9e6"), 2)
-		var remaining := maxi(0, ability.ready_tick - SimClock.state.tick)
+		var remaining := 0 if empowered else maxi(0, ability.ready_tick - SimClock.state.tick)
 		if remaining > 0:
 			var fraction := clampf(remaining / float(maxi(1, ability.cooldown_ticks)), 0.0, 1.0)
 			if fraction >= 0.999:
@@ -45,10 +47,16 @@ func _draw() -> void:
 			var seconds := remaining / 60.0
 			var text := "%.1f" % seconds if seconds < 3 else str(ceili(seconds))
 			draw_string(ThemeDB.fallback_font, Vector2(18, 47), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22)
-	draw_rect(rect, Color("dc655b") if _flash_left > 0 else Color("b89a6a") if usable else Color("58616a"), false, 2.0)
+	draw_rect(rect, Color("dc655b") if _flash_left > 0 else Color("f2cf67") if empowered else Color("b89a6a") if usable else Color("58616a"), false, 2.0)
 	draw_string(ThemeDB.fallback_font, Vector2(6, 17), key_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 15)
 	if charge_pool != null:
 		if charge_pool.next_charge_tick >= 0:
 			var fraction := clampf(1.0 - (charge_pool.next_charge_tick - SimClock.state.tick) / float(charge_pool.recharge_ticks), 0.0, 1.0)
 			draw_arc(center, 24.0, -PI / 2, -PI / 2 + TAU * fraction, 32, Color("e0b36f"), 2.0)
 		draw_string(ThemeDB.fallback_font, Vector2(22, 65), "%d/%d" % [charge_pool.available, charge_pool.maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, 13)
+
+	if ferocity >= 0:
+		for claw in range(3):
+			var x := 22.0 + claw * 13.0
+			draw_line(Vector2(x, 26), Vector2(x - 7, 36), Color("91ce9b") if usable else Color("5c6570"), 3.0)
+		for i in range(4): draw_circle(Vector2(14 + i * 16, 44), 5, Color("edbe61") if i < ferocity else Color("434b56"))

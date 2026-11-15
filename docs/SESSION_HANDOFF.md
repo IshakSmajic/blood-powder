@@ -1,50 +1,47 @@
 # Session handoff — 15 November 2026
 
-Read AGENTS.md, PROGRESS.md, ARCHITECTURE.md, and the relevant guide sections before gameplay changes. PROGRESS.md preserves the dated history.
+Read AGENTS.md, PROGRESS.md, ARCHITECTURE.md, and the relevant guide section before gameplay changes. PROGRESS.md keeps the dated history.
 
-## Current milestone
+## Current gate
 
-- Workspace: `/home/aurelius/Projects/blood-powder`.
-- Branch: `feature/m2-captain-kegs`, based on `m1-approved`.
-- M0/M1 accepted. M2 implementation is at final inspection; no full M2 approval, merge, or tag has been recorded. M3 must wait for explicit approval.
-- User wants autonomous milestone work and milestone inspection handoffs, not per-feature progress reports. Ask only for actual blockers/design decisions.
-- Q/E functional playtest passed; polish deferred. W activation and Searing Edge were confirmed. Denser Broadside visuals received “Much better.” Final manual combo acceptance remains unreported.
-- Final inspection guide: `docs/M2_PLAYTEST.md`. Implementation/automated gate mapping: `docs/M2_ACCEPTANCE.md`.
+- Workspace `/home/aurelius/Projects/blood-powder`; branch `feature/m3-hunter`.
+- M2 was approved after the barrel-link visibility fix (“Great, you may proceed”). Local `m2-approved` tags accepted code `cd07c59`. No individual five-chain playtest result was supplied; do not fabricate it.
+- M3 Hunter implementation is ready for inspection after final verification. User approval is still required before M4. No M4 enemies/challenge or M5 environment work was started.
+- User wants autonomous milestone completion and milestone-level handoffs. Avoid per-feature reports; raise actual blockers/design decisions when needed.
+- Game still starts as Captain. **F1 → Apex Hunter** switches on the next simulation tick. F5 preserves class. Switching resets player and clears prior class effects, while preserving simulation tick sequence and training settings.
+- Read `docs/M3_PLAYTEST.md` and `docs/M3_ACCEPTANCE.md` for the inspection/gate mapping.
 
-## Implemented Captain
+## Hunter implementation
 
-- Q Flintlock: targeted 15-tick cast, 270-tick cooldown, 26 m/s homing shot; physical crit-capable damage; owned keg hit removes one pip. Removed targets fizzle.
-- E: 15-tick pending placement, 30-tick recast lock, 3/4/5 charges, serial 780-tick recharge. Placement wall/spacing/range checks and approach-to-cast. Tier locks on materialization; default 60-tick decay to one pip; lifetime 1500 ticks. Graph distance 6.9 m, 20-tick propagation, pending-node combos, snapshot payload and hit-once set. Scheduled-node safety and reset cleanup tested.
-- Passive Searing Edge: melee enemy hit burns 5 × 24 true damage at 30-tick intervals; 25% speed for 120 ticks; 900-tick cooldown. First explosion of a chain resets readiness/grants speed once. Q/keg damage does not apply burn. P cooldown and ready blade glow included.
-- W Ration: 15-tick cast, 1080-tick cooldown, 100 + 13% missing HP healing, capped; cleanse slow/root/stun, preserve burn. **User approved the Ration-only stun exception:** W starts/completes through stun, then cleanses it. New stun does not interrupt W; death does. Other casts remain blocked/interrupted. The guide amendment was written before implementation. Physical W, buffered order, and exact timing have coverage.
-- R Broadside: 15-tick cast/1800-tick cooldown, ground target anywhere inside arena. A fixed 5.8 m area lasts 480 ticks after completion. Twelve 40-magic waves with 30% slow for 30 ticks, completion offsets 30/45/60, 150/165/180, 270/285/300, 390/405/420. Area damage snapshots; no keg/ally damage or passive burn. Ring lasts full duration. Default 16 cosmetic balls per wave (192 per cast), F1 density 1–32, seeded staggered impacts. Cosmetic density does not change simulation RNG consumption.
+- HunterController owns Ferocity, W/E/R/passive runners, brush/leap state, Rend buffs, grey damage window, Bola shots, and Stalk/mark state. Q runner remains unit.ability. HunterData resources and hunter stats are in data/.
+- BrushZone Area3D has a box shape and green 6×3 m footprint; fixed-tick center containment drives brush/leap/vision. Linger 21 ticks, leap 7.45 m edge range, 14.5 m/s, fixed destination 0.5 m beyond target gameplay edge. Actual body collision stops at walls; original impact deadline still applies. Landing hits a moved/hidden target without a range recheck, consumes Rend on dead target, and precedes buffered movement. Stun cancels flight without impact; root blocks takeoff only. Arc height 1.2 m is visual.
+- Ferocity 0–4; leap-derived-stack flag clears at zero. Normal W/E casts and first normal Q-buffed hit gain stacks. Non-burn damage dealt/taken resets 600-tick inactivity deadline; the first gained stack initializes that window. Q/E reaching four lock their empowered form 6 ticks. Empowered Q/W/E consume all, grant 40% speed for 90 ticks, ignore/preserve base cooldowns, and lock base same-slot 6 ticks (W 15).
+- Q Rend: reset attack, two buffed attacks in 180 ticks, 40% AS, first-hit +60 physical and +0.25 m range. First windup buffers commands rather than cancels. Bonus range ends 15 ticks after leap eligibility begins. Empowered first-hit +150 and 75% AS for 300 ticks; AS persists through a later normal Q. Midair Q buffs landing.
+- W Howl: 90 magic/4.5 m, heal 50% rolling post-mitigation damage from last 90 ticks, grey bar. Empowered: 160 plus cleanse slow/root/stun, usable during stun. Grey damage remains reusable inside the window (normal+empowered healing); burn contributes grey HP but does not refresh Ferocity combat time.
+- E Bola: 15-tick ground cast, instant midair; aim fixed at start, origin sampled at completion. 10 m/15 m/s/1.4 m swept width, first enemy, walls/starting overlaps stop it. Normal 80 physical +60% slow105 ticks; empowered140 +root105. Q/W buffer behind ground cast.
+- R Stalk: instant, 30 s cooldown, 720-tick duration, 50% speed, camouflage/leap after120 ticks. Nearest enemy within16 m marked. Marked hit adds100% AD and applies -20 armor before damage for240 ticks; expiry checked at exact deadline regardless target turn order. Attacks/non-Q basic casts end it; leap preserves until impact. R gives no Ferocity.
+- Visibility: camouflage hides beyond7.1 m. Brush hides after30 ticks unless same brush, within1.5 m, or hit by Hunter in last60 ticks. Training chase respects it; future M4 AI can reuse it.
+- Shared CombatUnit hooks isolate Hunter effects and preserve Captain defaults. Death clears Hunter Ferocity/Stalk/Rend and cancels leap/cast. Reset/class switch also remove projectiles. Existing one-command buffer remains last-wins, extended through leap for movement.
 
-## Training and debug
+## UI/presentation
 
-- F1 resource-backed settings: count 1–5, armor 0/50/100, HP 2000/10000, Infinite HP default On, Counts as Elite.
-- Behavior: stationary, three-meter strafe at 3.45 m/s, or slow chase at 1.5 m/s with 2 m stopping distance. Numeric parameters tunable. Driver uses normal tick orders/navigation/statuses and waits for pending commands; F5/settings changes reset patrol direction.
-- Enemy keg-attacking default Off; On makes dummies attack only live in-range kegs using normal melee timing. One pip per hit; enemy destruction removes without explosion/passive reset. No player attacks or keg chase; no M4 challenge AI.
-- LMB dummy: total resolved damage and encounter-average DPS since first hit, including idle time. Finite totals follow combat-log overkill semantics. Reset damage / DPS and Restore player health are queued for next tick.
-- Settings export through DebugConfig, apply next tick, reset/recenter targets when changed, persist through F5, restore with Reset tuning to file. Source resources remain unchanged. Arrays mutate in place for active kegs/Broadside. Removed targets are invalidated and selection cleared safely.
-- F2 radii, F3 state, F4 events; F7/F8 pacing, F9 pause/F10 tick step. F5 clears casts, statuses, kegs, shots, zones, charges, and damage counters. Explicit combat CSV/tuning exports remain available.
-- Actual main scene enables training. Legacy M1/Captain finite-health regression fixtures explicitly opt out; dedicated training tests use actual defaults.
+- F1 class selector, relevant ability tuning, all accepted dummy/Elite/decay/enemy-keg controls, exports/reset.
+- Four Ferocity pips/empowered cooldown bypass, claw eligibility, grey HP, red pulsing valid leap-target ring, gold eye/mark indicator, F2 leap radius/Bola aim, camouflage status.
+- Human hooded stock ranger in green for Hunter; Captain stays red. Existing rig/animation adapter plus imported Jump (Godot strips `_Loop`), visual arc, landing contact/recovery, substitute Howl cast pose, 30% opacity camouflage, full-Ferocity blade glow. No new external assets.
+- Animation fine-tuning/QE polish stay deferred. Final Hunter roar/audio/full particles/trails/map dressing remain M5.
 
-## Verification and limitations
+## Verification and constraints
 
-Final run details are appended to PROGRESS.md and below. `python tools/verify.py` runs import, all-script parsing, stock imports, full GUT, and 600-tick smoke. The known restricted-session editor debugger socket error must remain reported; never claim strict overall success here. No extra rerun is needed after documentation-only changes.
+Final verified totals are in PROGRESS.md and appended below. tools/verify.py now includes main-scene and Hunter 600-tick smoke stages. Strict editor import still reports the known sandbox debugger TCP-listener restriction; never claim overall strict success. No rerun needed for documentation-only changes.
 
-- Accepted movement, attack defaults, red stock character appearance, and deferred provisional animation markers are preserved.
-- Full art/VFX/audio/props remain M5/deferred polish. Raw packs stay outside repo; verify licenses and record used assets in CREDITS.md.
-- Keep work local. Prior GitHub pushes failed on DNS; user requested no repeated attempts. Do not add AI authorship/coauthor trailers.
-- Pre-existing `project.godot` editor serialization is uncommitted and must be preserved/excluded from the implementation commit.
-- No system/shell/desktop/other-app configuration changes without explicit approval.
+- Preserve pre-existing unstaged project.godot editor serialization and exclude it from implementation commits.
+- No system/shell/desktop/other-app config edits without approval.
+- Keep raw packs outside repo and record licenses/used files in CREDITS.md.
+- Keep work local; prior pushes failed on DNS, and user requested no repeated attempts. Preserve user Git identity and never add AI authorship/coauthor trailers.
+- Captain Ration's stun exception is explicitly approved in the guide amendment. Hunter empowered Howl's specific cleanse is implemented through the same cast-while-stunned interface; normal Howl is blocked.
 
-## Next gate
+## Next
 
-User inspection of final M2 build, including five consecutive three-keg chains on three dummies and Ration during stun. Address reported defects. Only after explicit M2 approval may M2 merge/tag or M3 Hunter work begin.
+User inspects M3: F1 Hunter, brush leap → Bola midair → Rend reset → empowered ability; inspect root/stun/walls, grey health, Stalk mark/camouflage, class switching/F5, and accepted Captain regression. Address defects and wait for explicit M3 approval before M4.
 
-Final verification: 93/93 tests passed (2,652 assertions), all 136 scripts loaded, 8 stock scenes imported, and main scene ran 600 ticks. `python tools/verify.py` fails only the known restricted-session editor debugger TCP-socket errors. `git diff --check` is clean.
-
-M2 inspection feedback: barrel links were too faint. Now amber ground ribbons with dark borders (link_width=0.16 m, link_border=0.06 m per side, F1 tunable), bright pale gold while scheduled. Visual-only change; graph/combat behavior unchanged. Restart for desktop inspection; M2 still awaiting approval.
-
-Link-visibility verification: 93 tests / 2,652 assertions passed, 136 scripts loaded, 8 asset scenes imported, and 600 runtime ticks passed. Strict verification retains only the known sandbox editor-import socket error. `git diff --check` passed; desktop visibility awaits inspection.
+Final verification: full suite 113/113 tests (2,758 assertions), all 143 scripts, 8 stock scenes, and Captain/Hunter 600-tick smoke checks passed. Strict editor import fails only the known sandbox TCP-listener check. Focused Hunter follow-up passed 18/18 tests (96 assertions), including the guide’s 30 armor stat. Whitespace checks are clean. No verification process remains running.

@@ -1,8 +1,8 @@
 # Progress
 
-## Active milestone: M2 — Powder Captain
+## Active milestone: M3 — Apex Hunter
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. **M2 implementation is ready for user inspection; milestone approval remains pending.** Captain passive/Q/W/E/R, combo mechanics, and full training controls are implemented. Ration's stun exception is explicitly approved and implemented. Final checks: 93 passing tests / 2,652 assertions, 136 scripts, 8 stock asset imports, and 600 runtime ticks. Strict editor import retains the known sandbox socket limitation. Use [docs/M2_PLAYTEST.md](docs/M2_PLAYTEST.md) for final inspection; do not begin M3 until explicit M2 approval.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m3-hunter`. M2 was approved after the barrel-link fix and tagged locally as `m2-approved`. **M3 implementation is ready for user inspection; M3 approval remains pending.** Select Apex Hunter in F1. Brush/leap, Ferocity, Q/W/E/R, vision/camouflage, class switching, HUD/tuning and cleanup are implemented. Final full verification: 113 tests / 2,758 assertions, 143 scripts, 8 asset scenes, Captain and Hunter 600-tick smoke checks; a focused Hunter follow-up also passed (18 tests / 96 assertions) after confirming the guide's 30-armor Hunter stat. Strict editor import retains the known sandbox socket limitation. Use [docs/M3_PLAYTEST.md](docs/M3_PLAYTEST.md); do not begin M4 before explicit M3 approval.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -317,3 +317,27 @@ Remaining gate is user inspection/approval, including five consecutive three-keg
 Ishak requested more visible links during M2 inspection. Replaced the thin dark line with an amber ground ribbon and dark border; scheduled links brighten to pale gold. Default core width is 0.16 m plus 0.06 m border each side, tunable under F1 Powder Keg. Double-sided unshaded triangle strips provide stable thickness instead of hardware-dependent line widths. No graph, collision, or combat logic changed. Manual check: restart, place linked kegs and inspect the brighter/thicker trail; F1 link_width/link_border adjust thickness. M2 approval remains pending.
 
 Link-visibility verification: 93 tests / 2,652 assertions passed, 136 scripts loaded, 8 asset scenes imported, and 600 runtime ticks passed. Strict verification retains only the known sandbox editor-import socket error. `git diff --check` passed; desktop visibility awaits inspection.
+
+
+### 2026-11-15 — M2 inspection approved; M3 authorized
+
+After final M2 inspection and the requested barrel-link visibility fix, Ishak said “Great, you may proceed.” Treat this as approval of the inspected M2 implementation and authorization for M3. No individual five-chain result was reported; do not invent that playtest detail. Preserve accepted Captain feel/visuals and deferred polish. New work branch: feature/m3-hunter. M3 is Apex Hunter and remains gated before M4. Milestone-only communication continues.
+
+### 2026-11-15 — M3 Hunter implementation and audit
+
+Implemented HunterController, Ferocity, HunterData resources/stats, brush Area3D center containment/vision rules, fixed-destination colliding leaps and visual arcs, airborne ability commands/movement buffer, Rend reset/protected first windup/AS/range/bonus, Howl grey HP/empowered cleanse, swept Bola cast/projectile/slow/root, Stalk camouflage/mark/armor shred, class switching, and Hunter HUD/tuning/visual adaptations. Preserved Captain scene defaults and shared combat regressions. Hunter is selected with F1; provisional green hooded stock human uses existing assets. Added grey health bar, claw/Ferocity state, leap/mark/aim overlays, jump animation and a substitute Howl cast pose. Final audio/VFX/map dressing remain M5; M4 AI/challenge was not started.
+
+M3-specific checks cover section-9 timing/range/linger/ground-vs-airborne cast/reset/Ferocity/grey-health gates plus walls, dead/moving targets, protected first windup, buffered movement, camouflage/vision/armor expiry, Bola width/wall/launch origin, full Ferocity combo/empowered cooldown bypass, AS buff persistence, class switching, render RNG isolation, and reset cleanup. Initial validation caught Godot's imported `_Loop` suffix removal on Jump; corrected to the imported Jump clip. Existing accepted animation markers remain untouched.
+
+Interpretations are recorded in ARCHITECTURE.md: leap distance is actual origin-to-landing-point travel, wall-blocked impact retains its original deadline, grey health remains reusable inside its rolling window, and the specific empowered Howl cleanse permits W during stun. No manual calibration or user feel approval is fabricated. See docs/M3_PLAYTEST.md for milestone inspection.
+
+Local milestone provenance: created annotated m2-approved at cd07c59, the inspected barrel-link refinement checkpoint, after Ishak approved proceeding. Hunter implementation remains on feature/m3-hunter and has not been merged/tagged as approved.
+
+
+### 2026-11-15 — M3 implementation ready for inspection
+
+Completed the guide's M3 implementation and section-9 gate mapping in docs/M3_ACCEPTANCE.md, refreshed README/architecture/credits/session handoff, and retained Captain as the default startup class. F1 class selection exposes the completed Hunter with a provisional green hooded human. No M4/M5 implementation was started. Prior accepted Captain mechanics, Q/E polish deferral, and animation marker deferral remain intact.
+
+Final full `python tools/verify.py` run: 143 scripts loaded, all 8 stock scenes imported, 113/113 tests passed with 2,758 assertions, Captain main scene and Hunter each completed 600 consecutive runtime ticks. Strict import failed only at the known restricted-session debugger TCP listener. A focused Hunter follow-up passed all 18 tests / 96 assertions after matching Hunter armor to the guide's 30 and adding a regression assertion. `git diff --check` and staged whitespace checks passed. Logs are in .local/m3-final-verification.log, .local/gut-suite.log, .local/hunter-final-focused.log, and per-stage verification logs. No verification process remains running.
+
+M3 is an implementation inspection checkpoint, not fabricated feel approval. User must inspect brush leap → airborne Bola → Rend reset → empowered ability, Hunter look/camouflage/mark/grey health, interruptions and class-switch/reset cleanup, then explicitly approve M3 before M4. The stock Howl pose and provisional visuals are documented; final roar/audio/full VFX/map dressing remain M5. Existing unstaged project.godot serialization was preserved and excluded from the implementation commit; no system/application config changes or remote pushes were made.

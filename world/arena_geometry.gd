@@ -13,7 +13,10 @@ func _ready() -> void:
 			box("Pillar", Vector3(2, 3, 2), Vector3(x, 1.5, z))
 	box("LowWall", Vector3(6, 1, 1), Vector3(0, 0.5, -1))
 	for x in [-11.0, 11.0]:
-		box("BrushVisual", Vector3(6, 0.18, 3), Vector3(x, 0.09, -7), Color("526847"), false)
+		var brush := BrushZone.new()
+		brush.name = "Brush"
+		brush.position = Vector3(x, 0, -7)
+		add_child(brush)
 
 
 func box(node_name: String, size: Vector3, at: Vector3, color: Color = Color("404750"), solid: bool = true) -> void:

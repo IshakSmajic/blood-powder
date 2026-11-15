@@ -2,7 +2,7 @@
 
 An offline 3D top-down combat arena for Linux and Windows, built with Godot and GDScript.
 
-Current slice: **M2 — Flintlock and powder-keg combos**. Q is targeted Flintlock, E places charge-based kegs, and right-click can attack your own kegs. The player keeps the accepted stock character and movement/basic attack timing. Searing Edge, W Ration, and R Broadside are not implemented in this first M2 slice. M0/M1 checkpoints are local tags `m0-approved` and `m1-approved`.
+Current milestone: **M3 — Apex Hunter**, ready for inspection after verification. M2 Powder Captain is accepted (`m2-approved`); M0/M1 tags remain available. All Captain abilities and training controls remain usable. Select **Apex Hunter in F1** to inspect brush leaps, Ferocity, Rend, Howl, Bola, and Stalk. See [M3 playtest](docs/M3_PLAYTEST.md) and [progress](PROGRESS.md).
 
 ## Open and run
 
@@ -29,8 +29,10 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | Left-click | Inspect nearest unit under the ground cursor |
 | A then left-click | Attack-move to the clicked point |
 | S / H | Stop / hold position and attack in range |
-| Q | Flintlock: shoot the enemy/own keg at the cursor; walks into range first |
-| E | Place a powder keg at the ground cursor; walks into range first |
+| Q | Captain: targeted Flintlock / Hunter: Rend attack reset and buff |
+| W | Captain: Ration heal/cleanse / Hunter: Howl magic damage/grey-health heal |
+| E | Captain: ground-targeted keg / Hunter: aimed Bola (instant mid-leap) |
+| R | Captain: Broadside at ground cursor / Hunter: Stalk speed/camouflage/mark |
 | Y / Space / wheel | Toggle camera lock / center while held / zoom |
 | F1 / F2 / F3 / F4 | Live player stats / range and path overlay / state and tick timers / combat log |
 | F5 in game | Reset units, camera, simulation clock, speed, and combat log; retain live tuning |
@@ -38,9 +40,9 @@ On Hyprland, if the window misbehaves, add `--display-driver x11` to that comman
 | F9 / F10 | Pause / single tick while paused |
 | Esc | Cancel armed attack-move, or open/close pause menu |
 
-Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are visual brush placeholders. Q and E are active Captain abilities. W/R and passive remain inactive in this slice. Keys 1–4 remain unbound; class switching and replay tooling come later.
+Start by moving north around the central low wall to reach the three dummies. Unlock the camera with Y to pan at screen edges. The two green patches are brush zones: Hunter can leap from them or during Stalk camouflage, with a brief linger after exiting. F1 provides the class selector and configurable dummies. All passive/QWER mechanics are active for both classes. Keys 1–4 remain unbound; replay tooling is later work.
 
-The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written back to source resource files. Explicit export can save a separate snapshot. F1 includes an **Open Animation Lab** button and exposes Q/E values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; F5 clears all statuses and cooldowns.
+The collision/navmesh radius stays fixed in this slice; the F1 panel exposes other numeric player stats. Changes apply next simulation tick. Restarting the game clears live tuning. Session tuning is not written back to source resource files. Explicit export can save a separate snapshot. F1 includes an **Open Animation Lab** button and exposes class ability values and buttons to apply slow, root, stun, burn, speed buff, or cleanse to the player. Status actions are processed on the next simulation tick; use F10 while paused. Burn survives cleanse; Captain Ration and empowered Hunter Howl can cleanse stun. F5 clears all statuses and cooldowns.
 
 ## Verify
 
@@ -50,7 +52,7 @@ From the repository root:
 python tools/verify.py
 ```
 
-The command verifies the pinned engine version, imports the project, explicitly loads every GDScript, checks all prepared stock assets, runs the GUT suite, and runs the actual main scene for 600 consecutive simulation ticks. It treats engine/script errors as failures even when Godot returns exit code zero and runs all stages before reporting failures. Logs and test output live in ignored `.local/`; existing application settings are not used by verification.
+The command verifies the pinned engine version, imports the project, explicitly loads every GDScript, checks all prepared stock assets, runs the GUT suite, and runs both the actual main scene and the Hunter class for 600 consecutive simulation ticks each. It treats engine/script errors as failures even when Godot returns exit code zero and runs all stages before reporting failures. Logs and test output live in ignored `.local/`; existing application settings are not used by verification.
 
 In a restricted session that prohibits socket creation, the editor import can report debugger TCP listener errors even when assets import and the standalone checks pass. Those errors remain failures in this script; run the same command from your normal terminal to confirm a clean import.
 
@@ -73,11 +75,11 @@ Eight stock character/animation candidates have been prepared and documented in 
 
 ## Character animation and calibration
 
-The player now uses the Quaternius male ranger outfit, with only the base character's head underneath. The red outfit is a provisional Captain appearance: the free pack does not include the concept sheet's pirate coat/hat. Dummies use the superhero male base body with flat grey materials. Physics remains a capsule collider; stock meshes are visual only.
+The player now uses the Quaternius male ranger outfit, with only the base character's head underneath. The red outfit is a provisional Captain appearance; Hunter uses the same hooded human in green: the free pack does not include the concept sheet's pirate coat/hat. Dummies use the superhero male base body with flat grey materials. Physics remains a capsule collider; stock meshes are visual only.
 
 Open **F1 → Open Animation Lab** to inspect the stock animations. Choose a character and clip; use **Space** to play/pause and **, / .** to step at 60 fps. For `attack_a` and `attack_b`, stop at the visual contact frame and press **M** to mark it. This saves only the corresponding project data resource under `data/anim_profiles/`. **Esc** returns to a reset arena.
 
-The initial attack markers are **provisional**. Marking changes animation time scaling and does not change the authoritative 15-tick attack windup or 91-tick attack period. Rest-pose compensation keeps target proportions, while the in-place library never drives actor movement. Ishak has accepted the current animations and deferred finer calibration unless later playtesting shows a need. The Animation Lab remains available when that work is useful.
+The initial attack markers are **provisional**. Marking changes animation time scaling and does not change authoritative combat timing (Captain defaults: 15-tick windup, 91-tick period; Hunter uses its own stats). Rest-pose compensation keeps target proportions, while the in-place library never drives actor movement. Ishak has accepted the current animations and deferred finer calibration unless later playtesting shows a need. The Animation Lab remains available when that work is useful.
 
 
 ## Export playtest feedback
@@ -90,11 +92,11 @@ Files appear in `~/Projects/blood-powder/debug_exports/` (or the same folder ins
 ## Try the keg-combo slice
 
 1. Press **E** over clear ground to place a keg. It materializes after 0.25 s and decays from **3 → 2 → 1** health, once per second. At one pip it is ready for a one-hit detonation.
-2. Place another keg within **6.9 m** of the first; a dark powder link appears. Use **F2** to show the **3.45 m** explosion radii.
+2. Place another keg within **6.9 m** of the first; a thick amber powder link appears. Use **F2** to show the **3.45 m** explosion radii.
 3. Hover the one-pip keg and press **Q**, or right-click it for a melee attack. Connected kegs explode **20 ticks** apart. A unit overlapping multiple blasts takes damage once per chain.
 4. Try **Q → E**: shoot an existing one-pip keg, then immediately place a linked keg. The in-progress ghost counts in the graph, allowing the one-part combo. New move/attack orders cancel an out-of-range pending cast.
 5. **F5** clears kegs/projectiles/schedules and restores charges/cooldowns. E starts with **3 charges** and recharges one every **13 s**. Live charges (3–5), decay, connection distance, and other Q/E values are in F1.
 
 Kegs expire after 25 s without exploding. They cannot be placed in walls or within 0.8 m of another keg. Pending ghosts are not attackable until materialized. Stun interrupts placement; the committed charge/cooldown remains spent. Q is homing and passes walls; a dead/removed target causes the shot to fizzle. The current barrels and explosion rings are procedural prototypes; full prop/VFX/audio polish comes later.
 
-The M1 Training Pulse resource and fixture remain only for regression testing. The normal arena enables the Captain controller. No character outfit or movement/attack timing defaults were changed for this slice.
+The M1 Training Pulse resource and fixture remain only for regression testing. The normal arena starts as Captain; F1 can switch to Hunter and back. Captain movement/attack timing and the accepted red outfit remain preserved.

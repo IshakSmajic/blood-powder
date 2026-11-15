@@ -14,6 +14,10 @@ var _training_signature: Dictionary = {}
 var _training_actions: Array[StringName] = []
 var _strafe_direction: Dictionary = {}
 var captain_enabled: bool = true
+var hunter: HunterController
+var active_class: String = "Captain"
+var initial_class: String = "Captain"
+var _queued_class: String = ""
 var captain: CaptainController
 var navigation_ready: bool = false
 var attack_move_armed: bool = false
@@ -47,6 +51,7 @@ func _ready() -> void:
 	if captain_enabled:
 		captain = CaptainController.new()
 		captain.configure(self, player)
+	if initial_class == "Hunter": _set_class("Hunter")
 	selected = player
 	camera = Camera.new()
 	camera.name = "Camera"
@@ -59,7 +64,8 @@ func _ready() -> void:
 	_debug_mesh.mesh = ImmediateMesh.new()
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color("c9b476")
+	material.albedo_color = Color.WHITE
+	material.vertex_color_use_as_albedo = true
 	_debug_mesh.material_override = material
 	add_child(_debug_mesh)
 	_hud = HUD.new()
@@ -133,6 +139,10 @@ func _add_unit(id: int, team: int, label: String, at: Vector3, data: UnitStats) 
 func simulate_tick(tick: int) -> void:
 	if not navigation_ready:
 		return
+	if not _queued_class.is_empty():
+		var next_class := _queued_class
+		_queued_class = ""
+		_set_class(next_class)
 	if training_enabled: _sync_training()
 	for action in _training_actions:
 		if action == &"reset_damage":
@@ -148,6 +158,7 @@ func simulate_tick(tick: int) -> void:
 			_: player.apply_status(kind, tick, 120)
 	_queued_debug_statuses.clear()
 	if captain != null: captain.pre_tick(tick)
+	if hunter != null: hunter.pre_tick(tick)
 	if attack_move_armed and tick >= _armed_until:
 		attack_move_armed = false
 	if _right_ground_held and not _menu_open and tick - _last_hold_tick >= 6:
@@ -157,6 +168,7 @@ func simulate_tick(tick: int) -> void:
 	for unit in units:
 		unit.simulate(tick, units)
 	if captain != null: captain.post_tick(tick)
+	if hunter != null: hunter.post_tick(tick)
 
 
 func _on_action(action: StringName) -> void:
@@ -174,7 +186,7 @@ func _on_action(action: StringName) -> void:
 			else:
 				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead"})
 		&"ability_w":
-			if captain == null: return
+			if captain == null and hunter == null: return
 			if not player.alive():
 				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"W"})
 				return
@@ -182,7 +194,15 @@ func _on_action(action: StringName) -> void:
 			command.slot = &"W"
 			player.queue_command(command, SimClock.state.tick)
 		&"ability_e", &"ability_r":
-			if captain == null: return
+			if hunter != null and action == &"ability_r":
+				if not player.alive():
+					EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"R"})
+					return
+				var command := UnitCommand.create(UnitCommand.Kind.CAST)
+				command.slot = &"R"
+				player.queue_command(command, SimClock.state.tick)
+				return
+			if captain == null and hunter == null: return
 			if not player.alive():
 				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"R" if action == &"ability_r" else &"E"})
 				return
@@ -328,10 +348,35 @@ func _process(_delta: float) -> void:
 		return
 	var immediate := _debug_mesh.mesh as ImmediateMesh
 	immediate.clear_surfaces()
+	if hunter != null:
+		immediate.surface_begin(Mesh.PRIMITIVE_LINES)
+		immediate.surface_set_color(Color("90bd8d") if hunter.leap_eligible(SimClock.state.tick) else Color("606e65"))
+		_draw_circle(immediate, player.position, 0.85 if hunter.leap_eligible(SimClock.state.tick) else 0.65)
+		var hovered := _pick_unit()
+		if hovered is CombatUnit and hovered.team != player.team and hunter.leap_eligible(SimClock.state.tick) and not player.in_attack_range(hovered) and SimClock.state.tick >= player.attack.ready_tick:
+			if player.position.distance_to(hovered.position) <= hunter.passive.value(&"leap_range") + player.stat(&"gameplay_radius") + hovered.stat(&"gameplay_radius"):
+				immediate.surface_set_color(Color("ed7064"))
+				_draw_circle(immediate, hovered.position, hovered.stat(&"gameplay_radius") + 0.25 + sin(SimClock.state.tick * 0.2) * 0.08)
+		if is_instance_valid(hunter.marked):
+			immediate.surface_set_color(Color("f4d17e"))
+			_draw_circle(immediate, hunter.marked.position, 1.1)
+			var eye := [Vector3(-0.65, 0.09, 0), Vector3(0, 0.09, -0.35), Vector3(0.65, 0.09, 0), Vector3(0, 0.09, 0.35)]
+			for i in range(4):
+				immediate.surface_add_vertex(hunter.marked.position + eye[i])
+				immediate.surface_add_vertex(hunter.marked.position + eye[(i + 1) % 4])
+			_draw_circle(immediate, hunter.marked.position, 0.15)
+		immediate.surface_end()
 	if show_ranges:
 		immediate.surface_begin(Mesh.PRIMITIVE_LINES)
+		immediate.surface_set_color(Color("c9b476"))
 		_draw_circle(immediate, player.global_position, player.stat(&"attack_range") + player.stat(&"gameplay_radius"))
 		_draw_circle(immediate, player.global_position, player.ability.value(&"radius"))
+		if hunter != null:
+			_draw_circle(immediate, player.position, hunter.passive.value(&"leap_range") + player.stat(&"gameplay_radius"))
+			var aim: Variant = _ground_point()
+			if aim != null:
+				immediate.surface_add_vertex(player.position + Vector3.UP * 0.1)
+				immediate.surface_add_vertex(player.position + (aim - player.position).normalized() * hunter.e.value(&"range") + Vector3.UP * 0.1)
 		if captain != null:
 			for node in captain.kegs.graph.nodes.values(): _draw_circle(immediate, node.point, captain.e.value(&"radius"))
 		for unit in units:
@@ -372,6 +417,8 @@ func _click_ring(point: Vector3, color: Color, radius: float = 0.31, grow: bool 
 
 func _on_combat_event(tick: int, event: StringName, payload: Dictionary) -> void:
 	combat_log.record(tick, event, payload)
+	if hunter != null and event == &"ability_cast_completed" and payload.get("ability", "") == "W":
+		_click_ring(payload.position, Color("d8c47b") if payload.get("empowered", false) else Color("75bdc5"), hunter.w.value(&"radius"), true)
 	if event == &"keg_exploded":
 		_click_ring(payload.position, Color("f09d46"), payload.radius, true)
 	if event == &"ability_cast_completed" and payload.get("ability", "") == "training_pulse":
@@ -455,8 +502,47 @@ func _drive_training(tick: int) -> void:
 				direction = -direction
 				point = target.spawn_point + Vector3.RIGHT * half_span * direction
 			_strafe_direction[target.unit_id] = direction
-		elif not player.alive() or target.position.distance_to(player.position) <= maxf(0.0, float(_training_signature.chase_stop_distance)):
+		elif not player.alive() or (hunter != null and not hunter.visible_to(target, tick)) or target.position.distance_to(player.position) <= maxf(0.0, float(_training_signature.chase_stop_distance)):
 			if target.order.kind != UnitCommand.Kind.STOP: target.queue_command(UnitCommand.create(UnitCommand.Kind.STOP), tick)
 			continue
 		if target.order.kind != UnitCommand.Kind.MOVE or (tick % 6 == 0 and target.order.point.distance_to(point) > 0.1):
 			target.queue_command(UnitCommand.create(UnitCommand.Kind.MOVE, point), tick)
+
+
+func brush_at(point: Vector3) -> BrushZone:
+	for brush in get_node("Geometry").get_children():
+		if brush is BrushZone and brush.contains(point): return brush
+	return null
+
+
+func queue_class(value: String) -> void:
+	if value in ["Captain", "Hunter"]: _queued_class = value
+
+
+func _set_class(value: String) -> void:
+	if player.cast_controller != null: player.cast_controller.reset()
+	if captain != null:
+		captain.kegs.queue_free()
+		captain = null
+	hunter = null
+	player.cast_controller = null
+	active_class = value
+	player.stats = load("res://data/stats/hunter.tres" if value == "Hunter" else "res://data/stats/captain.tres")
+	player.unit_name = "Apex Hunter" if value == "Hunter" else "Powder Captain"
+	player.reset_unit()
+	if value == "Hunter":
+		hunter = HunterController.new()
+		hunter.configure(self, player)
+	else:
+		captain = CaptainController.new()
+		captain.configure(self, player)
+	player.avatar.set_hunter_style(value == "Hunter")
+	if is_instance_valid(_hud):
+		_hud.queue_free()
+		_hud = HUD.new()
+		_hud.arena = self
+		add_child(_hud)
+		_hud.resume_requested.connect(_toggle_menu)
+		_hud.restart_requested.connect(reset_arena)
+	selected = player
+	EventBus.publish(&"class_changed", {"source": player.unit_id, "class": value})

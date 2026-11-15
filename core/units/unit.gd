@@ -30,6 +30,7 @@ var _last_repath: int = -999
 var _respawn_tick: int = -1
 var _visual: Node3D
 var avatar: CharacterAvatar
+var _grey_fill: MeshInstance3D
 var _health_fill: MeshInstance3D
 var _label: Label3D
 var _color: Color
@@ -38,7 +39,11 @@ var _resume_attack_move: bool = false
 
 
 func stat(field: StringName) -> float:
-	return float(stat_adjustments.get(field, DebugConfig.resolve(stats.resource_path, field, stats.get(field))))
+	var result := float(stat_adjustments.get(field, DebugConfig.resolve(stats.resource_path, field, stats.get(field))))
+	if field == &"armor":
+		for effect in statuses.effects.values():
+			if effect.kind == &"armor_shred" and effect.expires > SimClock.state.tick: result -= effect.magnitude
+	return result
 
 
 func alive() -> bool:
@@ -82,6 +87,14 @@ func _ready() -> void:
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	_health_fill.material_override = material
 	add_child(_health_fill)
+	_grey_fill = MeshInstance3D.new()
+	_grey_fill.mesh = bar
+	var grey_material := _material(Color("aaaeb7"))
+	grey_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	grey_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	_grey_fill.material_override = grey_material
+	_grey_fill.hide()
+	add_child(_grey_fill)
 	reset_unit()
 
 
@@ -113,7 +126,7 @@ func queue_command(command: UnitCommand, issued_tick: int) -> void:
 		return
 	_pending = command
 	_pending_tick = issued_tick + 1
-	_pending_expires = issued_tick + 30
+	_pending_expires = maxi(issued_tick + 30, cast_controller.leap_end + 30) if cast_controller is HunterController and cast_controller.airborne else issued_tick + 30
 
 
 func simulate(tick: int, units: Array[CombatUnit]) -> void:
@@ -124,13 +137,14 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 		return
 	for effect_event in statuses.advance(tick):
 		if effect_event.event == &"burn_pulse":
-			receive_damage(effect_event.amount, tick, effect_event.source_id, false, &"true")
+			receive_damage(effect_event.amount, tick, effect_event.source_id, false, &"true", true)
 		else:
 			EventBus.publish(&"status_expired", {"unit": unit_id, "status": effect_event.kind})
 	if not alive():
 		return
 	if _pending != null and tick >= _pending_expires:
 		_pending = null
+	if cast_controller is HunterController and cast_controller.airborne and cast_controller.airborne_tick(tick): return
 	if statuses.has(&"stun"):
 		var protected_cast: bool = active_cast != null and cast_controller != null and cast_controller.cast_survives_stun(active_cast)
 		if not protected_cast and _pending != null and _pending.kind == UnitCommand.Kind.CAST and tick >= _pending_tick:
@@ -156,6 +170,9 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 		else: _complete_pulse(tick, units)
 	if active_cast != null:
 		state = "Casting"
+		return
+	if cast_controller is HunterController and cast_controller.locked_windup():
+		state = "Attack windup"
 		return
 	if _pending != null and tick >= _pending_tick:
 		if _pending.kind == UnitCommand.Kind.CAST:
@@ -196,10 +213,11 @@ func simulate(tick: int, units: Array[CombatUnit]) -> void:
 	var target := _choose_target(units)
 	if target != null:
 		_resume_attack_move = order.kind == UnitCommand.Kind.ATTACK_MOVE
+		if cast_controller is HunterController and cast_controller.before_attack(target, tick): return
 		if in_attack_range(target):
 			movement.stop()
 			_face(target.global_position - global_position)
-			if attack.start(tick, stat(&"attack_speed"), stat(&"windup_fraction")):
+			if attack.start(tick, cast_controller.attack_speed(tick) if cast_controller is HunterController else stat(&"attack_speed"), stat(&"windup_fraction")):
 				_victim = target
 				EventBus.publish(&"attack_windup_started", {"source": unit_id, "target": target.unit_id, "hit_tick": attack.hit_tick})
 			state = "Attack windup" if attack.hit_tick >= 0 else "Attack backswing"
@@ -239,21 +257,24 @@ func _choose_target(units: Array[CombatUnit]) -> Node3D:
 			continue
 		var distance := global_position.distance_to(candidate.global_position)
 		var margin := 0.5 if order.kind == UnitCommand.Kind.ATTACK_MOVE else 0.0
-		if distance <= stat(&"attack_range") + stat(&"gameplay_radius") + candidate.stat(&"gameplay_radius") + margin and distance < best:
+		var reach := stat(&"attack_range")
+		if cast_controller is HunterController and order.kind == UnitCommand.Kind.ATTACK_MOVE and cast_controller.leap_eligible(SimClock.state.tick): reach = cast_controller.passive.value(&"leap_range")
+		if distance <= reach + stat(&"gameplay_radius") + candidate.stat(&"gameplay_radius") + margin and distance < best:
 			best = distance
 			nearest = candidate
 	return nearest
 
 
 func in_attack_range(target: Node3D) -> bool:
-	return global_position.distance_to(target.global_position) <= stat(&"attack_range") + stat(&"gameplay_radius") + target.stat(&"gameplay_radius") + 0.001
+	return global_position.distance_to(target.global_position) <= stat(&"attack_range") + stat(&"gameplay_radius") + target.stat(&"gameplay_radius") + (cast_controller.bonus_range(SimClock.state.tick) if cast_controller is HunterController else 0.0) + 0.001
 
 
-func _hit(tick: int) -> void:
-	if not is_instance_valid(_victim) or not _victim.alive() or not in_attack_range(_victim):
+func _hit(tick: int, ignore_range: bool = false) -> void:
+	if not is_instance_valid(_victim) or not _victim.alive() or (not ignore_range and not in_attack_range(_victim)):
 		return
 	var crit := SimClock.state.rng.randf() < clampf(stat(&"crit_chance"), 0.0, 1.0)
-	var raw := stat(&"attack_damage") * (stat(&"crit_multiplier") if crit else 1.0)
+	var bonus: float = cast_controller.attack_bonus(_victim, tick) if cast_controller is HunterController and _victim is CombatUnit else 0.0
+	var raw := (stat(&"attack_damage") + bonus) * (stat(&"crit_multiplier") if crit else 1.0)
 	EventBus.publish(&"attack_hit", {"source": unit_id, "target": _victim.unit_id})
 	if _victim is PowderKeg:
 		if team == _victim.team: _victim.manager.hit(_victim.state.id, tick, {"raw": raw, "crit": crit, "source": unit_id})
@@ -264,9 +285,10 @@ func _hit(tick: int) -> void:
 		if cast_controller != null: cast_controller.basic_hit(_victim, tick)
 
 
-func receive_damage(amount: float, tick: int, source: int, crit: bool = false, damage_type: StringName = &"physical") -> void:
+func receive_damage(amount: float, tick: int, source: int, crit: bool = false, damage_type: StringName = &"physical", burn: bool = false) -> void:
 	if not alive():
 		return
+	if cast_controller is HunterController: cast_controller.took_damage(minf(health, maxf(0.0, amount)), tick, burn)
 	if team != 0:
 		training_damage += maxf(0.0, amount)
 		if training_first_hit < 0: training_first_hit = tick
@@ -294,6 +316,7 @@ func apply_status(kind: StringName, tick: int, duration: int, magnitude: float =
 	statuses.apply(kind, tick, duration, magnitude, source, source_id)
 	EventBus.publish(&"status_applied", {"unit": unit_id, "status": kind, "duration": duration})
 	if kind == &"stun":
+		if cast_controller is HunterController and cast_controller.airborne: cast_controller.interrupt()
 		if attack.hit_tick >= 0:
 			attack.hit_tick = -1
 			attack.ready_tick = tick
@@ -387,6 +410,11 @@ func _complete_pulse(tick: int, units: Array[CombatUnit]) -> void:
 func _process(_delta: float) -> void:
 	_label.text = "%s\n%s" % [unit_name, "Infinite HP" if training_infinite else "%d / %d" % [ceili(health), ceili(stat(&"max_health"))]]
 	_health_fill.scale.x = maxf(0.001, health / maxf(1.0, stat(&"max_health")))
+	_health_fill.position.x = -0.9 + 0.9 * _health_fill.scale.x
+	var grey: float = minf(maxf(0.0, stat(&"max_health") - health), cast_controller.grey_health(SimClock.state.tick)) if cast_controller is HunterController else 0.0
+	_grey_fill.visible = grey > 0.0 and alive()
+	_grey_fill.scale.x = maxf(0.001, grey / stat(&"max_health"))
+	_grey_fill.position = Vector3(-0.9 + health / stat(&"max_health") * 1.8 + _grey_fill.scale.x * 0.9, 2.2, 0)
 	avatar.set_flash(_flash_frames > 0)
 	_flash_frames = maxi(0, _flash_frames - 1)
 
