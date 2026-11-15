@@ -1,88 +1,77 @@
-# Session handoff — 15 November 2026
+# Session handoff — M4 inspection checkpoint, 15 November 2026
 
-Read this file first, then AGENTS.md, PROGRESS.md, ARCHITECTURE.md, and the relevant development-guide section before gameplay changes. PROGRESS.md is the dated history; ARCHITECTURE.md describes implemented behavior.
+Read this file, AGENTS.md, PROGRESS.md, ARCHITECTURE.md and the relevant development-guide section before gameplay changes.
 
 ## Resume checkpoint
 
 - Project: `/home/aurelius/Projects/blood-powder`.
-- Branch: `feature/m3-hunter`.
-- Latest gameplay commit: `1a4610d` — automatic Hunter jump circle. Previous checkpoints: `4191223` — debug-input/toolbar workaround; `70d98a2` — Hunter milestone implementation.
-- M0 setup, M1 foundation, and M2 Powder Captain are accepted. Local tags: `m0-approved`, `m1-approved`, `m2-approved` (M2 inspected code `cd07c59`).
-- **M3 Apex Hunter implementation is complete and verified, with positive inspection feedback; explicit final M3 approval is still pending. Do not start M4 yet.** No individual full Hunter combo/manual regression result was reported; do not invent one.
-- No M4 enemy/challenge/replay implementation or M5 environment art has begun.
+- Branch: `feature/m4-pve`.
+- M0–M3 are explicitly approved. M3 approval was received in this session before any M4 implementation; local `m3-approved` points to the accepted M3 checkpoint `1902821` (latest gameplay there is `1a4610d`).
+- M4 implementation is ready for inspection after verification below. **Do not start M5 until Ishak explicitly approves M4.** No M4 merge/tag has been made.
+- User requested autonomous work through the milestone and a report only when finished, except actual blockers or needed decisions. Keep that communication preference.
+- No M5 environment art/textures, final audio/VFX, camera polish or exports have begun.
 
-## Latest user feedback and working agreement
-
-- Captain functionality accepted; Q/E polish explicitly deferred. Captain movement/attack feel and red character appearance must remain preserved.
-- Fine animation calibration is deferred unless later playtesting reveals a need. Existing markers remain provisional, not falsely calibrated.
-- Hunter was implemented, then user reported F keys unavailable. Visible mouse toolbar and Tab alternative were added, plus pre-GUI debug-key routing. User confirmed it “Works amazingly.” Exact OS/hardware cause was never established; do not blame Arch or change desktop/keyboard settings.
-- User requested a Hunter jump-range circle; added automatic green brush/linger circle and gold Stalk-camouflage circle. User responded “Amazing.” Record this as positive circle feedback, not automatic milestone approval.
-- Work autonomously through each authorized milestone according to the guide. **Notify at milestone inspection checkpoints rather than after each feature.** Raise only actual blockers/design decisions sooner. Full milestone approval remains required before the next milestone.
-- Final map art/textures belong to M5, after M4 PvE. Planned free CC0 packs in the guide: Quaternius LowPoly Modular Dungeon, Quaternius Ultimate Stylized Nature, Kenney Pirate Kit. These environment packs are not imported yet. Verify actual downloads/licenses, keep raw packs outside the repo, import only used assets, and update CREDITS.md.
-
-## Open, run, and inspect
+## Open and inspect
 
 ```bash
 ~/Applications/Godot-4.7.2/Godot_v4.7.2-stable_linux.x86_64 --editor --path ~/Projects/blood-powder
 ```
 
-Press F5 in the editor to start. Or launch directly:
+Press F5. The game starts in Training as Captain. Use **Tools** (mouse or Tab) to choose Apex Hunter. Click the top **Challenge** button to start the three-wave encounter. Advance toward enemies: acquisition is within 12 meters. Function keys are optional.
 
-```bash
-~/Applications/Godot-4.7.2/Godot_v4.7.2-stable_linux.x86_64 --path ~/Projects/blood-powder
-```
+Full inspection instructions: `docs/M4_PLAYTEST.md`. Automated gate mapping: `docs/M4_ACCEPTANCE.md`.
 
-- The game starts as Captain. **Click Tools at the top or press Tab, then select Apex Hunter.** Do not rely on the user's F keys.
-- Mouse toolbar provides Tools, Ranges, States, Log, Reset, Slower/Faster, Pause/Resume, and Step. F1–F10 equivalents remain; F6 switches class. Gameplay keys still respect GUI editing. Debug buttons do not grab keyboard focus.
-- Class selection applies on the next simulation tick; if paused, use Step/Resume. Switching resets player/old class effects, preserves clock sequence and training settings, and rebuilds the HUD. Reset/F5 preserves the current class.
-- Main Hunter inspection combo: **brush leap → Bola midair → Rend reset → empowered ability**. Full checklist: `docs/M3_PLAYTEST.md`; automated-gate mapping: `docs/M3_ACCEPTANCE.md`.
+- Wave 1: four Chasers, 180 ticks after start. Wave 2: three Chasers/two Kiters, 240 ticks after clear. Wave 3: Elite/two Chasers, 240 ticks after clear.
+- Kiters retreat below 5 m, attack through 6.5 m, launch 15 m/s projectiles and respect walls. Chasers pursue visible targets, remember the last seen point for 180 ticks, then return to spawn.
+- Elite uses a fixed-center red slam warning, radius 2.5 m, 60 ticks of warning, 120 magic damage/60-tick stun, 480-tick cooldown from warning start. Stun/root cannot cancel a started warning; death cancels it. Dodge the circle.
+- Both classes get ordinary brush hiding. Hunter keeps brush leap and Stalk camouflage. Recent hits reveal to the damaged observer. Hidden players are searched at their last observed point.
+- Challenge never respawns player/enemies. Victory/Defeat panels show clear time, damage taken and wave, with Retry/Training/Save actions. Reset preserves class and tuning. A Challenge class switch restarts the encounter; Training class switching retains its accepted clock behavior.
+- Tools has live enemy stats/behavior tuning; behavior timers are ticks. Keg attacking is off by default; the existing explicit training toggle also applies in Challenge. Kiters use traveling shots against kegs and enemy destruction never explodes them.
 
-## Hunter implementation
+## Replay workflow
 
-- HunterController owns Ferocity, W/E/R/passive runners, brush/leap state, Rend buffs, grey damage window, Bola shots, and Stalk/mark state. Q runner remains unit.ability. HunterData resources and hunter stats are in data/.
-- BrushZone Area3D has a box shape and green 6×3 m footprint; fixed-tick center containment drives brush/leap/vision. Linger 21 ticks, leap 7.45 m edge range, 14.5 m/s, fixed destination 0.5 m beyond target gameplay edge. Actual body collision stops at walls; original impact deadline still applies. Landing hits a moved/hidden target without a range recheck, consumes Rend on dead target, and precedes buffered movement. Stun cancels flight without impact; root blocks takeoff only. Arc height 1.2 m is visual.
-- Ferocity 0–4; leap-derived-stack flag clears at zero. Normal W/E casts and first normal Q-buffed hit gain stacks. Non-burn damage dealt/taken resets 600-tick inactivity deadline; the first gained stack initializes that window. Q/E reaching four lock their empowered form 6 ticks. Empowered Q/W/E consume all, grant 40% speed for 90 ticks, ignore/preserve base cooldowns, and lock base same-slot 6 ticks (W 15).
-- Q Rend: reset attack, two buffed attacks in 180 ticks, 40% AS, first-hit +60 physical and +0.25 m range. First windup buffers commands rather than cancels. Bonus range ends 15 ticks after leap eligibility begins. Empowered first-hit +150 and 75% AS for 300 ticks; AS persists through a later normal Q. Midair Q buffs landing.
-- W Howl: 90 magic/4.5 m, heal 50% rolling post-mitigation damage from last 90 ticks, grey bar. Empowered: 160 plus cleanse slow/root/stun, usable during stun. Grey damage remains reusable inside the window (normal+empowered healing); burn contributes grey HP but does not refresh Ferocity combat time.
-- E Bola: 15-tick ground cast, instant midair; aim fixed at start, origin sampled at completion. 10 m/15 m/s/1.4 m swept width, first enemy, walls/starting overlaps stop it. Normal 80 physical +60% slow105 ticks; empowered140 +root105. Q/W buffer behind ground cast.
-- R Stalk: instant, 30 s cooldown, 720-tick duration, 50% speed, camouflage/leap after120 ticks. Nearest enemy within16 m marked. Marked hit adds100% AD and applies -20 armor before damage for240 ticks; expiry checked at exact deadline regardless target turn order. Attacks/non-Q basic casts end it; leap preserves until impact. R gives no Ferocity.
-- Visibility: camouflage hides beyond7.1 m. Brush hides after30 ticks unless same brush, within1.5 m, or hit by Hunter in last60 ticks. Training chase respects it; future M4 AI can reuse it.
-- Shared CombatUnit hooks isolate Hunter effects and preserve Captain defaults. Death clears Hunter Ferocity/Stalk/Rend and cancels leap/cast. Reset/class switch also remove projectiles. Existing one-command buffer remains last-wins, extended through leap for movement.
+Choose class and tuning, then Reset. Commands are recorded automatically. Click **Save replay**, then **Load replay** and choose a `.bpr` under `debug_exports/`. Playback restores seed/class/mode/tuning, suppresses gameplay input and checks the full serialized combat log byte for byte at the saved final tick. It pauses with MATCH or MISMATCH. Camera/overlays/pause/speed/Step remain available. Reset exits playback. Mode buttons admit a transition tick even when paused.
 
-## Current UI, visuals, and training
+Runtime tuning/debug changes invalidate saving until Reset. Applying debug statuses is ignored during playback; changing tuning explicitly interrupts it. Replays require the same gameplay code/resources and pinned engine. Binary loading disables object deserialization and validates before resetting gameplay. Exports are explicit and ignored by Git; source resources are not overwritten.
 
-- Automatic leap circle needs no F2: green for brush/21-tick linger, gold for Stalk camouflage after the two-second warmup. It hides during flight, root, stun, death, and Captain selection. Nominal radius is leap range + Hunter radius (8.1 m default), representing reach to the enemy's near edge; width is tunable. It follows the interpolated actor without changing collision/combat/RNG.
-- HUD shows claw eligibility, Ferocity pips, empowered abilities, grey HP, red valid-leap target ring, gold eye/mark, camouflage, and Bola aim under Ranges. Hunter uses a provisional green hooded stock human, Jump clip/visual arc, a substitute Howl cast pose, and 30% opacity camouflage. Captain stays red. Final VFX/audio/roar/environment dressing remain M5.
-- Tools exposes dummy count1–5, stationary/strafe/slow chase, armor0/50/100, finite HP2000/10000 or Infinite(default), Elite flag, damage/DPS reset, restore player health, and ability tuning. Select a dummy for total resolved damage and encounter-average DPS (idle time included). Settings apply next tick, persist through Reset, export through DebugConfig, and restore via Reset tuning to file.
-- Enemy keg-attacking defaults Off. On makes dummies melee only live in-range kegs; enemy destruction removes without explosion/passive reset. No real challenge enemy AI is implied.
-- Captain remains fully available: Flintlock, keg graphs/pending combos/serial charges/decay, Searing Edge with once-per-chain reset, Ration (approved cast-through-stun exception), and dense Broadside (192 cosmetic cannonballs/cast). Keg links are bright outlined amber ribbons, pale gold when scheduled.
+## Proposed guide refinement requiring M4 inspection approval
+
+The guide specifies NavigationAgent avoidance. M4 keeps asynchronous server velocity avoidance disabled and instead uses synchronous stable-order crowd separation with bounded fixed-tick collision motion. NavigationAgents still compute paths, chase repaths remain six ticks, and walls/root/stun/slam states are respected. This keeps spreading deterministic under pause/slow/step/replay. The original guide is unchanged. The deviation is explicitly recorded in PROGRESS, ARCHITECTURE and M4_PLAYTEST; ask for its acceptance as part of M4 inspection, not silently treat it as already approved.
+
+## Important implementation details
+
+`ChallengeEncounter` owns wave/outcome state; `EnemyUnit` extends only ranged hits/visibility, and `EnemyAI` emits ordinary commands. Shared CombatUnit changes are command-record notification, opt-out respawn and authoritative per-source damage timestamps. Player class mechanics and Captain red appearance are preserved.
+
+Replay exposed an initial unsynchronized-navigation query: first-run move could select origin while replay got the real path. Arena now disables asynchronous map iterations before setup and waits for nonzero map iteration before accepting simulation commands. Movement refreshes its path before checking navigation-finished status. Arena geometry/navmesh clearance and player movement parameters are unchanged.
+
+Simulation order and replay initialization are documented in ARCHITECTURE. Presentation consumes no combat RNG. New enemies use the existing stock grey avatars; no new assets/licenses were needed. Human balance/feel and warning readability still require inspection; exact-state automated pilots are stronger than human play.
 
 ## Verification
 
-Latest complete run (`.local/leap-ring-verification.log`):
+Latest required run: `python tools/verify.py`, full output in `.local/m4-inspection-verification.log`.
 
-- **119/119 tests passed, 2,791 assertions.**
-- All **145 scripts** loaded; all **8 stock asset scenes** imported.
-- Captain main scene and Hunter each completed **600 consecutive simulation ticks**.
-- Strict `python tools/verify.py` still exits failed **only at editor import** because the restricted session blocks Godot's debugger TCP listener. This is the previously confirmed sandbox limitation; do not claim full strict success or suppress unknown errors.
-- Whitespace checks passed. All verification processes finished. These handoff-only edits do not require another gameplay test run.
+- **134/134 GUT tests passed, 2,863 assertions across 17 scripts** (68.614 seconds).
+- All **155 scripts** loaded; all **8 stock asset scenes** imported.
+- Captain, Hunter and Challenge each completed **600 consecutive simulation ticks**.
+- Both full successful class recordings replayed with identical serialized combat-log bytes. A focused replay scenario also passes with extra physics/render frames between playback ticks.
+- Strict verification exits failed **only at editor import**, with the previously documented sandbox TCP listener errors (`_sock == -1`, `ERR_CANT_CREATE`). No gameplay/import errors were suppressed. Run `python tools/verify.py` from an unrestricted normal terminal for a strict editor-import result.
+- `git diff --check` passed. All verification processes completed. Documentation-only handoff edits do not require repeating gameplay checks.
 
-Pinned editor: Godot `4.7.2.stable.official.ed1daf0bf`; GUT9.7.1 is vendored. Verification command is `python tools/verify.py`; logs live in ignored `.local/`. It now runs both Captain/main-scene and Hunter smoke stages.
+Automated stock-stat command pilots clear both classes and reproduce their whole successful runs byte for byte:
 
-## Persistent constraints
+- Captain: 110.02 seconds, 1,757 resolved damage taken, 313.01 HP remaining.
+- Hunter: 100.35 seconds, 319 resolved damage taken, 690.38 HP remaining.
 
-- Preserve pre-existing **unstaged `project.godot` editor serialization**, exclude it from implementation commits, and do not overwrite it. At this handoff it is the only non-documentation uncommitted change.
-- No system/shell/desktop/other-application configuration edits without explicit approval.
-- Keep work local. Previous GitHub pushes failed on DNS and user requested no repeated attempts. No remote synchronization is claimed.
-- Preserve configured Git identity. **Never add AI authorship/coauthor trailers.**
-- Work on branches; no milestone merge/tag until approval. M3 has no approval tag yet.
-- Simulation stays deterministic at integer60Hz ticks. Rendering must not change combat/RNG.
-- Captain Ration's stun exception is explicitly approved in the guide amendment. Hunter empowered Howl's specific cleanse uses the same cast-while-stunned interface; normal Howl is blocked.
-- Raw packs stay outside repo; record used files/licenses in CREDITS.md. No new external assets were required in M3.
+These are automated feasibility/regression results, not user playtest or final difficulty approval. Pilots use ordinary commands and no artificial healing/damage/teleport/tuning during a run.
 
-## Next session
+## Persistent constraints and next steps
 
-1. Resume from this checkpoint; do not reimplement completed Hunter/Captain features or repeat unchanged verification merely to reconstruct context.
-2. Address any new M3 inspection feedback. If user approves proceeding beyond M3, record that approval before M4 and follow the guide.
-3. M4: Melee Chaser, Ranged Kiter, Elite/telegraphed slam, vision/camouflage AI, challenge waves/win-lose flow, balancing, deterministic command replay.
-4. M5 later: environment dressing/textures, final VFX/audio, camera polish, credits and Linux/Windows offline exports. Preserve collision/navigation when dressing the arena.
+- Preserve the pre-existing **unstaged `project.godot` editor serialization**, excluded from implementation commits. It is not an M4 gameplay change.
+- Work locally; previous GitHub DNS failures and the user's no-retry request remain. No remote synchronization is claimed.
+- Preserve configured Git identity and never add AI authorship/coauthor trailers.
+- No system, shell, desktop or other application configuration changes without explicit approval.
+- Keep authoritative combat at integer 60 Hz. Raw asset packs remain external; used asset licenses belong in CREDITS.
+- F keys are unavailable for the user; keep mouse toolbar and Tab access. No established OS/hardware diagnosis exists.
+- Captain Q/E polish and fine animation calibration remain deferred by the user. Existing provisional markers are not falsely calibrated.
+- Address M4 feedback, including human balance/readability and the disclosed avoidance refinement. Do not repeat unchanged verification just to reconstruct context.
+- Once M4 is explicitly approved, record it before M5 environment dressing, final VFX/audio/camera work, credits and Linux/Windows offline exports. Preserve arena collision/navigation while dressing it.

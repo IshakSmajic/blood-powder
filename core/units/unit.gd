@@ -2,13 +2,18 @@ class_name CombatUnit
 extends CharacterBody3D
 ## Command-driven unit; stock visual animation never drives its simulation.
 
+signal command_queued(command: UnitCommand, issued_tick: int)
+
 var stats: UnitStats
 var unit_name: String = "Unit"
 var team: int = 0
 var unit_id: int = 0
+
+var respawn_enabled: bool = true
 var health: float = 0.0
 var stat_adjustments: Dictionary = {}
 var training_infinite: bool = false
+var last_damage_by_source: Dictionary = {}
 var training_damage: float = 0.0
 var training_first_hit: int = -1
 var state: String = "Idle"
@@ -102,6 +107,7 @@ func reset_unit() -> void:
 	global_position = spawn_point
 	health = stat(&"max_health")
 	reset_damage_readout()
+	last_damage_by_source.clear()
 	state = "Idle"
 	attack.reset()
 	ability.reset()
@@ -124,6 +130,7 @@ func reset_unit() -> void:
 func queue_command(command: UnitCommand, issued_tick: int) -> void:
 	if not alive():
 		return
+	command_queued.emit(command, issued_tick)
 	_pending = command
 	_pending_tick = issued_tick + 1
 	_pending_expires = maxi(issued_tick + 30, cast_controller.leap_end + 30) if cast_controller is HunterController and cast_controller.airborne else issued_tick + 30
@@ -131,7 +138,7 @@ func queue_command(command: UnitCommand, issued_tick: int) -> void:
 
 func simulate(tick: int, units: Array[CombatUnit]) -> void:
 	if not alive():
-		if tick >= _respawn_tick:
+		if respawn_enabled and tick >= _respawn_tick:
 			reset_unit()
 			EventBus.publish(&"unit_respawned", {"unit": unit_id})
 		return
@@ -288,6 +295,7 @@ func _hit(tick: int, ignore_range: bool = false) -> void:
 func receive_damage(amount: float, tick: int, source: int, crit: bool = false, damage_type: StringName = &"physical", burn: bool = false) -> void:
 	if not alive():
 		return
+	last_damage_by_source[source] = tick
 	if cast_controller is HunterController: cast_controller.took_damage(minf(health, maxf(0.0, amount)), tick, burn)
 	if team != 0:
 		training_damage += maxf(0.0, amount)

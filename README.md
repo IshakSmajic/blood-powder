@@ -107,3 +107,7 @@ The M1 Training Pulse resource and fixture remain only for regression testing. T
 ## If function keys do not reach the game
 
 Use the visible toolbar: **Tools**, Ranges, States, Log, Reset, Slower/Faster, Pause/Resume, and Step. **Tab** also toggles Tools. Reserved debug keys are handled before GUI focus can consume them; movement/abilities still respect GUI editing. Keyboard Fn/media mode or shortcuts outside the game may intercept function keys, which the game cannot override. No desktop or keyboard configuration is changed.
+
+## M4 Challenge inspection
+
+Use the top toolbar’s **Challenge** button to start the three-wave encounter, and **Tools** to choose Captain or Hunter. **Save replay / Load replay** records commands and checks the entire combat log on playback. See [M4 playtest](docs/M4_PLAYTEST.md) and [automated gate mapping](docs/M4_ACCEPTANCE.md). M4 awaits inspection; M5 is not started.

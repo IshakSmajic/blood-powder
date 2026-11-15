@@ -1,8 +1,8 @@
 # Progress
 
-## Active milestone: M3 — Apex Hunter
+## Active milestone: M4 — PvE validation
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m3-hunter`. M2 was approved after the barrel-link fix and tagged locally as `m2-approved`. **M3 implementation is ready for user inspection; M3 approval remains pending.** Click Tools (or press Tab) and select Apex Hunter. Brush/leap, Ferocity, Q/W/E/R, vision/camouflage, class switching, HUD/tuning and cleanup are implemented. Latest full verification: 119 tests / 2,791 assertions, 145 scripts, 8 asset scenes, Captain and Hunter 600-tick smoke checks; a focused Hunter follow-up also passed (18 tests / 96 assertions) after confirming the guide's 30-armor Hunter stat. Strict editor import retains the known sandbox socket limitation. Use [docs/M3_PLAYTEST.md](docs/M3_PLAYTEST.md); do not begin M4 before explicit M3 approval.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m4-pve`. M0–M3 are approved. M4 implements real enemy AI, telegraphed Elite slam, shared vision, three-wave Challenge, results/reset and binary command replay. M4 is ready for inspection: 134/134 tests and 2,863 assertions passed, 155 scripts loaded, 8 stock scenes imported, and Captain/Hunter/Challenge each passed 600-tick smoke checks. Strict editor import retains the known sandbox TCP restriction; M5 remains gated on explicit approval. See [M4 playtest](docs/M4_PLAYTEST.md) and [gate mapping](docs/M4_ACCEPTANCE.md).
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -368,3 +368,30 @@ Automatic leap-circle verification: all 119 tests passed (2,791 assertions), all
 At Ishak's request, consolidated docs/SESSION_HANDOFF.md for the next session with milestone status, exact gameplay checkpoints/branch, launch commands, Tools/Tab/mouse alternatives, Hunter/Captain mechanics and training, approved/deferred choices, asset sourcing schedule, final verification, and persistent workspace/Git constraints. User positively confirmed the debug-control workaround and automatic jump circle. M3 is implemented/verified and awaiting explicit final milestone approval; M4 has not begun. Do not infer a full manual combo sign-off from individual positive feedback.
 
 Latest gameplay commit is 1a4610d on feature/m3-hunter. Latest complete verification remains 119 passing tests / 2,791 assertions, 145 scripts, 8 stock scenes, and separate Captain/Hunter 600-tick smoke checks; only the known sandbox editor-import socket error remains. No code changed in this handoff and no unchanged tests were rerun. Pre-existing project.godot editor serialization remains unstaged and preserved. Next work is M3 feedback/approval, then guide-defined M4; M5 art/textures/audio/export remain later.
+
+## 2026-11-15 — M3 approved; M4 authorized
+
+Ishak explicitly approved M3 and instructed completion of M4, reporting at the milestone checkpoint or when information is needed. Working on `feature/m4-pve`; M5 remains gated. Existing unstaged project.godot serialization is preserved.
+
+
+## 2026-11-15 — M4 implementation and inspection preparation
+
+- Implemented guide-stat Chaser, Kiter and Elite resources/AI; ranged travel/wall interception; fixed-center uninterruptible slam and stun; brush/camouflage sight memory and return; opt-in keg attacks; fixed-tick crowd spreading.
+- Added resource-backed waves, exact opening/inter-wave delays, Victory/Defeat statistics and panels, no Challenge respawn, class-aware reset, persistent mode controls and return to configured Training.
+- Added exact-precision command recordings and validated binary save/load with seed/class/mode/tuning initialization and byte-for-byte whole-log comparison. Full successful stock-stat runs for both classes reproduce. Runtime tuning/debug changes require Reset before recording; playback rejects gameplay input and interrupts on tuning changes.
+- Fixed navigation initialization exposed by replay: the first movement queried a map before synchronization; replay could therefore follow a different route. Navigation map iterations now initialize synchronously and readiness waits for map synchronization; retargeted path queries refresh before finished checks. Existing navigation clearance and player movement stats are preserved.
+- Added focused challenge/replay tests, full-run command pilots and Challenge smoke stage. Existing Captain, Hunter, movement, training and debug gates remain required. `verify.py` accelerates frame-driven tests with fixed render delta and gives the expanded suite a 300-second timeout.
+- **Proposed deviation requiring approval with M4 inspection:** replace the guide's asynchronous NavigationAgent avoidance velocity solver with synchronous stable-order crowd separation. This keeps combat motion on admitted 60 Hz ticks and supports exact replay/pause/slow/step. NavigationAgents remain for paths; chase repaths remain six ticks. The original guide was not changed. See ARCHITECTURE and M4_PLAYTEST for details.
+- Automated pilots use ordinary player commands and unmodified resource stats, with no artificial healing/damage/teleports. Their exact state/timing knowledge is stronger than human play; human balance/feel remains an inspection limitation. Environment art, final enemy costumes, final VFX/audio and exports remain M5. No external assets or network writes were needed.
+- Existing unstaged `project.godot` editor serialization is preserved and excluded from implementation commits. No system/application settings were changed. Work remains local; no GitHub retry was attempted.
+
+Latest required run: `python tools/verify.py`, full output in `.local/m4-inspection-verification.log`.
+
+- **134/134 GUT tests passed, 2,863 assertions across 17 scripts** (68.614 seconds).
+- All **155 scripts** loaded; all **8 stock asset scenes** imported.
+- Captain, Hunter and Challenge each completed **600 consecutive simulation ticks**.
+- Both full successful class recordings replayed with identical serialized combat-log bytes. A focused replay scenario also passes with extra physics/render frames between playback ticks.
+- Strict verification exits failed **only at editor import**, with the previously documented sandbox TCP listener errors (`_sock == -1`, `ERR_CANT_CREATE`). No gameplay/import errors were suppressed. Run `python tools/verify.py` from an unrestricted normal terminal for a strict editor-import result.
+- `git diff --check` passed. All verification processes completed. Documentation-only handoff edits do not require repeating gameplay checks.
+
+M4 is ready for inspection. Full command pilots: Captain clear 110.02 s / 1,757 damage taken / 313.01 HP remaining; Hunter clear 100.35 s / 319 damage taken / 690.38 HP remaining. Both saved full runs reproduce identical logs and Victory. Human balance and the proposed crowd-avoidance guide refinement await approval. Local `m3-approved` tags accepted checkpoint `1902821`. M4 has not been merged/tagged and M5 has not started.

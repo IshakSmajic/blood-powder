@@ -4,6 +4,8 @@ signal resume_requested
 signal restart_requested
 
 var arena: Node3D
+var _result_panel: PanelContainer
+var _result_label: Label
 var _status: Label
 var _selected: Label
 var _log: Label
@@ -33,7 +35,7 @@ func _ready() -> void:
 	header.position = Vector2(24, 18)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(header)
-	header.add_child(_label("BLOOD & POWDER   /   " + ("M3 APEX HUNTER" if arena.hunter != null else "M2 POWDER CAPTAIN" if arena.captain != null else "M1 FOUNDATION"), 24, Color("e8d6bb")))
+	header.add_child(_label("BLOOD & POWDER   /   " + "M4 PVE VALIDATION", 24, Color("e8d6bb")))
 	_status = _label("Baking navigation…", 16)
 	header.add_child(_status)
 	_selected = _label("", 16)
@@ -49,6 +51,39 @@ func _ready() -> void:
 		button.focus_mode = Control.FOCUS_NONE
 		button.pressed.connect(func() -> void: InputRouter.activate_debug(item[1]))
 		toolbar.add_child(button)
+	for label in ["Training", "Challenge"]:
+		var button := Button.new()
+		button.text = label
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(func() -> void: arena.queue_mode(label))
+		toolbar.add_child(button)
+	for label in ["Save replay", "Load replay"]:
+		var button := Button.new()
+		button.text = label
+		button.focus_mode = Control.FOCUS_NONE
+		button.pressed.connect(_save_replay if label == "Save replay" else _choose_replay)
+		toolbar.add_child(button)
+	_result_panel = PanelContainer.new()
+	_result_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_result_panel.offset_left = -270
+	_result_panel.offset_right = 270
+	_result_panel.offset_top = -100
+	root.add_child(_result_panel)
+	var result_box := VBoxContainer.new()
+	_result_panel.add_child(result_box)
+	_result_label = _label("", 24, Color("e8d6bb"))
+	_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_box.add_child(_result_label)
+	for label in ["Retry Challenge", "Back to Training", "Save replay"]:
+		var button := Button.new()
+		button.text = label
+		button.focus_mode = Control.FOCUS_NONE
+		match label:
+			"Retry Challenge": button.pressed.connect(func() -> void: restart_requested.emit())
+			"Back to Training": button.pressed.connect(func() -> void: arena.queue_mode("Training"))
+			_: button.pressed.connect(_save_replay)
+		result_box.add_child(button)
+	_result_panel.hide()
 	var footer := VBoxContainer.new()
 	footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	footer.offset_top = -220
@@ -195,6 +230,13 @@ func _ready() -> void:
 		for section in sections:
 			fields.add_child(_label(section[0].data.display_name.to_upper(), 18))
 			_add_ability_fields(fields, section[0], section[1])
+	fields.add_child(_label("CHALLENGE ENEMIES", 18))
+	fields.add_child(_label("Reset after tuning before saving a replay.", 14))
+	for kind in ["chaser", "kiter", "elite"]:
+		fields.add_child(_label(kind.to_upper(), 16))
+		_add_resource_fields(fields, load("res://data/stats/%s.tres" % kind), ["max_health", "attack_damage", "armor", "magic_resist", "attack_speed", "windup_fraction", "attack_range", "move_speed"])
+	fields.add_child(_label("ENEMY BEHAVIOR (timers in ticks)", 16))
+	_add_resource_fields(fields, preload("res://data/encounters/enemy_behavior.tres"), [])
 	fields.add_child(_label("APPLY TO PLAYER", 18))
 	var status_grid := GridContainer.new()
 	status_grid.columns = 3
@@ -231,10 +273,15 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var player: CombatUnit = arena.player
+	_result_panel.visible = arena.mode == "Challenge" and not arena.challenge.outcome.is_empty() and not _menu.visible
+	if _result_panel.visible:
+		_result_label.text = "%s\nWave %d / 3  ·  %.2f seconds\nDamage taken: %.0f" % [arena.challenge.outcome.to_upper(), arena.challenge.wave, arena.challenge.end_tick / 60.0, arena.challenge.damage_taken]
 	_status.text = "%s · tick %06d · %.1f× · %s · HP %d/%d · %s" % [
 		"PAUSED" if SimClock.state.paused else "TRAINING", SimClock.state.tick,
 		SimClock.state.speed_tenths / 10.0, "CAM LOCKED" if arena.camera.locked else "CAM FREE",
 		ceili(player.health), ceili(player.stat(&"max_health")), "A + click armed" if arena.attack_move_armed else ""]
+	if arena.mode == "Challenge": _status.text += "\n" + arena.challenge.summary(SimClock.state.tick)
+	if arena.replay.playing: _status.text += "\n" + (arena.replay.result if not arena.replay.result.is_empty() else "REPLAY RUNNING")
 	if not arena.navigation_ready:
 		_status.text = "Baking navigation…"
 	var status_text := player.statuses.summary(SimClock.state.tick)
@@ -266,6 +313,7 @@ func _process(delta: float) -> void:
 	_selected.text = "%s · HP %d · armor %.0f · MR %.0f" % [unit.unit_name, ceili(unit.health), unit.stat(&"armor"), unit.stat(&"magic_resist")] if is_instance_valid(unit) else "LMB inspect a unit"
 	if is_instance_valid(unit) and unit is CombatUnit and unit.team != 0:
 		_selected.text += " · %s · Damage %.1f · DPS %.1f" % ["Infinite HP" if unit.training_infinite else "Finite HP", unit.training_damage, unit.training_dps(SimClock.state.tick)]
+	if is_instance_valid(unit) and unit is EnemyUnit: _selected.text += " · AI: " + unit.driver.state
 	if arena.show_states:
 		_selected.text += "\n%s · ready in %d ticks · hit tick %d" % [player.state, maxi(0, player.attack.ready_tick - SimClock.state.tick), player.attack.hit_tick]
 	if is_instance_valid(unit) and unit is CombatUnit:
@@ -400,3 +448,47 @@ func _add_training_numeric(container: VBoxContainer, field: StringName) -> void:
 	spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(data.resource_path, field, value))
 	row.add_child(spinner)
 	_tuning_fields.append({"control": spinner, "resource": data, "field": field})
+
+
+func _save_replay() -> void:
+	var path := _export_path("replay", "bpr")
+	if path.is_empty(): return
+	var error: Error = arena.replay.save_run(arena, path)
+	_export_status.text = "Saved: " + path if error == OK else "Replay unavailable: Reset after changing class, tuning or debug state. Error %d" % error
+	_debug.show()
+
+func _choose_replay() -> void:
+	var dialog := FileDialog.new()
+	dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	dialog.access = FileDialog.ACCESS_FILESYSTEM
+	dialog.filters = PackedStringArray(["*.bpr ; Blood & Powder replay"])
+	dialog.current_dir = ProjectSettings.globalize_path("res://debug_exports")
+	add_child(dialog)
+	dialog.file_selected.connect(func(path: String) -> void:
+		var error: Error = arena.load_replay(path)
+		if error != OK:
+			_export_status.text = "Invalid or incompatible replay: %d" % error
+			_debug.show()
+		dialog.queue_free())
+	dialog.canceled.connect(dialog.queue_free)
+	dialog.popup_centered_ratio(0.6)
+
+
+func _add_resource_fields(container: VBoxContainer, data: Resource, allowed: Array) -> void:
+	for property in data.get_property_list():
+		if not property.usage & PROPERTY_USAGE_EDITOR or property.type not in [TYPE_FLOAT, TYPE_INT]: continue
+		var field := StringName(property.name)
+		if not allowed.is_empty() and String(field) not in allowed: continue
+		var row := HBoxContainer.new()
+		container.add_child(row)
+		var label := _label(String(field).replace("_", " "), 14)
+		label.custom_minimum_size.x = 170
+		row.add_child(label)
+		var spinner := SpinBox.new()
+		spinner.min_value = 0.01 if field in [&"max_health", &"attack_speed"] else 0.0
+		spinner.max_value = 1.0 if field == &"windup_fraction" else 10000.0
+		spinner.step = 1.0 if property.type == TYPE_INT else 0.01
+		spinner.value = DebugConfig.resolve(data.resource_path, field, data.get(field))
+		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(data.resource_path, field, value))
+		_tuning_fields.append({"control": spinner, "resource": data, "field": field})
+		row.add_child(spinner)

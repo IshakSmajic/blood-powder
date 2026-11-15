@@ -15,7 +15,8 @@ func configure(owner_body: CharacterBody3D) -> void:
 	agent.path_desired_distance = 0.12
 	agent.target_desired_distance = 0.1
 	agent.radius = 0.65
-	# Avoidance is introduced with moving enemies in M4, not static dummies.
+	# Arena uses synchronous crowd separation; asynchronous avoidance would
+	# let physics frames outside admitted simulation ticks alter replay motion.
 	agent.avoidance_enabled = false
 	body.add_child(agent)
 
@@ -38,10 +39,11 @@ func stop() -> void:
 func simulate(speed: float) -> Vector3:
 	if not active:
 		return Vector3.ZERO
+	# Updating the path first clears a stale finished flag after retarget/reset.
+	var point := agent.get_next_path_position()
 	if agent.is_navigation_finished():
 		stop()
 		return Vector3.ZERO
-	var point := agent.get_next_path_position()
 	var direction := point - body.global_position
 	direction.y = 0.0
 	var distance := direction.length()
