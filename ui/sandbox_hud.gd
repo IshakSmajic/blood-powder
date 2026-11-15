@@ -135,7 +135,7 @@ func _ready() -> void:
 		fields.add_child(_label("SEARING EDGE (damage per burn pulse)", 18))
 		_add_ability_fields(fields, arena.captain.passive, ["cooldown", "damage", "burn_duration", "speed_fraction", "speed_duration"])
 		fields.add_child(_label("BROADSIDE", 18))
-		_add_ability_fields(fields, arena.captain.r, ["cooldown", "cast_time", "radius", "damage", "slow_fraction", "slow_duration", "duration", "first_wave_delay", "cluster_interval", "wave_interval", "cluster_count", "waves_per_cluster"])
+		_add_ability_fields(fields, arena.captain.r, ["cooldown", "cast_time", "radius", "damage", "slow_fraction", "slow_duration", "duration", "first_wave_delay", "cluster_interval", "wave_interval", "cluster_count", "waves_per_cluster", "cannonballs_per_wave"])
 		fields.add_child(_label("RATION", 18))
 		_add_ability_fields(fields, arena.captain.w, ["cooldown", "cast_time", "heal_flat", "heal_missing_fraction"])
 		fields.add_child(_label("POWDER KEG", 18))
@@ -291,7 +291,7 @@ func _add_ability_fields(container: VBoxContainer, runner: AbilityRunner, allowe
 		row.add_child(label)
 		var spinner := SpinBox.new()
 		spinner.min_value = 3 if field == &"charges" else 0.0
-		spinner.max_value = 5 if field == &"charges" else 1.0 if field in [&"slow_fraction", &"armor_penetration", &"crit_bonus", &"heal_missing_fraction"] else 10000.0
+		spinner.max_value = 32 if field == &"cannonballs_per_wave" else 5 if field == &"charges" else 1.0 if field in [&"slow_fraction", &"armor_penetration", &"crit_bonus", &"heal_missing_fraction"] else 10000.0
 		spinner.step = 1.0 if property.type == TYPE_INT else 0.01
 		spinner.value = runner.value(field)
 		spinner.value_changed.connect(func(value: float) -> void: DebugConfig.set_override(runner.data.resource_path, field, value))

@@ -262,3 +262,12 @@ Added R input routing (including the physical key), cooldown/failure UI, F1 tuni
 Manual playtest: restart, point near a dummy and press R. Confirm short cast, orange area ring, falling cannonballs, blue damage in four clusters of three, slow, and 30-second cooldown. Walk away after casting; the area stays fixed. Cast at distant arena ground to confirm no approach. F4 shows wave ticks; F9/F10 pause/step the effect. F5 mid-bombardment must clear it and restore R. No M2 approval is inferred; final combo acceptance still needs user playtesting.
 
 Broadside verification: `python tools/verify.py` loaded all 134 scripts, imported all 8 stock scenes, passed all 82 tests (2,352 assertions), and completed 600 main-scene ticks. Strict editor import still fails only with the documented sandbox TCP-socket errors. New tests cover all 12 exact wave ticks, full ring duration, slow expiry, area boundaries/moving targets, damage snapshot, global range, interruption/cooldown/reset, physical R forwarding, invalid ground, seeded impacts, and render RNG isolation. `git diff --check` passed. Desktop effects/feel await user playtest.
+
+
+### 2026-11-15 — denser Broadside cannonball visuals
+
+Ishak requested “much much more” falling models. Increased visuals from one to sixteen cannonballs per damage wave: 192 per default cast, with seeded positions across the area and ±5-tick stagger for a denser barrage. Added F1 `cannonballs_per_wave` tuning (1–32, snapshotted on cast completion), shared low-poly meshes/materials, and a 2048-visual cap for extreme custom wave settings. Cosmetic expansion uses a local RNG seeded from each existing wave anchor, so changing visual density preserves simulation RNG consumption, future crits, damage waves, slows, and cooldowns. This is a requested visual refinement, not a change to combat balance.
+
+Added a regression comparing dense/sparse casts with the same seed, confirming equal simulation RNG state, wave anchors and relative schedules; checks default count and circle bounds. Manual check: restart, cast R near dummies, and inspect the denser staggered rain; use F1 cannonballs_per_wave for preference tuning. Rendering smoothness still needs desktop playtesting.
+
+Density verification: all 83 tests passed (2,572 assertions), 134 scripts loaded, 8 stock scenes imported, and the 600-tick runtime check passed. Full `python tools/verify.py` still exits failed only for the known editor-import sandbox socket restriction. `git diff --check` passed.

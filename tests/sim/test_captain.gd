@@ -488,3 +488,27 @@ func test_broadside_seeded_impacts_repeat_inside_circle_without_render_rng() -> 
 	var actual: Array = arena.captain.broadsides[0].waves
 	assert_eq(actual.size(), expected.size())
 	for i in range(expected.size()): assert_eq(actual[i].impact, expected[i].impact)
+
+
+func test_broadside_dense_visuals_preserve_wave_schedule_and_simulation_rng() -> void:
+	SimClock.state.rng.seed = 4321
+	queue_r(Vector3(0, 0, 8))
+	await advance(16)
+	var dense: BroadsideZone = arena.captain.broadsides[0]
+	assert_eq(dense.visual_impacts.size(), 192)
+	var expected_rng := SimClock.state.rng.state
+	var expected_waves := dense.waves.duplicate(true)
+	for impact in dense.visual_impacts:
+		assert_lte(impact.impact.length(), 5.80001)
+	arena.reset_arena()
+	DebugConfig.set_override(arena.captain.r.data.resource_path, &"cannonballs_per_wave", 1)
+	SimClock.state.rng.seed = 4321
+	queue_r(Vector3(0, 0, 8))
+	await advance(32)
+	var sparse: BroadsideZone = arena.captain.broadsides[0]
+	assert_eq(sparse.visual_impacts.size(), 12)
+	assert_eq(SimClock.state.rng.state, expected_rng)
+	assert_eq(sparse.waves.size(), expected_waves.size())
+	for i in range(expected_waves.size()):
+		assert_eq(sparse.waves[i].impact, expected_waves[i].impact)
+		assert_eq(sparse.waves[i].tick - 16, expected_waves[i].tick)
