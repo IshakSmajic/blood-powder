@@ -333,7 +333,7 @@ func _request_cast(command: UnitCommand, tick: int, units: Array[CombatUnit]) ->
 		return
 	active_cast = result.runner
 	if is_instance_valid(command.target): _face(command.target.global_position - global_position)
-	elif command.slot == &"E": _face(command.point - global_position)
+	elif command.slot in [&"E", &"R"]: _face(command.point - global_position)
 	if attack.cancel(tick): EventBus.publish(&"attack_cancelled", {"source": unit_id})
 	_victim = null
 	movement.stop()

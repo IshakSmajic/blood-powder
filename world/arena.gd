@@ -168,15 +168,15 @@ func _on_action(action: StringName) -> void:
 			var command := UnitCommand.create(UnitCommand.Kind.CAST)
 			command.slot = &"W"
 			player.queue_command(command, SimClock.state.tick)
-		&"ability_e":
+		&"ability_e", &"ability_r":
 			if captain == null: return
 			if not player.alive():
-				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"E"})
+				EventBus.publish(&"ability_cast_failed", {"source": player.unit_id, "reason": "Dead", "slot": &"R" if action == &"ability_r" else &"E"})
 				return
 			var point: Variant = _ground_point()
 			if point == null: return
 			var command := UnitCommand.create(UnitCommand.Kind.CAST, point)
-			command.slot = &"E"
+			command.slot = &"R" if action == &"ability_r" else &"E"
 			player.queue_command(command, SimClock.state.tick)
 		&"toggle_camera_lock", &"zoom_in", &"zoom_out":
 			camera.handle_action(action)

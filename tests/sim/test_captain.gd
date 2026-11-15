@@ -375,3 +375,116 @@ func test_searing_edge_rearms_on_exact_cooldown_boundary() -> void:
 	arena.captain.basic_hit(dummy, 901)
 	assert_eq(arena.captain.passive.ready_tick, 1801)
 	assert_almost_eq(player.statuses.move_multiplier(), 1.25, 0.0001)
+
+
+func queue_r(point: Vector3) -> void:
+	var command := UnitCommand.create(UnitCommand.Kind.CAST, point)
+	command.slot = &"R"
+	player.queue_command(command, current_tick)
+
+
+func test_broadside_exact_twelve_waves_slow_and_full_area_duration() -> void:
+	queue_r(dummy.position)
+	await advance(1)
+	assert_same(player.active_cast, arena.captain.r)
+	assert_eq(arena.captain.r.ready_tick, 1801)
+	await advance(15)
+	assert_eq(arena.captain.broadsides.size(), 0)
+	await advance(16)
+	assert_eq(arena.captain.broadsides.size(), 1)
+	var zone: BroadsideZone = arena.captain.broadsides[0]
+	assert_eq(zone.expires_tick, 496)
+	await advance(45)
+	assert_eq(dummy.health, 2000.0)
+	await advance(46)
+	var per_wave := DamageResolver.resolve(40.0, dummy.stat(&"magic_resist"))
+	assert_almost_eq(dummy.health, 2000.0 - per_wave, 0.0001)
+	assert_almost_eq(dummy.statuses.move_multiplier(), 0.7, 0.0001)
+	await advance(106)
+	assert_false(dummy.statuses.has(&"slow"))
+	await advance(495)
+	assert_eq(arena.captain.broadsides.size(), 1)
+	assert_almost_eq(dummy.health, 2000.0 - 12 * per_wave, 0.0001)
+	var rows: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool: return row.event == "broadside_wave")
+	var ticks: Array = rows.map(func(row: Dictionary) -> int: return row.tick)
+	assert_eq(ticks, [46, 61, 76, 166, 181, 196, 286, 301, 316, 406, 421, 436])
+	await advance(496)
+	assert_eq(arena.captain.broadsides.size(), 0)
+
+
+func test_broadside_area_boundary_targets_and_snapshot() -> void:
+	var point := Vector3(0, 0, 8)
+	dummy.position = Vector3(6.45, 0, 8)
+	var outside: CombatUnit = arena.units[2]
+	outside.position = Vector3(6.46, 0, 8)
+	queue_r(point)
+	await advance(16)
+	DebugConfig.set_override(arena.captain.r.data.resource_path, &"damage", 999.0)
+	DebugConfig.set_override(arena.captain.r.data.resource_path, &"radius", 30.0)
+	await advance(46)
+	assert_almost_eq(dummy.health, 2000.0 - DamageResolver.resolve(40.0, dummy.stat(&"magic_resist")), 0.0001)
+	assert_eq(outside.health, 2000.0)
+	assert_eq(player.health, 1200.0)
+	assert_false(dummy.statuses.has(&"burn"))
+	assert_eq(arena.captain.passive.ready_tick, 0)
+	dummy.position = Vector3(10, 0, 8)
+	outside.position = point
+	await advance(61)
+	assert_almost_eq(outside.health, 2000.0 - DamageResolver.resolve(40.0, outside.stat(&"magic_resist")), 0.0001)
+
+
+func test_broadside_global_cast_interrupt_cooldown_and_reset() -> void:
+	queue_r(Vector3(-15, 0, -11))
+	await advance(1)
+	assert_same(player.active_cast, arena.captain.r)
+	player.apply_status(&"stun", 1, 5)
+	await advance(16)
+	assert_eq(arena.captain.broadsides.size(), 0)
+	assert_eq(arena.captain.r.ready_tick, 1801)
+	queue_r(Vector3(0, 0, 8))
+	await advance(17)
+	var failures: Array = arena.combat_log.rows.filter(func(row: Dictionary) -> bool: return row.event == "ability_cast_failed")
+	assert_eq(failures[-1].payload.slot, &"R")
+	assert_eq(failures[-1].payload.reason, "On cooldown")
+	arena.reset_arena()
+	queue_r(Vector3(0, 0, 8))
+	await advance(33)
+	assert_eq(arena.captain.broadsides.size(), 1)
+	arena.reset_arena()
+	assert_eq(arena.captain.broadsides.size(), 0)
+	assert_eq(arena.captain.r.ready_tick, 0)
+	await advance(90)
+	assert_eq(arena.combat_log.rows.size(), 0)
+
+
+func test_broadside_rejects_outside_arena_and_physical_r_is_forwarded() -> void:
+	queue_r(Vector3(19, 0, 8))
+	await advance(1)
+	assert_eq(arena.captain.r.ready_tick, 0)
+	watch_signals(InputRouter)
+	var key := InputEventKey.new()
+	key.physical_keycode = KEY_R
+	key.pressed = true
+	assert_true(key.is_action_pressed("ability_r"))
+	InputRouter._unhandled_input(key)
+	assert_signal_emitted_with_parameters(InputRouter, "world_action", [&"ability_r"])
+
+
+func test_broadside_seeded_impacts_repeat_inside_circle_without_render_rng() -> void:
+	SimClock.state.rng.seed = 1234
+	queue_r(Vector3(0, 0, 8))
+	await advance(16)
+	var zone: BroadsideZone = arena.captain.broadsides[0]
+	var expected := zone.waves.duplicate(true)
+	var rng_state := SimClock.state.rng.state
+	zone._process(0.1)
+	zone._process(0.2)
+	assert_eq(SimClock.state.rng.state, rng_state)
+	for wave in zone.waves: assert_lte(wave.impact.length(), 5.80001)
+	arena.reset_arena()
+	SimClock.state.rng.seed = 1234
+	queue_r(Vector3(0, 0, 8))
+	await advance(32)
+	var actual: Array = arena.captain.broadsides[0].waves
+	assert_eq(actual.size(), expected.size())
+	for i in range(expected.size()): assert_eq(actual[i].impact, expected[i].impact)

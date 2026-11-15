@@ -2,7 +2,7 @@
 
 ## Active milestone: M2 — Powder Captain
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. Q/E functionality is user-playtested with polish deferred; W activation is user-confirmed after its keyboard fix. Searing Edge is now implemented; its playtest and R Broadside are next. M2 is not complete.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m2-captain-kegs`. Q/E functionality is user-playtested with polish deferred; W activation is user-confirmed after its keyboard fix. Searing Edge is implemented and user-playtested successfully; R Broadside is now implemented; its playtest and final M2 acceptance checks remain. M2 is not complete.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -246,3 +246,19 @@ Added simulation checks for exact melee/burn timing and true damage, speed expir
 Manual check: restart the game; P and the blade should indicate readiness. RMB a dummy, then S after one hit; watch five orange burn numbers and P's 15-second cooldown. Move during the two-second speed buff. Place linked kegs, wait for one pip and detonate; P should become ready again and speed should refresh. Q alone should not burn a dummy or consume P. F5 resets. Full flame particles/audio remain deferred; Broadside remains the next M2 slice. No M2 approval or M3 work is implied.
 
 Searing Edge verification: `python tools/verify.py` loaded all 132 scripts, imported all 8 stock scenes, passed 77/77 tests (2,295 assertions), and completed 600 main-scene ticks. Strict editor import fails only with the previously documented restricted-session TCP socket errors. `git diff --check` passed. Desktop glow/feel still requires user playtesting.
+
+
+### 2026-11-15 — Searing Edge playtest confirmed
+
+Ishak reported “Works perfectly” after the Searing Edge handoff. Record the passive slice as confirmed in user playtesting. No implementation changes or additional verification run were needed; latest checks remain 77 passing tests / 2,295 assertions, 132 scripts, 8 asset scenes, and 600 runtime ticks, with the documented sandbox editor-import socket limitation. R Broadside is next. Q/E polish remains deferred, and M2 still requires completion and explicit milestone approval before M3.
+
+
+### 2026-11-15 — R Broadside implemented
+
+Implemented resource-backed R quick cast anywhere inside the arena: 15-tick cast, 1800-tick cooldown, 5.8 m fixed area for 480 ticks, twelve waves of 40 magic damage and 30% slow for 30 ticks. Wave offsets are measured from cast completion: +30/+45/+60 and three more clusters 120 ticks apart (last wave +420). Radius intersects target gameplay radius, consistent with existing area effects. Allies/kegs are excluded and no passive burn is applied. Cast parameters snapshot at zone creation; custom waves outside the tuned duration are excluded. Stun interrupts pending R, retaining cooldown; a completed zone continues through stun/death until expiry or controller reset/respawn. F5 clears all zones and cooldown.
+
+Added R input routing (including the physical key), cooldown/failure UI, F1 tuning, full-duration ground ring, tick-based falling streaks/impact flashes, and seeded uniform-circle impact points. Cosmetic positions are drawn from the simulation RNG at creation; rendering never consumes gameplay RNG. Full VFX/audio remain later polish. Existing Q/E polish remains deferred.
+
+Manual playtest: restart, point near a dummy and press R. Confirm short cast, orange area ring, falling cannonballs, blue damage in four clusters of three, slow, and 30-second cooldown. Walk away after casting; the area stays fixed. Cast at distant arena ground to confirm no approach. F4 shows wave ticks; F9/F10 pause/step the effect. F5 mid-bombardment must clear it and restore R. No M2 approval is inferred; final combo acceptance still needs user playtesting.
+
+Broadside verification: `python tools/verify.py` loaded all 134 scripts, imported all 8 stock scenes, passed all 82 tests (2,352 assertions), and completed 600 main-scene ticks. Strict editor import still fails only with the documented sandbox TCP-socket errors. New tests cover all 12 exact wave ticks, full ring duration, slow expiry, area boundaries/moving targets, damage snapshot, global range, interruption/cooldown/reset, physical R forwarding, invalid ground, seeded impacts, and render RNG isolation. `git diff --check` passed. Desktop effects/feel await user playtest.

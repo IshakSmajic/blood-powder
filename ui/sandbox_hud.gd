@@ -13,6 +13,7 @@ var _events: Array[String] = []
 var _pulse_slot: Control
 var _e_slot: Control
 var _passive_slot: Control
+var _r_slot: Control
 var _w_slot: Control
 var _fail_label: Label
 var _fail_left: float = 0.0
@@ -55,6 +56,10 @@ func _ready() -> void:
 		if key == "P" and arena.captain != null:
 			slot.ability = arena.captain.passive
 			_passive_slot = slot
+		if key == "R" and arena.captain != null:
+			slot.ability = arena.captain.r
+			slot.usable = true
+			_r_slot = slot
 		if key == "W" and arena.captain != null:
 			slot.ability = arena.captain.w
 			slot.usable = true
@@ -65,7 +70,7 @@ func _ready() -> void:
 			slot.usable = true
 			_e_slot = slot
 		slots.add_child(slot)
-	footer.add_child(_label("Q: Flintlock at cursor target · W: heal + cleanse · E: place keg · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
+	footer.add_child(_label("Q: Flintlock at cursor target · W: heal + cleanse · E: place keg · R: Broadside at cursor · RMB: attack keg · wait for 1 pip to detonate" if arena.captain != null else "Q: Training Pulse — nearby magic damage + slow. W/E/R and passive await class mechanics.", 16, Color("bcb5ac")))
 	footer.add_child(_label("RMB move / attack · hold RMB ground to steer · A then LMB attack-move · S stop · H hold", 17))
 	footer.add_child(_label("Y camera lock · Space center · wheel zoom · F1 tuning · F2 ranges · F3 state · F4 log", 17))
 	footer.add_child(_label("F5 reset · F7/F8 speed · F9 pause · F10 step · Esc menu", 17))
@@ -129,6 +134,8 @@ func _ready() -> void:
 	if arena.captain != null:
 		fields.add_child(_label("SEARING EDGE (damage per burn pulse)", 18))
 		_add_ability_fields(fields, arena.captain.passive, ["cooldown", "damage", "burn_duration", "speed_fraction", "speed_duration"])
+		fields.add_child(_label("BROADSIDE", 18))
+		_add_ability_fields(fields, arena.captain.r, ["cooldown", "cast_time", "radius", "damage", "slow_fraction", "slow_duration", "duration", "first_wave_delay", "cluster_interval", "wave_interval", "cluster_count", "waves_per_cluster"])
 		fields.add_child(_label("RATION", 18))
 		_add_ability_fields(fields, arena.captain.w, ["cooldown", "cast_time", "heal_flat", "heal_missing_fraction"])
 		fields.add_child(_label("POWDER KEG", 18))
@@ -182,6 +189,7 @@ func _process(delta: float) -> void:
 	_fail_label.visible = _fail_left > 0.0
 	_fail_label.position = get_viewport().get_mouse_position() + Vector2(16, 16)
 	if _passive_slot != null: _passive_slot.usable = player.alive() and SimClock.state.tick >= arena.captain.passive.ready_tick
+	if _r_slot != null: _r_slot.usable = _pulse_slot.usable
 	if _w_slot != null: _w_slot.usable = _pulse_slot.usable
 	if _e_slot != null:
 		_e_slot.usable = _pulse_slot.usable and arena.captain.charges.available > 0
@@ -255,7 +263,7 @@ func _on_event(tick: int, event: StringName, payload: Dictionary) -> void:
 	if event == &"ability_cast_failed" and payload.source == arena.player.unit_id:
 		_fail_label.text = payload.reason
 		_fail_left = 0.6
-		var failed_slot: Control = _e_slot if payload.get("slot", &"Q") == &"E" else _w_slot if payload.get("slot", &"Q") == &"W" else _pulse_slot
+		var failed_slot: Control = _e_slot if payload.get("slot", &"Q") == &"E" else _w_slot if payload.get("slot", &"Q") == &"W" else _r_slot if payload.get("slot", &"Q") == &"R" else _pulse_slot
 		if failed_slot != null: failed_slot.flash_failure()
 	_events.append("%06d  %s  %s" % [tick, event, str(payload)])
 	if _events.size() > 200:
