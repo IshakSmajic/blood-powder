@@ -6,11 +6,19 @@ Read this file, AGENTS.md, PROGRESS.md, ARCHITECTURE.md and the relevant develop
 
 Ishak requested that the next session explicitly ask for an M4 review after moving the project to his PC. Help restore/open the project on that PC first, then request the review using `docs/M4_PLAYTEST.md`, including the proposed deterministic crowd-separation refinement. M4 is not approved; do not start M5.
 
+### New PC prerequisites — check with Ishak before setup
+
+- [ ] **Git** installed and available (`git --version`); confirm access to the GitHub repository.
+- [ ] **Godot 4.7.2** installed for the PC's operating system; locate the executable and confirm the pinned version.
+- [ ] **Python 3** installed and available (`python --version` or `py --version`) for `tools/verify.py`.
+
+The next session should help check/install these three prerequisites on the new PC, then clone/open `feature/m4-pve`, import assets and verify the project before requesting the M4 review. Do not assume this machine's executable paths exist on the PC.
+
 The project repository contains the used assets and vendored GUT. On the PC, clone the repository, check out `feature/m4-pve`, install the pinned Godot 4.7.2, open `project.godot`, let assets import, then run the verification script with `GODOT_BIN` pointing to that PC's engine executable. Paths in older notes refer to this Linux machine. Ignored `.local/`, `.godot/`, `debug_exports/`, external raw packs and installed engine/export templates are not transferred by Git; copy any wanted replays/tuning exports separately.
 
 On 15 November Ishak explicitly requested pushing everything to GitHub, superseding the earlier no-retry instruction for this synchronization. The existing editor serialization of `project.godot` is included in the migration checkpoint, separately from the M4 implementation commit.
 
-GitHub synchronization attempt failed on DNS (`Could not resolve host: github.com`); no successful remote synchronization is claimed. All changes are locally committed. A transfer bundle is available at `/home/aurelius/Downloads/blood-powder-migration.bundle`, containing all local branches and tags. It can be cloned on the PC with `git clone blood-powder-migration.bundle blood-powder`, then `git switch feature/m4-pve`; replace the bundle origin with `https://github.com/IshakSmajic/blood-powder.git` before later pushes. To upload from this machine once DNS works: `git push origin --all` and `git push origin --tags`.
+**GitHub status:** Ishak reports that he manually pushed everything to GitHub on 15 November 2026, after the agent's earlier DNS-blocked attempt. Record this as user-confirmed synchronization, not an independently verified remote check. The new prerequisite checklist was added after that manual push and must also reach GitHub before relying on it from the PC. A transfer bundle of the earlier checkpoint remains at `/home/aurelius/Downloads/blood-powder-migration.bundle`; it predates this checklist. Prefer cloning `https://github.com/IshakSmajic/blood-powder.git` and selecting `feature/m4-pve` on the PC.
 
 ## Resume checkpoint
 
