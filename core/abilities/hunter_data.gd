@@ -13,6 +13,7 @@ extends AbilityData
 @export var grey_fraction: float = 0.5
 @export var grey_window: float = 1.5
 @export var leap_range: float = 7.45
+@export var leap_ring_width: float = 0.1
 @export var leap_speed: float = 14.5
 @export var leap_linger: float = 0.35
 @export var landing_gap: float = 0.5

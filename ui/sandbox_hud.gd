@@ -188,7 +188,7 @@ func _ready() -> void:
 		_add_ability_fields(fields, arena.captain.e, ["cooldown", "cast_time", "radius", "slow_fraction", "slow_duration", "range", "charges", "recharge", "decay_interval", "lifetime", "connection_distance", "chain_delay", "minimum_spacing", "armor_penetration", "crit_bonus", "elite_bonus", "link_width", "link_border"])
 	if arena.hunter != null:
 		var sections := [
-			[arena.hunter.passive, ["leap_range", "leap_speed", "leap_linger", "landing_gap", "arc_height", "ferocity_decay", "empowered_speed", "empowered_speed_duration", "brush_reveal_range", "brush_hide_delay", "brush_hit_reveal"]],
+			[arena.hunter.passive, ["leap_range", "leap_ring_width", "leap_speed", "leap_linger", "landing_gap", "arc_height", "ferocity_decay", "empowered_speed", "empowered_speed_duration", "brush_reveal_range", "brush_hide_delay", "brush_hit_reveal"]],
 			[arena.hunter.w, ["cooldown", "radius", "damage", "empowered_damage", "grey_fraction", "grey_window"]],
 			[arena.hunter.e, ["cooldown", "cast_time", "range", "width", "projectile_speed", "damage", "empowered_damage", "slow_fraction", "slow_duration", "root_duration"]],
 			[arena.hunter.r, ["cooldown", "duration", "speed_fraction", "camouflage_delay", "detection_range", "mark_range", "mark_ad_ratio", "armor_reduction", "armor_duration"]]]

@@ -6,7 +6,7 @@ Restart the game. Open F1 and select **Apex Hunter** at the top, then close F1. 
 
 ## Main milestone combo
 
-1. Move into either green brush patch near the north dummy line. P's claw indicator and the Leap READY text show eligibility. F2 displays the leap range and Bola aim line.
+1. Move into either green brush patch near the north dummy line. P's claw indicator and the Leap READY text show eligibility. An outlined jump-range circle appears automatically while eligible (green from brush/linger, gold from Stalk camouflage). F2 still shows the Bola aim and other debug ranges.
 2. RMB a dummy beyond normal melee range but within leap range. The Hunter leaps toward the target's sampled position and attacks on landing.
 3. Press E at the enemy during the leap. Bola should launch immediately without the grounded cast delay.
 4. Press Q while airborne or immediately after landing to empower/reset attacks. W hits nearby targets and builds Ferocity.
@@ -18,7 +18,7 @@ Restart the game. Open F1 and select **Apex Hunter** at the top, then close F1. 
 - Q Rend: resets readiness, buffs two attacks, first-hit bonus and uncancellable first windup. Try a move order during its first windup; it should execute after the hit. Empowered Q's five-second attack-speed buff survives a follow-up normal Q.
 - W Howl: magic damage in 4.5 m and healing for 50% of post-mitigation damage from the prior 90 ticks. Use F1 Burn or damage/status buttons to inspect grey HP. Damage older than 1.5 seconds leaves the grey bar. Empowered W can be used while stunned and cleanses slow/root/stun; normal W cannot.
 - E Bola: ground cast takes 15 ticks, direction is fixed by the original aim point, and the shot launches from the cast-completion position. It hits the first enemy, slows, and is stopped by walls. Empowered E roots. Try Q/W during the ground cast to check buffering.
-- R Stalk: immediate speed, camouflage/leap eligibility after two seconds, nearest-enemy marker within 16 m. Model fades to 30% opacity. Attacking or casting W/E ends it; Q preserves it. A marked attack adds AD damage and reduces armor by 20 for four seconds.
+- R Stalk: immediate speed, camouflage/leap eligibility after two seconds, nearest-enemy marker within 16 m. Model fades to 30% opacity, and the automatic jump circle turns gold after the two-second warmup. Attacking or casting W/E ends it; Q preserves it. A marked attack adds AD damage and reduces armor by 20 for four seconds.
 - Ferocity: one leap-derived stack until stacks are consumed/decayed, W/E cast gains, first normal Rend hit gain, cap four. Empowered abilities ignore base cooldowns. Observe the brief same-ability lockouts. After ten seconds without non-burn combat damage, pips clear.
 
 ## Interruptions, geometry, and cleanup

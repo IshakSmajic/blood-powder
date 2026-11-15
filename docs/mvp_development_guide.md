@@ -3555,3 +3555,8 @@ During M2 inspection, Ishak requested more visible barrel links. Replace the fai
 # User-directed refinement — 15 November 2026: function-key access
 
 During M3 inspection, Ishak reported function keys unavailable in the game. Provide a persistent clickable debug toolbar and Tab alternative for Tools, while preserving the existing F-key actions. The toolbar covers overlays/log/reset/speed/pause/step. This adds access paths without changing mechanics or desktop/editor configuration.
+
+
+# User-directed refinement — 15 November 2026: automatic Hunter jump circle
+
+Ishak requested a circle around Hunter indicating jump range from brush or the fourth ability. Show the nominal leap-reach ring automatically while brush/linger or Stalk camouflage grants leap eligibility, without requiring the debug range overlay. Use the configured leap range plus Hunter gameplay radius so the ring represents the enemy-edge reach. Hide it while dead, rooted, stunned, airborne, or on another class. This is presentation only.

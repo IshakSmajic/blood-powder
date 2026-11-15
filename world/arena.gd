@@ -14,6 +14,7 @@ var _training_signature: Dictionary = {}
 var _training_actions: Array[StringName] = []
 var _strafe_direction: Dictionary = {}
 var captain_enabled: bool = true
+var leap_indicator: LeapRangeIndicator
 var hunter: HunterController
 var active_class: String = "Captain"
 var initial_class: String = "Captain"
@@ -58,6 +59,9 @@ func _ready() -> void:
 	camera.target = player
 	add_child(camera)
 	_effects = Node3D.new()
+	leap_indicator = LeapRangeIndicator.new()
+	leap_indicator.name = "HunterLeapRange"
+	add_child(leap_indicator)
 	_effects.name = "TransientEffects"
 	add_child(_effects)
 	_debug_mesh = MeshInstance3D.new()
@@ -348,6 +352,7 @@ func reset_arena() -> void:
 func _process(_delta: float) -> void:
 	if not is_instance_valid(player):
 		return
+	leap_indicator.update_visual(player, hunter, SimClock.state.tick)
 	var immediate := _debug_mesh.mesh as ImmediateMesh
 	immediate.clear_surfaces()
 	if hunter != null:
@@ -374,7 +379,6 @@ func _process(_delta: float) -> void:
 		_draw_circle(immediate, player.global_position, player.stat(&"attack_range") + player.stat(&"gameplay_radius"))
 		_draw_circle(immediate, player.global_position, player.ability.value(&"radius"))
 		if hunter != null:
-			_draw_circle(immediate, player.position, hunter.passive.value(&"leap_range") + player.stat(&"gameplay_radius"))
 			var aim: Variant = _ground_point()
 			if aim != null:
 				immediate.surface_add_vertex(player.position + Vector3.UP * 0.1)

@@ -2,7 +2,7 @@
 
 ## Active milestone: M3 — Apex Hunter
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m3-hunter`. M2 was approved after the barrel-link fix and tagged locally as `m2-approved`. **M3 implementation is ready for user inspection; M3 approval remains pending.** Click Tools (or press Tab) and select Apex Hunter. Brush/leap, Ferocity, Q/W/E/R, vision/camouflage, class switching, HUD/tuning and cleanup are implemented. Latest full verification: 117 tests / 2,779 assertions, 144 scripts, 8 asset scenes, Captain and Hunter 600-tick smoke checks; a focused Hunter follow-up also passed (18 tests / 96 assertions) after confirming the guide's 30-armor Hunter stat. Strict editor import retains the known sandbox socket limitation. Use [docs/M3_PLAYTEST.md](docs/M3_PLAYTEST.md); do not begin M4 before explicit M3 approval.
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m3-hunter`. M2 was approved after the barrel-link fix and tagged locally as `m2-approved`. **M3 implementation is ready for user inspection; M3 approval remains pending.** Click Tools (or press Tab) and select Apex Hunter. Brush/leap, Ferocity, Q/W/E/R, vision/camouflage, class switching, HUD/tuning and cleanup are implemented. Latest full verification: 119 tests / 2,791 assertions, 145 scripts, 8 asset scenes, Captain and Hunter 600-tick smoke checks; a focused Hunter follow-up also passed (18 tests / 96 assertions) after confirming the guide's 30-armor Hunter stat. Strict editor import retains the known sandbox socket limitation. Use [docs/M3_PLAYTEST.md](docs/M3_PLAYTEST.md); do not begin M4 before explicit M3 approval.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -352,3 +352,12 @@ Tests inject real viewport keyboard events with a focused SpinBox to verify Tab/
 Also connected the previously mapped but unforwarded F6 class-switch action. The focused input test exercises F6 through the real viewport, then steps the queued class change and verifies toolbar availability after the HUD rebuild. Synthetic input tests explicitly flush Godot’s buffered events before asserting state and release injected keys after each test.
 
 Debug-control verification: all 117 tests passed (2,779 assertions), all 144 scripts loaded, 8 stock asset scenes imported, and Captain/Hunter each ran 600 ticks. Focused debug-input checks passed 4/4 tests (20 assertions). Full verification retains only the known sandbox editor-import TCP-listener error. `git diff --check` passed. Exact host F-key interception remains unconfirmed; Tools/Tab/mouse alternatives are ready for desktop inspection.
+
+
+### 2026-11-15 — automatic Hunter jump-range circle
+
+Ishak confirmed the debug-control workaround works “amazingly” and requested a character-centered leap-range circle from brush or R. Added a bright outlined ring independent of F2, automatically green for brush/linger and gold for Stalk camouflage after the two-second warmup. It follows the interpolated actor, reads actual leap eligibility, and hides during flight/root/stun/death or Captain selection. Radius uses the same configured edge range plus Hunter gameplay radius (8.1 m default); width is visual-only tuning in Tools. Cached annulus geometry has no collision or RNG influence. Removed the duplicate F2 leap ring while retaining other overlays.
+
+Added integration checks for automatic display with F2 off, brush/linger expiry, root/in-flight hiding, R warmup, range tuning, class-switch cleanup, and rendering RNG isolation. Manual check: restart/select Hunter, enter/exit brush, and cast R outside brush; the circle should appear in brush and turn gold when R grants camouflage after two seconds. This feedback does not imply full M3 approval.
+
+Automatic leap-circle verification: all 119 tests passed (2,791 assertions), all 145 scripts loaded, 8 stock scenes imported, and both Captain/Hunter 600-tick runtime checks passed. Strict verification retains only the known sandbox editor-import socket failure. `git diff --check` passed. Desktop appearance remains for user inspection.

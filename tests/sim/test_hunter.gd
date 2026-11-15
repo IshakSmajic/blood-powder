@@ -348,3 +348,48 @@ func test_armor_shred_expires_before_target_turn_on_boundary_tick() -> void:
 	assert_eq(dummy.stat(&"armor"), 30.0)
 	SimClock.state.tick = 10
 	assert_eq(dummy.stat(&"armor"), 50.0)
+
+
+func test_automatic_leap_ring_tracks_brush_linger_and_disabled_states_without_f2() -> void:
+	assert_false(arena.show_ranges)
+	await advance(1)
+	arena._process(0.016)
+	assert_true(arena.leap_indicator.visible)
+	assert_almost_eq(arena.leap_indicator._radius, 8.1, 0.0001)
+	var rng := SimClock.state.rng.state
+	arena._process(0.016)
+	assert_eq(SimClock.state.rng.state, rng)
+	player.position = Vector3(-11, 0, -5)
+	await advance(21)
+	arena._process(0.016)
+	assert_true(arena.leap_indicator.visible)
+	await advance(23)
+	arena._process(0.016)
+	assert_false(arena.leap_indicator.visible)
+	player.position = Vector3(-11, 0, -7)
+	await advance(24)
+	player.apply_status(&"root", tick, 60)
+	arena._process(0.016)
+	assert_false(arena.leap_indicator.visible)
+	player.cleanse()
+	attack()
+	await advance(25)
+	arena._process(0.016)
+	assert_false(arena.leap_indicator.visible)
+
+
+func test_automatic_leap_ring_stalk_warmup_tuning_and_class_switch_cleanup() -> void:
+	player.position = Vector3(0, 0, 8)
+	cast(&"R")
+	await advance(120)
+	arena._process(0.016)
+	assert_false(arena.leap_indicator.visible)
+	await advance(121)
+	arena._process(0.016)
+	assert_true(arena.leap_indicator.visible)
+	DebugConfig.set_override(hunter.passive.data.resource_path, &"leap_range", 6.0)
+	arena._process(0.016)
+	assert_almost_eq(arena.leap_indicator._radius, 6.65, 0.0001)
+	arena._set_class("Captain")
+	arena._process(0.016)
+	assert_false(arena.leap_indicator.visible)
