@@ -2,6 +2,14 @@
 
 Read this file, AGENTS.md, PROGRESS.md, ARCHITECTURE.md and the relevant development-guide section before gameplay changes.
 
+## First action next session — PC migration and review
+
+Ishak requested that the next session explicitly ask for an M4 review after moving the project to his PC. Help restore/open the project on that PC first, then request the review using `docs/M4_PLAYTEST.md`, including the proposed deterministic crowd-separation refinement. M4 is not approved; do not start M5.
+
+The project repository contains the used assets and vendored GUT. On the PC, clone the repository, check out `feature/m4-pve`, install the pinned Godot 4.7.2, open `project.godot`, let assets import, then run the verification script with `GODOT_BIN` pointing to that PC's engine executable. Paths in older notes refer to this Linux machine. Ignored `.local/`, `.godot/`, `debug_exports/`, external raw packs and installed engine/export templates are not transferred by Git; copy any wanted replays/tuning exports separately.
+
+On 15 November Ishak explicitly requested pushing everything to GitHub, superseding the earlier no-retry instruction for this synchronization. The existing editor serialization of `project.godot` is included in the migration checkpoint, separately from the M4 implementation commit.
+
 ## Resume checkpoint
 
 - Project: `/home/aurelius/Projects/blood-powder`.
@@ -66,8 +74,8 @@ These are automated feasibility/regression results, not user playtest or final d
 
 ## Persistent constraints and next steps
 
-- Preserve the pre-existing **unstaged `project.godot` editor serialization**, excluded from implementation commits. It is not an M4 gameplay change.
-- Work locally; previous GitHub DNS failures and the user's no-retry request remain. No remote synchronization is claimed.
+- The pre-existing `project.godot` editor serialization was preserved through M4 implementation and is included in the subsequent user-requested migration checkpoint. It is not an M4 gameplay change.
+- User requested GitHub synchronization for PC migration on 15 November; consult the latest PROGRESS entry for the actual push result. Do not claim remote success without verification.
 - Preserve configured Git identity and never add AI authorship/coauthor trailers.
 - No system, shell, desktop or other application configuration changes without explicit approval.
 - Keep authoritative combat at integer 60 Hz. Raw asset packs remain external; used asset licenses belong in CREDITS.

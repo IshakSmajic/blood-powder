@@ -395,3 +395,8 @@ Latest required run: `python tools/verify.py`, full output in `.local/m4-inspect
 - `git diff --check` passed. All verification processes completed. Documentation-only handoff edits do not require repeating gameplay checks.
 
 M4 is ready for inspection. Full command pilots: Captain clear 110.02 s / 1,757 damage taken / 313.01 HP remaining; Hunter clear 100.35 s / 319 damage taken / 690.38 HP remaining. Both saved full runs reproduce identical logs and Victory. Human balance and the proposed crowd-avoidance guide refinement await approval. Local `m3-approved` tags accepted checkpoint `1902821`. M4 has not been merged/tagged and M5 has not started.
+
+
+## 2026-11-15 — PC migration and next-session review reminder
+
+Ishak requested that the next session ask for the M4 review after the project moves to his PC, and explicitly requested pushing all work to GitHub. The handoff now starts with that reminder and PC setup instructions. This new request authorizes synchronization despite the earlier no-retry preference. The previously preserved editor serialization in `project.godot` is included in this migration checkpoint, separate from implementation commit `57279d7`. Ignored caches/logs/replay exports and external engine/raw packs are not Git content. M4 approval remains pending; M5 is still gated. Push result is recorded separately below.
