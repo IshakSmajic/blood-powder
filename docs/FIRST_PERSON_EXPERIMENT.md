@@ -1,5 +1,16 @@
 # First-person Captain experiment
 
+Implementation checkpoint: `be5bab9`, branch `experiment/first-person-captain`, based on the published map/NPC checkpoint `555f00a`. This branch includes the battlefield, soldier/knight integration and material fixes as well as the experiment. The experiment is separate from the main top-down launch.
+
+To retrieve the branch on another checkout:
+
+```bash
+git fetch origin
+git switch experiment/first-person-captain
+```
+
+Godot 4.7.2 and Python 3 remain the project prerequisites. Wait for import when opening on a new machine.
+
 Run from any directory:
 
 ```bash
@@ -42,3 +53,10 @@ The single soldier has 2,000 HP, does not attack or chase, and respawns two seco
 This is a separate control/perspective trial, not a conversion of the main game. Hands and weapons are simple primitives. No jump, sprint, first-person body rig, active opponent AI, first-person replay, audio pass or difficulty balancing is included. Flintlock retains targeted homing and its original range/cooldown, rather than becoming a free-aim hitscan gun. Both sword targeting and placement stop at scenery. Area effects are still planar on uneven terrain, and headshots are not a separate mechanic. Human feel is for inspection.
 
 All motion, hit deadlines, statuses, casts, barrel decay/chains and damage run on admitted integer 60 Hz simulation ticks. Mouse/camera presentation cannot change combat timing. Shared top-down behavior is covered by the normal regression suite.
+
+
+## Verification checkpoint
+
+`python tools/verify.py` passed for `be5bab9`: 169 scripts load, eight stock asset scenes import, 148 tests pass with 4,972 assertions, and Captain, Hunter, Challenge and first-person scenes each pass a 600-tick runtime check. The first-person suite covers movement/collision, exact melee impact and aim misses, pistol travel, barrel chain damage, raw keyboard input, pause/focus/reset, wall occlusion, rendering RNG isolation and input cleanup on scene exit.
+
+The actual menu and game were also rendered and visually inspected with Compatibility and the project's normal Vulkan Forward+ renderer. Human control feel and comfort still await inspection. No milestone merge, tag or first-person design approval is implied by publishing this experiment.
