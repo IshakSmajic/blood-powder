@@ -64,7 +64,7 @@ func request(command: UnitCommand, tick: int) -> Dictionary:
 		if not can_place(command.point): return {"reason": "Invalid placement"}
 		if unit.position.distance_to(command.point) > e.value(&"range") + 0.001: return {"approach": true}
 	elif command.slot == &"R":
-		if not command.point.is_finite() or absf(command.point.x) > 18.0 or absf(command.point.z) > 14.0: return {"reason": "Outside arena"}
+		if not arena.contains_ground(command.point): return {"reason": "Outside arena"}
 	elif command.slot == &"Q":
 		if not is_instance_valid(command.target) or not command.target.alive(): return {"reason": "No target"}
 		if command.target is CombatUnit and command.target.team == unit.team: return {"reason": "No target"}
@@ -80,7 +80,8 @@ func request(command: UnitCommand, tick: int) -> Dictionary:
 
 
 func can_place(point: Vector3) -> bool:
-	if absf(point.x) > 17.5 or absf(point.z) > 13.5: return false
+	var extent := Vector2(49.5, 49.5) if arena.battlefield_enabled else Vector2(17.5, 13.5)
+	if not point.is_finite() or absf(point.x) > extent.x or absf(point.z) > extent.y: return false
 	if not kegs.graph.spacing_valid(point, e.value(&"minimum_spacing")): return false
 	var shape := SphereShape3D.new()
 	shape.radius = 0.44

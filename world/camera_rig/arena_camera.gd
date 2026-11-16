@@ -5,6 +5,7 @@ var locked: bool = true
 var zoom: float = 1.0
 var focus: Vector3 = Vector3.ZERO
 var controls_enabled: bool = true
+var pan_extent := Vector2(22, 18)
 
 
 func _ready() -> void:
@@ -47,8 +48,8 @@ func _process(delta: float) -> void:
 			if mouse.y <= 8.0: pan.z -= 1.0
 			if mouse.y >= rect.size.y - 8.0: pan.z += 1.0
 			focus += pan.normalized() * 25.0 * delta
-	focus.x = clampf(focus.x, -22.0, 22.0)
-	focus.z = clampf(focus.z, -18.0, 18.0)
+	focus.x = clampf(focus.x, -pan_extent.x, pan_extent.x)
+	focus.z = clampf(focus.z, -pan_extent.y, pan_extent.y)
 	_update_transform()
 
 

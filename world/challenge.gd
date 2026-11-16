@@ -60,6 +60,7 @@ func spawn_wave(tick: int) -> void:
 		enemy.spawn_point = pads[i % pads.size()]
 		enemy.counts_as_elite = types[i] == "elite"
 		enemy.respawn_enabled = false
+		if arena.battlefield_enabled: enemy.set_meta("terrain_arena", arena)
 		arena.add_child(enemy)
 		arena.units.append(enemy)
 		var driver := EnemyAI.new()

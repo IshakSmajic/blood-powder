@@ -1,0 +1,37 @@
+{
+  "source": "User-supplied Projects/assets/Medieval_Battlefield.blend",
+  "source_sha256": "3cc7ab0dd1a9e6a0f1cdd040ef46c5cb957b8d156a86b058add84493162a199b",
+  "export": "battlefield.glb",
+  "export_sha256": "d91fc64f6b5f2acbc12639f7bb0e7cfdf8eaace059140694d15c7dbb27d877c5",
+  "blender": "5.2.3 LTS",
+  "dimensions_m": [
+    100,
+    100
+  ],
+  "render_objects": 562,
+  "render_triangles": 26518,
+  "unique_render_meshes": 122,
+  "static_collision_proxies": 59,
+  "concealment_zones": 8,
+  "qa": {
+    "checked_unique_render_meshes": 122,
+    "errors": 0,
+    "accepted_warnings": {
+      "placed_above_or_below_world_origin": 122,
+      "separate_grass_flower_islands": 74,
+      "internal_back_to_back_groundcover_faces": 5
+    },
+    "uv_check": "Disabled: untextured vertex-color materials; no UV-dependent textures or lightmaps"
+  },
+  "omitted_decorative_tiles": [
+    "SM_GrassWeedsFlowers_Tile_4_0",
+    "SM_GrassWeedsFlowers_Tile_0_1",
+    "SM_GrassWeedsFlowers_Tile_2_1"
+  ],
+  "notes": [
+    "Collision helper meshes deliberately exported separately from art.",
+    "Character references, lights, cameras, armatures and animations excluded.",
+    "No external license or author notice supplied for the map; recorded as user-provided project asset.",
+    "Godot post-import script enables linear vertex-color albedo for both map materials."
+  ]
+}

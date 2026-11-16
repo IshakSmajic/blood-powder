@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Blood & Powder"
-run/main_scene="res://world/arena.tscn"
+run/main_scene="res://world/battlefield.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="blood-powder"
 config/features=PackedStringArray("4.7", "Forward Plus")

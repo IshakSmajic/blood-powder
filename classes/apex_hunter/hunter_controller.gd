@@ -254,6 +254,7 @@ func airborne_tick(tick: int) -> bool:
 	var fraction := clampf((tick - leap_start) / float(maxi(1, leap_end - leap_start)), 0.0, 1.0)
 	if not leap_blocked:
 		var destination := leap_origin.lerp(leap_destination, fraction)
+		if arena.battlefield_enabled: destination = arena.ground_position(destination) + Vector3.UP * 0.04
 		if unit.move_and_collide(destination - unit.position) != null: leap_blocked = true
 	unit.avatar.position.y = passive.value(&"arc_height") * 4 * fraction * (1 - fraction)
 	unit.state = "Airborne"

@@ -15,6 +15,11 @@ func configure(owner_body: CharacterBody3D) -> void:
 	agent.path_desired_distance = 0.12
 	agent.target_desired_distance = 0.1
 	agent.radius = 0.65
+	if body.has_meta("terrain_arena"):
+		# Recast quantizes sloped path heights to voxels. Waypoint tolerance must
+		# cover that vertical error, while collision still uses the actual terrain.
+		agent.path_desired_distance = 0.65
+		agent.target_desired_distance = 0.65
 	# Arena uses synchronous crowd separation; asynchronous avoidance would
 	# let physics frames outside admitted simulation ticks alter replay motion.
 	agent.avoidance_enabled = false
@@ -25,7 +30,11 @@ func set_destination(point: Vector3) -> void:
 	var surface := NavigationServer3D.map_get_closest_point(body.get_world_3d().navigation_map, point)
 	# Recast's walkable surface is quantized above the physical floor. Align
 	# agent path points with the actor's feet so the first waypoint is reachable.
-	agent.path_height_offset = surface.y - body.global_position.y
+	if body.has_meta("terrain_arena"):
+		var arena: Node3D = body.get_meta("terrain_arena")
+		agent.path_height_offset = surface.y - arena.ground_position(surface).y
+	else:
+		agent.path_height_offset = surface.y - body.global_position.y
 	destination = Vector3(surface.x, body.global_position.y, surface.z)
 	agent.target_position = surface
 	active = true
@@ -50,6 +59,9 @@ func simulate(speed: float) -> Vector3:
 	if distance < 0.0001:
 		return Vector3.ZERO
 	var motion := direction / distance * minf(maxf(0.0, speed) / 60.0, distance)
+	if body.has_meta("terrain_arena"):
+		var arena: Node3D = body.get_meta("terrain_arena")
+		motion.y = arena.ground_position(body.global_position + motion).y + 0.04 - body.global_position.y
 	var collision := body.move_and_collide(motion)
 	if collision != null:
 		var slide := collision.get_remainder().slide(collision.get_normal())

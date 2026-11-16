@@ -13,6 +13,7 @@ var class_name_value: String = "Captain"
 var mode: String = "Training"
 var tuning: Dictionary = {}
 var valid: bool = true
+var map_id: String = "graybox"
 
 func begin(arena: Node3D) -> void:
 	commands.clear()
@@ -25,6 +26,7 @@ func begin(arena: Node3D) -> void:
 	seed_value = SimClock.state.rng.seed
 	class_name_value = arena.active_class
 	mode = arena.mode
+	map_id = "battlefield" if arena.battlefield_enabled else "graybox"
 	tuning = DebugConfig._overrides.duplicate(true)
 
 func record(command: UnitCommand, tick: int) -> void:
@@ -52,7 +54,7 @@ func save_run(arena: Node3D, path: String) -> Error:
 	if error != OK: return error
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null: return FileAccess.get_open_error()
-	file.store_var({"version": VERSION, "engine": Engine.get_version_info().string, "seed": seed_value, "class": class_name_value, "mode": mode, "tuning": tuning, "commands": commands, "end_tick": SimClock.state.tick, "log": var_to_bytes(arena.combat_log.rows)})
+	file.store_var({"version": VERSION, "map": map_id, "engine": Engine.get_version_info().string, "seed": seed_value, "class": class_name_value, "mode": mode, "tuning": tuning, "commands": commands, "end_tick": SimClock.state.tick, "log": var_to_bytes(arena.combat_log.rows)})
 	file.flush()
 	return file.get_error()
 

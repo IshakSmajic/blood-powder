@@ -1,0 +1,45 @@
+{
+  "assets": [
+    {
+      "source": "Projects/assets/infantry_soldier.glb",
+      "path": "assets/characters/enemies/infantry_soldier.glb",
+      "sha256": "a07a9acd940874f409b89342eef322e5e1171da261da2c195fec7101d57b1b2a",
+      "bytes": 416512,
+      "bones": 20,
+      "triangles": 2092,
+      "materials": 2,
+      "animations": [
+        "INF_Idle",
+        "INF_Walk",
+        "INF_Run",
+        "INF_Attack",
+        "INF_HitReaction",
+        "INF_Death"
+      ],
+      "source_modified": false
+    },
+    {
+      "source": "Projects/assets/knight_boss.glb",
+      "path": "assets/characters/enemies/knight_boss.glb",
+      "sha256": "525eeeec4d340a8a9a05c11c1053c30f549f3496634a63281d7c670f970da9cf",
+      "bytes": 320084,
+      "bones": 16,
+      "triangles": 1416,
+      "materials": 6,
+      "animations": [
+        "idle",
+        "run",
+        "combo",
+        "slam",
+        "death"
+      ],
+      "source_modified": false
+    }
+  ],
+  "notes": [
+    "User-supplied Blender exports copied byte for byte. Raw Blender files remain outside the repository.",
+    "Knight animation source: supplied handoff credits existing Quaternius UAL1/UAL2 CC0 libraries.",
+    "Godot soldier post-import enables the existing linear vertex palette.",
+    "Accepted QA: intentional flat-shading/vertex-color splits and six soldier / twelve knight internal back-to-back triangle pairs."
+  ]
+}

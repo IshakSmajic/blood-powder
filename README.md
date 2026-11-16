@@ -2,7 +2,7 @@
 
 An offline 3D top-down combat arena for Linux and Windows, built with Godot and GDScript.
 
-Current milestone: **M3 — Apex Hunter**, ready for inspection after verification. M2 Powder Captain is accepted (`m2-approved`); M0/M1 tags remain available. All Captain abilities and training controls remain usable. Click **Tools** (or press **Tab**) and select **Apex Hunter** to inspect brush leaps, Ferocity, Rend, Howl, Bola, and Stalk. See [M3 playtest](docs/M3_PLAYTEST.md) and [progress](PROGRESS.md).
+Current milestone: **M4 — PvE validation**, awaiting inspection. M3 is approved. The game now starts on the user-supplied **100×100 m Medieval Battlefield**, with ruins, terrain collision, navigation and eight working concealment bushes. Training and Challenge use this map. Challenge enemies use the supplied Blender soldiers and final knight boss; Captain remains the starting class. Click **Tools** (or **Tab**) to choose Hunter. See [M4 playtest](docs/M4_PLAYTEST.md) and [progress](PROGRESS.md).
 
 ## Open and run
 

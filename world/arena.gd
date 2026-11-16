@@ -3,6 +3,7 @@ extends Node3D
 const Geometry = preload("res://world/arena_geometry.gd")
 const Camera = preload("res://world/camera_rig/arena_camera.gd")
 const HUD = preload("res://ui/sandbox_hud.gd")
+@export var battlefield_enabled: bool = false
 
 var mode: String = "Training"
 var _queued_mode: String = ""
@@ -49,7 +50,7 @@ func _ready() -> void:
 	SimClock.reset()
 	InputRouter.gameplay_blocked = false
 	_build_lighting()
-	var geometry := Geometry.new()
+	var geometry: Node3D = load("res://world/battlefield_geometry.gd").new() if battlefield_enabled else Geometry.new()
 	geometry.name = "Geometry"
 	add_child(geometry)
 	NavigationServer3D.map_set_use_async_iterations(get_world_3d().navigation_map, false)
@@ -69,6 +70,7 @@ func _ready() -> void:
 	camera = Camera.new()
 	camera.name = "Camera"
 	camera.target = player
+	if battlefield_enabled: camera.pan_extent = Vector2(50, 50)
 	add_child(camera)
 	_effects = Node3D.new()
 	leap_indicator = LeapRangeIndicator.new()
@@ -132,7 +134,7 @@ func _build_navigation(geometry: Node3D) -> void:
 	var mesh := NavigationMesh.new()
 	mesh.agent_radius = 0.75
 	mesh.agent_height = 2.0
-	mesh.agent_max_climb = 0.0
+	mesh.agent_max_climb = 0.5 if battlefield_enabled else 0.0
 	mesh.agent_max_slope = 20.0
 	mesh.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
 	mesh.geometry_collision_mask = 1
@@ -151,6 +153,7 @@ func _add_unit(id: int, team: int, label: String, at: Vector3, data: UnitStats) 
 	unit.unit_name = label
 	unit.spawn_point = at
 	unit.stats = data
+	if battlefield_enabled: unit.set_meta("terrain_arena", self)
 	add_child(unit)
 	units.append(unit)
 	return unit
@@ -214,6 +217,7 @@ func simulate_tick(tick: int) -> void:
 			unit.state = "Slam telegraph"
 			continue
 		unit.simulate(tick, units)
+		if battlefield_enabled: unit.position = ground_position(unit.position) + Vector3.UP * 0.04
 	if captain != null: captain.post_tick(tick)
 	if hunter != null: hunter.post_tick(tick)
 	if mode == "Challenge":
@@ -316,7 +320,24 @@ func queue_debug_status(kind: StringName) -> void:
 
 func _ground_point() -> Variant:
 	var mouse := get_viewport().get_mouse_position()
+	if battlefield_enabled:
+		var origin := camera.project_ray_origin(mouse)
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + camera.project_ray_normal(mouse) * 500.0, 4)
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		return hit.position if not hit.is_empty() else null
 	return Plane(Vector3.UP, 0.0).intersects_ray(camera.project_ray_origin(mouse), camera.project_ray_normal(mouse))
+
+
+func ground_position(point: Vector3) -> Vector3:
+	if not battlefield_enabled: return point
+	var query := PhysicsRayQueryParameters3D.create(Vector3(point.x, 12, point.z), Vector3(point.x, -8, point.z), 4)
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	return hit.position if not hit.is_empty() else point
+
+
+func contains_ground(point: Vector3) -> bool:
+	var extent := Vector2(50, 50) if battlefield_enabled else Vector2(18, 14)
+	return point.is_finite() and absf(point.x) <= extent.x and absf(point.z) <= extent.y
 
 
 func _targets() -> Array[Node3D]:
@@ -659,6 +680,7 @@ func _separate_enemies() -> void:
 func load_replay(path: String) -> Error:
 	var data := replay.read_run(path)
 	if data.is_empty(): return ERR_INVALID_DATA
+	if data.get("map", "graybox") != ("battlefield" if battlefield_enabled else "graybox"): return ERR_INVALID_DATA
 	_loading_replay = true
 	mode = data.mode
 	_queued_mode = ""

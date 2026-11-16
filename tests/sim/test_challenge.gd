@@ -49,6 +49,8 @@ func test_wave_delays_composition_victory_and_restart() -> void:
 	await step()
 	assert_eq(arena.challenge.wave, 1)
 	assert_eq(arena.units.size(), 5)
+	for enemy in arena.units:
+		if enemy != arena.player: assert_true(enemy.avatar is InfantryAvatar, "Opening enemies use the supplied soldier")
 	for unit in arena.units:
 		if unit != arena.player: unit.receive_damage(100000.0, tick, 0)
 	await step()
@@ -63,6 +65,10 @@ func test_wave_delays_composition_victory_and_restart() -> void:
 	await step()
 	await advance(662)
 	assert_eq(arena.challenge.wave, 3)
+	for enemy in arena.units:
+		if enemy is EnemyUnit and enemy.counts_as_elite:
+			assert_true(enemy.avatar is KnightBossAvatar, "Final Elite uses the supplied knight")
+			assert_gt(enemy.avatar.model_height, 2.7)
 	var elites: Array = arena.units.filter(func(u: CombatUnit) -> bool: return u.counts_as_elite)
 	assert_eq(elites.size(), 1)
 	assert_eq(elites[0].health, 2200.0)

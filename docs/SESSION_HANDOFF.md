@@ -1,3 +1,7 @@
+> **16 November NPC update:** Challenge Chasers/Kiters now use the supplied Blender infantry soldier; final Elite uses the supplied knight and combo/slam animations. Restart the game and select Challenge to inspect them. Training dummies retain their gray bodies. See latest PROGRESS entry for checks.
+
+> **16 November 2026 map update:** Project main scene is now `world/battlefield.tscn`, the user-requested Medieval Battlefield from the shared `Projects/assets` directory. M4 approval remains pending. Original graybox is preserved in `world/arena.tscn` for regression fixtures. Inspect map terrain movement, eight bushes/Hunter leaps, ruins, and Challenge mode; see latest PROGRESS entry for checks and limitations.
+
 # Session handoff — M4 inspection checkpoint, 15 November 2026
 
 Read this file, AGENTS.md, PROGRESS.md, ARCHITECTURE.md and the relevant development-guide section before gameplay changes.

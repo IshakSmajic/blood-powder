@@ -43,6 +43,10 @@ var _flash_frames: int = 0
 var _resume_attack_move: bool = false
 
 
+func _create_avatar() -> CharacterAvatar:
+	return CharacterAvatar.new()
+
+
 func stat(field: StringName) -> float:
 	var result := float(stat_adjustments.get(field, DebugConfig.resolve(stats.resource_path, field, stats.get(field))))
 	if field == &"armor":
@@ -71,13 +75,13 @@ func _ready() -> void:
 	_color = Color("923b3b") if team == 0 else Color("a7aeb5")
 	_visual = Node3D.new()
 	add_child(_visual)
-	avatar = CharacterAvatar.new()
+	avatar = _create_avatar()
 	avatar.unit = self
 	avatar.dressed = team == 0
 	_visual.add_child(avatar)
 	if team == 1: _visual.rotation.y = PI
 	_label = Label3D.new()
-	_label.position.y = 2.5
+	_label.position.y = maxf(2.5, avatar.model_height + 0.55)
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_label.font_size = 36
 	_label.pixel_size = 0.004
@@ -86,7 +90,7 @@ func _ready() -> void:
 	var bar := QuadMesh.new()
 	bar.size = Vector2(1.8, 0.12)
 	_health_fill.mesh = bar
-	_health_fill.position.y = 2.2
+	_health_fill.position.y = maxf(2.2, avatar.model_height + 0.25)
 	var material := _material(Color("76ae70") if team == 0 else Color("b86760"))
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
