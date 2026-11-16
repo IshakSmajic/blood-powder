@@ -108,6 +108,6 @@ The M1 Training Pulse resource and fixture remain only for regression testing. T
 
 Use the visible toolbar: **Tools**, Ranges, States, Log, Reset, Slower/Faster, Pause/Resume, and Step. **Tab** also toggles Tools. Reserved debug keys are handled before GUI focus can consume them; movement/abilities still respect GUI editing. Keyboard Fn/media mode or shortcuts outside the game may intercept function keys, which the game cannot override. No desktop or keyboard configuration is changed.
 
-## M4 Challenge inspection
+## Current milestone — M5 polish and export
 
-Use the top toolbar’s **Challenge** button to start the three-wave encounter, and **Tools** to choose Captain or Hunter. **Save replay / Load replay** records commands and checks the entire combat log on playback. See [M4 playtest](docs/M4_PLAYTEST.md) and [automated gate mapping](docs/M4_ACCEPTANCE.md). M4 awaits inspection; M5 is not started.
+M4 was accepted by Ishak on 15 November 2026 after he confirmed the challenge works perfectly. M5 is active on `feature/m5-polish`: arena dressing keeps the established collision/nav geometry, while VFX, procedural offline sounds, camera feedback, pause/credits presentation and desktop exports are polished. See [the M5 checklist](docs/M5_PLAYTEST.md), [M4 approval record](docs/M4_PLAYTEST.md) and [automated M4 gate mapping](docs/M4_ACCEPTANCE.md).

@@ -11,6 +11,8 @@ var _selected: Label
 var _log: Label
 var _debug: PanelContainer
 var _menu: PanelContainer
+var _credits_panel: PanelContainer
+var _credits_return_to_pause: bool = false
 var _events: Array[String] = []
 var _pulse_slot: Control
 var _e_slot: Control
@@ -35,7 +37,7 @@ func _ready() -> void:
 	header.position = Vector2(24, 18)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(header)
-	header.add_child(_label("BLOOD & POWDER   /   " + "M4 PVE VALIDATION", 24, Color("e8d6bb")))
+	header.add_child(_label("BLOOD & POWDER   /   OFFLINE ARENA", 24, Color("e8d6bb")))
 	_status = _label("Baking navigation…", 16)
 	header.add_child(_status)
 	_selected = _label("", 16)
@@ -251,22 +253,32 @@ func _ready() -> void:
 	root.add_child(_fail_label)
 	_menu = PanelContainer.new()
 	_menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	_menu.offset_left = -180
-	_menu.offset_right = 180
-	_menu.offset_top = -100
+	_menu.offset_left = -210
+	_menu.offset_right = 210
+	_menu.offset_top = -160
+	_menu.offset_bottom = 160
+	_menu.add_theme_stylebox_override("panel", _panel_style())
 	root.add_child(_menu)
 	var buttons := VBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 10)
 	_menu.add_child(buttons)
-	buttons.add_child(_label("PAUSED", 24))
-	for item in ["Resume", "Restart", "Quit"]:
+	var pause_title := _label("BLOOD & POWDER", 26, Color("e8d6bb"))
+	pause_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	buttons.add_child(pause_title)
+	buttons.add_child(_label("PAUSED", 17, Color("bcb5ac")))
+	for item in ["Resume", "Credits", "Restart", "Quit"]:
 		var button := Button.new()
 		button.text = item
+		button.custom_minimum_size.y = 42
 		buttons.add_child(button)
 		match item:
 			"Resume": button.pressed.connect(func() -> void: resume_requested.emit())
+			"Credits": button.pressed.connect(_show_credits)
 			"Restart": button.pressed.connect(func() -> void: restart_requested.emit())
 			"Quit": button.pressed.connect(func() -> void: get_tree().quit())
+		button.pressed.connect(func() -> void: _play_ui_sound())
 	_menu.hide()
+	_build_credits(root)
 	EventBus.combat_event.connect(_on_event)
 	DebugConfig.overrides_cleared.connect(_sync_tuning_fields)
 
@@ -333,10 +345,76 @@ func toggle_log() -> void:
 
 func show_menu(value: bool) -> void:
 	_menu.visible = value
+	if not value and _credits_panel != null:
+		_credits_panel.hide()
 
 
 func clear_log() -> void:
 	_events.clear()
+
+
+func _build_credits(root: Control) -> void:
+	_credits_panel = PanelContainer.new()
+	_credits_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_credits_panel.offset_left = -420
+	_credits_panel.offset_right = 420
+	_credits_panel.offset_top = -300
+	_credits_panel.offset_bottom = 300
+	_credits_panel.add_theme_stylebox_override("panel", _panel_style())
+	root.add_child(_credits_panel)
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 12)
+	_credits_panel.add_child(layout)
+	var title := _label("CREDITS", 28, Color("e8d6bb"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	layout.add_child(title)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	layout.add_child(scroll)
+	var body := _label("", 17, Color("d3dae1"))
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var file := FileAccess.open("res://data/credits_screen.txt", FileAccess.READ)
+	if file != null:
+		body.text = file.get_as_text()
+		file.close()
+	else:
+		body.text = "Blood & Powder · Designed by Ishak Smajic\nGodot Engine 4.7.2 · GUT 9.7.1\nQuaternius character and animation assets · CC0 1.0"
+	scroll.add_child(body)
+	var close := Button.new()
+	close.text = "Back"
+	close.custom_minimum_size.y = 42
+	close.focus_mode = Control.FOCUS_NONE
+	close.pressed.connect(_hide_credits)
+	close.pressed.connect(func() -> void: _play_ui_sound())
+	layout.add_child(close)
+	_credits_panel.hide()
+
+
+func _show_credits() -> void:
+	_credits_return_to_pause = _menu.visible
+	_menu.hide()
+	_credits_panel.show()
+
+
+func _hide_credits() -> void:
+	_credits_panel.hide()
+	_menu.visible = _credits_return_to_pause
+
+
+func _play_ui_sound() -> void:
+	if is_instance_valid(arena) and arena.sfx_player != null:
+		arena.sfx_player.play_ui()
+
+
+func _panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.075, 0.07, 0.072, 0.96)
+	style.border_color = Color("9d7652")
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(10)
+	style.set_content_margin_all(22)
+	return style
 
 
 func _sync_tuning_fields() -> void:

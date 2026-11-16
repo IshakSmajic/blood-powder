@@ -35,6 +35,8 @@ var _howl_tick: int = -9999
 var _blade_material: StandardMaterial3D
 var _sword: Node3D
 var _pistol: Node3D
+var _visual_hit_stop_left: float = 0.0
+var _flash_tween: Tween
 
 
 func _ready() -> void:
@@ -168,6 +170,17 @@ func set_flash(value: bool) -> void:
 	_flash.albedo_color = Color(1, 1, 1, 1 if value else 0)
 
 
+func flash_hit() -> void:
+	if _flash_tween != null and _flash_tween.is_running(): _flash_tween.kill()
+	set_flash(true)
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(_flash, "albedo_color", Color(1, 1, 1, 0), 0.05)
+
+
+func hit_stop_visual(seconds: float) -> void:
+	_visual_hit_stop_left = maxf(_visual_hit_stop_left, seconds)
+
+
 func reset_pose() -> void:
 	_howl_tick = -9999
 	_attack_serial = 0
@@ -210,6 +223,8 @@ func preview(role: StringName, time: float, elapsed: float = 0.0) -> void:
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(unit): return
+	_visual_hit_stop_left = maxf(0.0, _visual_hit_stop_left - delta)
+	if _visual_hit_stop_left > 0.0: return
 	var tick := SimClock.state.tick
 	if _blade_material != null:
 		var ready: bool = unit.alive() and unit.cast_controller != null and not unit.cast_controller is HunterController and tick >= unit.cast_controller.passive.ready_tick

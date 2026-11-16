@@ -39,8 +39,24 @@ func _run() -> void:
 		print("ASSET: %s | skeletons=%d | clips=%d" % [entry.path, skeletons.size(), clips.size()])
 		root.remove_child(instance)
 		instance.free()
+	var environment_paths: Array[String] = []
+	for path in DirAccess.get_files_at("res://assets/environment/dungeon"):
+		if path.ends_with(".glb"): environment_paths.append("res://assets/environment/dungeon/" + path)
+	for path in DirAccess.get_files_at("res://assets/environment/foliage"):
+		if path.ends_with(".glb"): environment_paths.append("res://assets/environment/foliage/" + path)
+	environment_paths.sort()
+	for path in environment_paths:
+		var packed := load(path) as PackedScene
+		if packed == null:
+			_fail("Cannot import environment asset " + path)
+			continue
+		var instance := packed.instantiate()
+		if instance.find_children("*", "MeshInstance3D", true, false).is_empty():
+			_fail("Environment asset has no visible mesh " + path)
+		instance.free()
+		print("ENVIRONMENT: %s" % path.trim_prefix("res://"))
 	if _failures == 0:
-		print("ASSETS PASS: %d scenes import with expected bones and animations" % manifest.assets.size())
+		print("ASSETS PASS: %d character/animation scenes and %d environment models loaded" % [manifest.assets.size(), environment_paths.size()])
 	quit(0 if _failures == 0 else 1)
 
 

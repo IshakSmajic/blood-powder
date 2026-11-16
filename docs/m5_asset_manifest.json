@@ -1,0 +1,24 @@
+{
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "original_source": "https://quaternius.com/packs/modulardungeon.html and https://quaternius.com/packs/ultimatestylizednature.html",
+  "retrieval_mirror": "https://github.com/trebeljahr/quaternius-showcase",
+  "notes": "Only listed models were copied from the public mirror; original source pack pages identify these packs as CC0. Raw packs remain outside the repository.",
+  "assets": [
+    {"path":"assets/environment/dungeon/arch.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"857ee40c846fb94b3f8daf7c53d205c8c70d3308beb8f74dc917927bc890492a","bytes":240092},
+    {"path":"assets/environment/dungeon/barrel.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"bc2fe12bd6f04492ea22d89394324c18e32c77afe85194d1319c16585777963a","bytes":75512},
+    {"path":"assets/environment/dungeon/column.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"c5c0692f7622f152efa2d565ddb8a85d7002e0ee7948c1fca5410a287f0e4fe0","bytes":24732},
+    {"path":"assets/environment/dungeon/column2.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"801df4da3026c50ae757195f49244d7b1c68b4860d3b816f5b5ae2a54b5bcc69","bytes":30328},
+    {"path":"assets/environment/dungeon/crate.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"782913d4b9e5aebd896e5281254fffa9f80422f7780dbef7bd683a98d3b32d98","bytes":131500},
+    {"path":"assets/environment/dungeon/decorative_wall.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"1906750fc9c64cb0d63ca8067a820a34fa80682fdefc41989651cbb0d2a86788","bytes":58408},
+    {"path":"assets/environment/dungeon/floor_modular.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"e1010fc4b9c7d9c1c1997f2f1c2e0d77d4b82b8a2dd03c3bb345ef62d168497a","bytes":63540},
+    {"path":"assets/environment/dungeon/torch.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"f6a8c78b5a79175df86e25fc9ba3b470101dc78529c05fe64d977c90b65610af","bytes":23492},
+    {"path":"assets/environment/dungeon/wall_modular.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"052a5ff5a468c946dcfe170d907a0c4554a96c7f253c89ff54e72fdf048d22c6","bytes":91404},
+    {"path":"assets/environment/dungeon/woodfire.glb","pack":"LowPoly Modular Dungeon Pack","sha256":"986bc996eaab2de88a2f32d72ee36c43ca111a3762cce21b51ebfac416ab18fc","bytes":16940},
+    {"path":"assets/environment/foliage/bush_1.glb","pack":"Ultimate Stylized Nature Pack","sha256":"a10307dcb7030d364093fae966f01a3776e3482bf7bb0ab0231b16a3e1b65e27","bytes":21348},
+    {"path":"assets/environment/foliage/commontree_1.glb","pack":"Ultimate Stylized Nature Pack","sha256":"61c05d351070fb5fb9f7c1b46b53f59cfd9625ddd16ba8de1ef3855f35557f72","bytes":158708},
+    {"path":"assets/environment/foliage/grass.glb","pack":"Ultimate Stylized Nature Pack","sha256":"7312e2c5592476f14bbd29282f2b13d9893a63d052f0fd2b245bfc1fa66a5937","bytes":12632},
+    {"path":"assets/environment/foliage/pinetree_1.glb","pack":"Ultimate Stylized Nature Pack","sha256":"82c2e4f9737c7b97358974b684b64b791efd4f342653c37aeee725158b7aad44","bytes":106060},
+    {"path":"assets/environment/foliage/rock_1.glb","pack":"Ultimate Stylized Nature Pack","sha256":"8ad6399cfa9ec7c1d73779fe16b11821cf574f47baeec11f7d7e33bc72e40e97","bytes":5516}
+  ]
+}

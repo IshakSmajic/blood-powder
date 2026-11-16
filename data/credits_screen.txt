@@ -1,0 +1,23 @@
+BLOOD & POWDER
+Offline combat arena · v0.1
+
+GAME DESIGN
+Ishak Smajic
+
+ENGINE AND TESTING
+Godot Engine 4.7.2 stable · MIT License
+GUT 9.7.1 · MIT License · automated tests
+
+CHARACTERS AND ANIMATIONS
+Quaternius · Universal Base Characters
+Quaternius · Modular Character Outfits – Fantasy
+Quaternius · Universal Animation Library 1 and 2
+CC0 1.0 · original notices are included in the project
+
+ARENA ENVIRONMENT
+Quaternius · LowPoly Modular Dungeon Pack
+Quaternius · Ultimate Stylized Nature Pack
+CC0 1.0 · selected models; original source pages and hashes are documented in CREDITS.md
+
+All game code, arena geometry, interface, procedural effects, and generated sound effects are original project content.
+No music or online services are used.

@@ -1,6 +1,8 @@
 extends Node3D
 ## Same geometry feeds both physics and the runtime navigation bake.
 
+const EnvironmentDressing = preload("res://world/environment_dressing.gd")
+
 
 func _ready() -> void:
 	box("Floor", Vector3(36, 0.5, 28), Vector3(0, -0.25, 0), Color("646a70"))
@@ -17,6 +19,10 @@ func _ready() -> void:
 		brush.name = "Brush"
 		brush.position = Vector3(x, 0, -7)
 		add_child(brush)
+	var dressing := EnvironmentDressing.new()
+	dressing.name = "EnvironmentDressing"
+	add_child(dressing)
+	dressing.build(self)
 
 
 func box(node_name: String, size: Vector3, at: Vector3, color: Color = Color("404750"), solid: bool = true) -> void:

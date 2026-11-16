@@ -1,6 +1,6 @@
 # M4 inspection — repeatable combat challenge
 
-M3 was explicitly approved on 15 November 2026. M4 is implemented on `feature/m4-pve`; M5 still requires approval after this inspection.
+M3 was explicitly approved on 15 November 2026. M4 was accepted by Ishak on 15 November 2026: “It works perfectly. You may proceed.” The deterministic stable-order crowd-separation refinement is accepted; M5 is authorized.
 
 Run the project with the pinned Godot 4.7.2 editor and press F5. Use the clickable toolbar; function keys are optional.
 

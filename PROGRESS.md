@@ -1,8 +1,8 @@
 # Progress
 
-## Active milestone: M4 — PvE validation
+## Active milestone: M5 — Polish and export
 
-**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m4-pve`. M0–M3 are approved. M4 implements real enemy AI, telegraphed Elite slam, shared vision, three-wave Challenge, results/reset and binary command replay. M4 is ready for inspection: 134/134 tests and 2,863 assertions passed, 155 scripts loaded, 8 stock scenes imported, and Captain/Hunter/Challenge each passed 600-tick smoke checks. Strict editor import retains the known sandbox TCP restriction; M5 remains gated on explicit approval. See [M4 playtest](docs/M4_PLAYTEST.md) and [gate mapping](docs/M4_ACCEPTANCE.md).
+**Restart note:** read [docs/SESSION_HANDOFF.md](docs/SESSION_HANDOFF.md). Current branch: `feature/m5-polish`. M0–M4 are approved; Ishak authorized M5 after reporting M4 works perfectly. M5 arena dressing, presentation effects/audio, pause/credits and both desktop exports are implemented. Verification passed 134/134 tests (2,863 assertions), 158 scripts parsed, 8 stock scenes plus 15 environment models imported, and Captain/Hunter/Challenge each passed 600-tick smoke checks. See [M5 playtest](docs/M5_PLAYTEST.md). Manual visual/audio and disabled-network launch checks remain pending before M5 approval.
 
 Ishak explicitly approved M0 and proceeding to M1. M0 setup is accepted; remote synchronization remains pending because this session cannot resolve GitHub.
 
@@ -407,3 +407,21 @@ GitHub push attempt: `git push origin --all` failed before remote contact becaus
 ## 2026-11-15 — User-confirmed manual push and PC prerequisites
 
 Ishak reports manually pushing everything to GitHub after the agent's DNS-blocked attempt. Added a prominent next-session checklist to `docs/SESSION_HANDOFF.md`: check/install Git, pinned Godot 4.7.2, and Python 3 on the new PC; then restore `feature/m4-pve`, import/verify, and ask for the M4 review. This checklist was added after the reported manual push, so its commit must also be synchronized for the PC session. No gameplay changed; prior gameplay verification remains applicable.
+
+
+## 2026-11-15 — M4 accepted; M5 polish/export implementation
+
+Ishak confirmed “It works perfectly. You may proceed,” accepting M4 and authorizing M5. Work is on `feature/m5-polish`; M5 has not been merged, tagged, or approved.
+
+- Added 15 selected Quaternius dungeon/foliage GLBs. `EnvironmentDressing` covers the 36×28 arena with tiled stone floor, modular walls, columns, low-wall accents, torches/lights, corner props, grass and trees. Existing collision shapes, brush gameplay and navigation bake sources remain unchanged. Asset sources/licenses and SHA256/size manifest are in `CREDITS.md` and `docs/m5_asset_manifest.json`; raw downloads remain outside Git.
+- Added EventBus driven visual hit flash/sparks, 40 ms critical-only avatar visual stop, camera shake, keg burst/smoke/scorch, ability rings/bursts, leap trail/dust and Elite slam feedback. Added generated in-memory PCM effects and runtime-only SFX/UI buses. Presentation reads events/state but does not write simulation outcomes or use gameplay RNG.
+- Added the Pause panel (Resume, Credits, Restart, Quit), in-game credits, and Windows/Linux x86_64 export presets. Godot 4.7.2 export templates and builds are local under ignored `.local/` and `builds/`.
+- Updated `ARCHITECTURE.md`, README, milestone records, M5 playtest checklist, and this handoff log. The development guide was not changed.
+
+**Verification:** `python tools/verify.py` passed using Godot `4.7.2.stable.official.ed1daf0bf`. Results: 158 scripts parsed; 8 character/animation scenes and 15 environment models imported; **134/134 GUT tests and 2,863 assertions passed** in 572.746 seconds; Captain, Hunter and Challenge each passed 600-tick smoke runs. The verifier redirects Windows app-data writes to `.local/`. It ignores only Godot's sandbox-specific “Failed to read the root certificate store” startup error; the project is offline and makes no runtime network requests. The Windows GUT command omits `--fixed-fps`, which caused a 15-minute timeout and flaky frame-timing failures on this host; frame-based smoke commands remain fixed at 60 Hz.
+
+Final exports were rebuilt after the particle/API and shutdown cleanup fixes: `builds/BloodAndPowder.exe` (370,261,400 bytes) and `builds/BloodAndPowder.x86_64` (334,653,128 bytes; ELF64 header confirmed). The Windows export ran headlessly for 1,200 frames without script errors. `git diff --check` passed. The existing new-PC editor changes to `project.godot` and old `.import` sidecars remain preserved and unstaged.
+
+**Known limitations / next steps:** Linux was exported but cannot be launched here: WSL is not installed. Neither executable has yet been playtested with networking disabled or visually inspected in the game window; the CUA desktop pipe was unavailable in this session. Use `docs/M5_PLAYTEST.md` to check Windows/Linux launches, window layout, both classes, combat feedback, sound, and Pause/Credits. M5 remains pending Ishak's visual/audio/platform inspection and approval.
+
+M5 changes remain as working-tree edits on `feature/m5-polish`. The restricted sandbox denied writes to `.git/index`, so no files were staged or committed; pre-existing `project.godot` and old `.import` editor changes were preserved.

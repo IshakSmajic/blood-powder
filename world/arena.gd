@@ -3,6 +3,8 @@ extends Node3D
 const Geometry = preload("res://world/arena_geometry.gd")
 const Camera = preload("res://world/camera_rig/arena_camera.gd")
 const HUD = preload("res://ui/sandbox_hud.gd")
+const Sfx = preload("res://audio/sfx_player.gd")
+const PresentationFx = preload("res://vfx/presentation_fx.gd")
 
 var mode: String = "Training"
 var _queued_mode: String = ""
@@ -41,6 +43,8 @@ var _menu_open: bool = false
 var _paused_before_menu: bool = false
 var _debug_mesh: MeshInstance3D
 var _effects: Node3D
+var sfx_player: Node
+var presentation_fx: Node3D
 var _queued_debug_statuses: Array[StringName] = []
 var combat_log := CombatLog.new()
 
@@ -76,6 +80,14 @@ func _ready() -> void:
 	add_child(leap_indicator)
 	_effects.name = "TransientEffects"
 	add_child(_effects)
+	presentation_fx = PresentationFx.new()
+	presentation_fx.name = "PresentationEffects"
+	add_child(presentation_fx)
+	presentation_fx.configure(self)
+	sfx_player = Sfx.new()
+	sfx_player.name = "SfxPlayer"
+	add_child(sfx_player)
+	sfx_player.configure(self)
 	_debug_mesh = MeshInstance3D.new()
 	_debug_mesh.mesh = ImmediateMesh.new()
 	var material := StandardMaterial3D.new()
@@ -108,6 +120,8 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	InputRouter.gameplay_blocked = false
+	if is_instance_valid(presentation_fx): presentation_fx.clear_transients()
+	if is_instance_valid(sfx_player): sfx_player.clear_transients()
 
 
 func _build_lighting() -> void:
@@ -391,6 +405,8 @@ func reset_arena() -> void:
 		unit.reset_unit()
 	for effect in _effects.get_children():
 		effect.queue_free()
+	presentation_fx.clear_transients()
+	sfx_player.clear_transients()
 	_menu_open = false
 	InputRouter.gameplay_blocked = false
 	camera.controls_enabled = true
@@ -404,6 +420,7 @@ func reset_arena() -> void:
 	combat_log.clear()
 	selected = player
 	camera.snap()
+	if camera.has_method("clear_shake"): camera.call("clear_shake")
 	if not _loading_replay: replay.begin(self)
 
 

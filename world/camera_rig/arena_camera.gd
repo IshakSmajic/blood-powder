@@ -5,6 +5,10 @@ var locked: bool = true
 var zoom: float = 1.0
 var focus: Vector3 = Vector3.ZERO
 var controls_enabled: bool = true
+var _shake_left: float = 0.0
+var _shake_duration: float = 0.0
+var _shake_strength: float = 0.0
+var _shake_phase: float = 0.0
 
 
 func _ready() -> void:
@@ -30,6 +34,18 @@ func handle_action(action: StringName) -> void:
 		&"zoom_out": zoom = maxf(0.8, zoom - 0.05)
 
 
+func add_shake(strength: float, duration: float) -> void:
+	_shake_strength = maxf(_shake_strength, strength)
+	_shake_duration = maxf(_shake_duration, duration)
+	_shake_left = maxf(_shake_left, duration)
+
+
+func clear_shake() -> void:
+	_shake_left = 0.0
+	_shake_duration = 0.0
+	_shake_strength = 0.0
+
+
 func _process(delta: float) -> void:
 	if not is_instance_valid(target):
 		return
@@ -49,10 +65,17 @@ func _process(delta: float) -> void:
 			focus += pan.normalized() * 25.0 * delta
 	focus.x = clampf(focus.x, -22.0, 22.0)
 	focus.z = clampf(focus.z, -18.0, 18.0)
+	_shake_left = maxf(0.0, _shake_left - delta)
+	_shake_phase += delta * 70.0
+	if _shake_left <= 0.0:
+		_shake_strength = 0.0
+		_shake_duration = 0.0
 	_update_transform()
 
 
 func _update_transform() -> void:
 	var distance := 17.0 / zoom
-	position = focus + Vector3(0, sin(deg_to_rad(56)) * distance, cos(deg_to_rad(56)) * distance)
+	var weight := _shake_left / maxf(0.001, _shake_duration)
+	var shake := Vector3(sin(_shake_phase) * _shake_strength * weight, cos(_shake_phase * 1.31) * _shake_strength * weight, 0.0)
+	position = focus + Vector3(0, sin(deg_to_rad(56)) * distance, cos(deg_to_rad(56)) * distance) + shake
 	look_at(focus)

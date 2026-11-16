@@ -7,4 +7,4 @@
 - `tools/smoke_challenge.gd`: the actual arena runs 600 consecutive ticks with four real first-wave enemies; Captain and Hunter smoke stages remain.
 - `python tools/verify.py`: editor import, every script, stock assets, full GUT suite, and all three smoke stages. GUT runs with fixed render delta to accelerate frame-driven tests while simulation steps remain 60 Hz; a 300-second suite timeout accommodates full Challenge replays. No import errors are suppressed.
 
-Manual gate: follow `M4_PLAYTEST.md`, especially human balance/feel with both classes and readability of retreat/slam/crowding. No user playtest result is implied by automated gates. M5 remains gated on explicit M4 approval.
+Manual gate completed: Ishak confirmed on 15 November 2026 that M4 “works perfectly” and authorized proceeding. The stable-order deterministic crowd-separation refinement is accepted. See `M4_PLAYTEST.md` for the approval record; M5 is active.

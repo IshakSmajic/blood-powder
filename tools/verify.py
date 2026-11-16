@@ -29,7 +29,14 @@ def run(label, command, env, marker=None, timeout=120):
     else:
         print(output, end="", flush=True)
     errors = ("SCRIPT ERROR:", "ERROR:", "Parse Error", "Failed to load script")
-    if result.returncode or any(message in result.stdout for message in errors):
+    # The managed Windows sandbox can deny querying the system certificate
+    # store. The game is offline-only; this does not affect import or runtime.
+    actionable_output = "\n".join(
+        line for line in output.splitlines()
+        if "Failed to read the root certificate store." not in line
+        and "at: get_system_ca_certificates" not in line
+    )
+    if result.returncode or any(message in actionable_output for message in errors):
         raise RuntimeError(f"{label} failed (exit {result.returncode})")
     if marker and marker not in result.stdout:
         raise RuntimeError(f"{label} did not report completion")
@@ -47,15 +54,27 @@ def main():
         path = ROOT / ".local" / folder
         path.mkdir(parents=True, exist_ok=True)
         env[variable] = str(path)
+    if sys.platform == "win32":
+        # Godot uses APPDATA for editor settings and user:// logs on Windows;
+        # XDG paths alone do not redirect those writes.
+        for variable, folder in [("APPDATA", "appdata"), ("LOCALAPPDATA", "localappdata")]:
+            path = ROOT / ".local" / folder
+            path.mkdir(parents=True, exist_ok=True)
+            env[variable] = str(path)
     version = subprocess.check_output([binary, "--version"], text=True, env=env).strip()
     if version != PINNED_VERSION:
         raise RuntimeError(f"Expected {PINNED_VERSION}; got {version}")
     common = [binary, "--headless", "--path", str(ROOT)]
+    gut_command = common + ["--script", "res://addons/gut/gut_cmdln.gd"]
+    if sys.platform != "win32":
+        # Keep the prior fixed render delta on Linux; on Windows it makes
+        # frame-driven GUT tests wait in real time and destabilizes their timing.
+        gut_command += ["--fixed-fps", "60"]
     checks = [
         ("Import and editor parse", common + ["--import"], None),
         ("All-script parse", common + ["--script", "res://tools/parse_all.gd"], "PARSE PASS:"),
         ("Stock asset imports", common + ["--script", "res://tools/check_assets.gd"], "ASSETS PASS:"),
-        ("GUT suite", common + ["--script", "res://addons/gut/gut_cmdln.gd", "--fixed-fps", "60"], "All tests passed!"),
+        ("GUT suite", gut_command, "All tests passed!"),
         ("600-tick main-scene smoke test", common + ["--script", "res://tools/smoke.gd",
             "--fixed-fps", "60"], "SMOKE PASS:"),
     ]
@@ -64,7 +83,7 @@ def main():
     failures = []
     for label, command, marker in checks:
         try:
-            run(label, command, env, marker, timeout=300 if label == "GUT suite" else 120)
+            run(label, command, env, marker, timeout=1200 if label == "GUT suite" else 120)
         except (RuntimeError, OSError, subprocess.SubprocessError) as error:
             failures.append(str(error))
             print(f"CHECK FAILED: {error}", flush=True)
