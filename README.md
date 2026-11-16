@@ -20,6 +20,16 @@ Wait for asset import, then press **F5** in the editor. To run the project direc
 
 On Hyprland, if the window misbehaves, add `--display-driver x11` to that command. This is a per-launch option and does not change desktop configuration.
 
+## First-person experiment
+
+A separate Captain prototype is available on `experiment/first-person-captain`:
+
+```bash
+~/Projects/blood-powder/tools/run_first_person.sh
+```
+
+Click **Start / Resume**. Use **WASD** to move, mouse to look, **LMB** for sword, **RMB/Q** for pistol, **E** for barrels, **F** for Ration, and **R** for Broadside. **Esc/Tab** opens the pause menu. One soldier target respawns after death. The normal launch command still opens the top-down arena. See [experiment notes](docs/FIRST_PERSON_EXPERIMENT.md).
+
 ## Sandbox controls
 
 | Input | Result |
