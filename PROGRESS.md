@@ -425,3 +425,8 @@ Final exports were rebuilt after the particle/API and shutdown cleanup fixes: `b
 **Known limitations / next steps:** Linux was exported but cannot be launched here: WSL is not installed. Neither executable has yet been playtested with networking disabled or visually inspected in the game window; the CUA desktop pipe was unavailable in this session. Use `docs/M5_PLAYTEST.md` to check Windows/Linux launches, window layout, both classes, combat feedback, sound, and Pause/Credits. M5 remains pending Ishak's visual/audio/platform inspection and approval.
 
 M5 changes remain as working-tree edits on `feature/m5-polish`. The restricted sandbox denied writes to `.git/index`, so no files were staged or committed; pre-existing `project.godot` and old `.import` editor changes were preserved.
+
+
+## 2026-11-16 â€” M5 checkpoint committed and pushed
+
+Ishak requested committing all current project changes and pushing them to GitHub. Committed the complete working tree on `feature/m5-polish` as `399363d` (`Complete M5 polish and export`) and pushed the branch successfully to `origin`. This supersedes the prior note that the M5 changes remained unstaged. No merge or tag was created; M5 remains pending visual/audio/platform inspection and explicit approval. `git diff --check` passed before staging. The full gameplay verifier was not rerun during this source-control handoff; the M5 verification results immediately above remain the recorded implementation verification. Next step: complete the manual checks in `docs/M5_PLAYTEST.md`, record findings, then request M5 approval.
